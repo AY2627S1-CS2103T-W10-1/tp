@@ -9,13 +9,11 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 ## Project team
 
-### John Doe
+### Jack Chua
 
-<img src="images/johndoe.png" width="200px">
+<img src="images/jackchuayc.png" width="200px">
 
-[[homepage](http://www.comp.nus.edu.sg/~damithch)]
-[[github](https://github.com/johndoe)]
-[[portfolio](team/johndoe.md)]
+[[github](http://github.com/jackchuayc)] 
 
 * Role: Project Advisor
 
@@ -27,31 +25,27 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 * Role: Developer
 
-### Jack Chua
+### Jovan Lo
 
-<img src="images/jackchuayc.png" width="200px">
+<img src="images/snowlyr.png" width="200px">
 
-[[github](http://github.com/jackchuayc)] 
-
-* Role: Developer
-* Responsibilities: Not yet decided
-
-### Jean Doe
-
-<img src="images/johndoe.png" width="200px">
-
-[[github](http://github.com/johndoe)]
-[[portfolio](team/johndoe.md)]
+[[github](http://github.com/snowlyr)] 
 
 * Role: Developer
-* Responsibilities: Dev Ops + Threading
 
-### James Doe
+### Liu Yuqi
 
-<img src="images/johndoe.png" width="200px">
+<img src="images/liu-yuqi-617.jpg" width="200px">
 
-[[github](http://github.com/johndoe)]
-[[portfolio](team/johndoe.md)]
+[[github](https://github.com/Liu-Yuqi-617)]
 
 * Role: Developer
-* Responsibilities: UI
+
+### He Qianyi
+
+<img src="images/he-qianyi.png" width="200px">
+
+[[github](https://github.com/He-Qianyi)]
+
+* Role: Developer
+* Responsibilities: UI design
