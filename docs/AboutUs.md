@@ -27,14 +27,14 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 * Role: Developer
 
-### Johnny Doe
+### Jack Chua
 
-<img src="images/johndoe.png" width="200px">
+<img src="images/jackchuayc.png" width="200px">
 
-[[github](http://github.com/johndoe)] [[portfolio](team/johndoe.md)]
+[[github](http://github.com/jackchuayc)] 
 
 * Role: Developer
-* Responsibilities: Data
+* Responsibilities: Not yet decided
 
 ### Jean Doe
 
