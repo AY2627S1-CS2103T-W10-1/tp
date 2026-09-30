@@ -261,27 +261,39 @@ _{Explain here how the data archiving feature will be implemented}_
 
 **Target user profile**:
 
+* is a secretary of a department head at a tech firm
+* needs to be able to store contact information offline
 * has a need to manage a significant number of contacts
 * prefers desktop apps over other types of applications
 * can type fast
 * prefers typing to mouse interactions
 * is reasonably comfortable using CLI apps
 
-**Value proposition**: Manage contacts faster than with a typical mouse-driven GUI application.
+**Value proposition**: sudoContact is a lightweight address book that strips away clunky GUIs. It allows you to search, update and route VIP contact data instantly using standard Unix syntax. SudoContact can instantly pipe a filtered list of investors directly into a csv for quick sharing.
 
 
 ### User stories
 
 Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unlikely to have) - `*`
 
-| Priority | As a …​                                    | I want to …​                     | So that I can…​                                                        |
-| -------- | ------------------------------------------ | ------------------------------ | ---------------------------------------------------------------------- |
-| `* * *`  | new user                                   | see usage instructions         | refer to instructions when I forget how to use the App                 |
-| `* * *`  | user                                       | add a new person               |                                                                        |
-| `* * *`  | user                                       | delete a person                | remove entries that I no longer need                                   |
-| `* * *`  | user                                       | find a person by name          | locate details of persons without having to go through the entire list |
-| `* *`    | user                                       | hide private contact details   | minimize chance of someone else seeing them by accident                |
-| `*`      | user with many persons in the address book | sort persons by name           | locate a person easily                                                 |
+| Priority | As a …​                                    | I want to …​                                  | So that I can…​                                                               |
+| -------- |-------------------------------------------|----------------------------------------------|------------------------------------------------------------------------------|
+| `* * *`  | new user / forgetful user                 | see usage instructions                       | refer to instructions when I do not know/forget how to use the App           |
+| `* * *`  | forgetful user                            | see usage instructions                       | refer to instructions when I do not know/forget how to use the App           |
+| `* * *`  | user                                      | add a new person                             |                                                                              |
+| `* * *`  | user                                      | delete a person                              | remove entries that I no longer need                                         |
+| `* * *`  | user                                      | find a person by name                        | locate details of persons without having to go through the entire list       |
+| `* * *`  | user                                      | record which department a contact belongs to | categorise employees for easier filtering                                    |
+| `* * *`  | user                                      | search across all tags                       | find someone when I only remember where they work/fragmented info            |
+| `* * *`  | user                                      | view one contact's full details              | see all the fields of a person that may be cut off in the list view          |
+| `* * *`  | user                                      | add a contact with only partial information  | capture an person's incomplete information if I do not have all their info   |
+| `* * *`  | user                                      | undo a delete                                | recover from a mistaken delete                                               |
+| `* * *`  | user with many contacts                   | List all contacts                            | quickly review the contacts I have stored                                    |
+| `* * *`  | user with many contacts                   | sort contacts by department/tags             | quickly review contact list of people with the same tag                      |
+| `* * *`  | user                                      | use unix syntax                              | type faster coming from a unix background                                    |
+| `* *`  | user                                      | generate a .csv of the contact list          | Easily copy and paste their email address to quickly send out an email blast |
+| `* *`    | user                                      | hide private contact details                 | minimize chance of someone else seeing them by accident                      |
+| `*`      | user with many persons in the address book | sort persons by name                         | locate a person easily                                                       |
 
 *{More to be added}*
 
