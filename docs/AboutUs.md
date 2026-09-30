@@ -34,7 +34,6 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 [[github](http://github.com/jackchuayc)] 
 
 * Role: Developer
-* Responsibilities: Not yet decided
 
 ### Jean Doe
 
