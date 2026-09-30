@@ -27,24 +27,23 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 * Role: Developer
 
-### Johnny Doe
+### Jovan Lo
 
-<img src="images/johndoe.png" width="200px">
+<img src="images/snowlyr.png" width="200px">
 
-[[github](http://github.com/johndoe)] [[portfolio](team/johndoe.md)]
+[[github](http://github.com/snowlyr)] 
 
 * Role: Developer
 * Responsibilities: Data
 
-### Jean Doe
+### Liu Yuqi
 
-<img src="images/snowlyr.png" width="200px">
+<img src="images/liu-yuqi-617.jpg" width="200px">
 
-[[github](http://github.com/snowlyr)]
-[[portfolio](team/snowlyr.md)]
+[[github](https://github.com/Liu-Yuqi-617)]
 
 * Role: Developer
-* Responsibilities: Dev Ops + Threading
+
 
 ### James Doe
 
