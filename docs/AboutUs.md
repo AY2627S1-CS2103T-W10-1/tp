@@ -9,13 +9,11 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 ## Project team
 
-### John Doe
+### Jack Chua
 
-<img src="images/johndoe.png" width="200px">
+<img src="images/jackchuayc.png" width="200px">
 
-[[homepage](http://www.comp.nus.edu.sg/~damithch)]
-[[github](https://github.com/johndoe)]
-[[portfolio](team/johndoe.md)]
+[[github](http://github.com/jackchuayc)] 
 
 * Role: Project Advisor
 
@@ -34,7 +32,6 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 [[github](http://github.com/snowlyr)] 
 
 * Role: Developer
-* Responsibilities: Data
 
 ### Liu Yuqi
 
@@ -43,7 +40,6 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 [[github](https://github.com/Liu-Yuqi-617)]
 
 * Role: Developer
-
 
 ### He Qianyi
 
