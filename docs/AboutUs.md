@@ -35,7 +35,7 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 ### Liu Yuqi
 
-<img src="images/liu-yuqi-617.jpg" width="200px">
+<img src="images/liu-yuqi-617.png" width="200px">
 
 [[github](https://github.com/Liu-Yuqi-617)]
 
