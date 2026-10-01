@@ -304,13 +304,23 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case ends.
 
-**Use case: Delete a person**
+**Use Case: UC2 - User sorts contacts by department/tag**
 
 **MSS**
 
 1. User <u>lists all contacts (UC1)</u>
-2. User requests to delete a specific person in the list
-3. AddressBook deletes the person
+2. User sorts the contact by either the department or tag field.
+3. AddressBook shows a sorted list of contacts according to field selected.
+
+   use case ends
+
+**Use case: UC3 - Delete a contact**
+
+**MSS**
+
+1. User <u>lists all contacts (UC1)</u>
+2. User requests to delete a specific contact in the list
+3. AddressBook deletes the contact
 
     Use case ends.
 
