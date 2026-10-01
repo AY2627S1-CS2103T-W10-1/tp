@@ -74,3 +74,4 @@ public class LogicManager implements Logic {
         model.setGuiSettings(guiSettings);
     }
 }
+
