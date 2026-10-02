@@ -332,27 +332,33 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **MSS**
 
-1. User <u>lists all contacts (UC1)</u>
-2. User requests to delete a specific contact in the list
-3. AddressBook deletes the contact
+1. User <u>lists all contacts (UC1)</u>.
+2. User requests to delete a contact using its index in the currently
+   displayed list.
+3. AddressBook deletes the selected contact.
+4. AddressBook displays the deleted contact's details and informs the
+   user that the deletion can be undone.
 
-    Use case ends.
+   Use case ends.
 
 **Extensions**
 
-* 1a. <u>User sorts contacts by department/tag (UC2)</u>
+* 1a. User filters the contacts or <u>sorts contacts by
+  department/tag (UC2)</u>.
 
-    Use case resumes at step 2
-* 1b. The list is empty.
-  
+  Use case resumes at step 2 using the resulting displayed list.
+
+* 1b. The displayed list is empty.
+
   Use case ends.
-  
-* 2a. The given index is invalid.
 
-    * 2a1. AddressBook shows an error message.
+* 2a. The deletion request has an invalid format or the index is
+  missing, invalid, or outside the displayed list's range.
 
-      Use case resumes at step 2.
+  * 2a1. AddressBook shows an error message and indicates the
+    required format or valid index range.
 
+  Use case resumes at step 2.
 
 
 *{More to be added}*
