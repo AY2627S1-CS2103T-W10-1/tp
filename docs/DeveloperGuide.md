@@ -329,7 +329,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * 1a. <u>User sorts contacts by department/tag (UC2)</u>
 
     Use case resumes at step 2
-
+* 1b. The list is empty.
+  Use case ends.
   
 * 2a. The given index is invalid.
 
