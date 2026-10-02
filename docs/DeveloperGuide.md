@@ -352,7 +352,33 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case resumes at step 2.
 
+**Use Case: UC4 - View available commands and their usage**
+ 
+  **Actor:** User
+ 
+  **MSS**
+ 
+  1. User enters `help`.
+  2. sudoContact displays the available commands and their usage.
+  3. User enters `help COMMAND` to learn more about a specific command.
+  4. sudoContact displays the usage of that command.
+ 
+     Use case ends.
+ 
+  **Extensions**
+ 
+* 1a. User enters `help COMMAND` directly.
+    * 1a1. Use case resumes at step 4.
 
+* 3a. User enters `help COMMAND` wrongly/for a command that does not exist
+    * 3a1. Inform user it is an unrecognized command
+
+      Use case ends
+ 
+* 4a. The specified command does not exist.
+    * 4a1. sudoContact displays `Command not found`.
+ 
+      Use case ends
 
 *{More to be added}*
 
