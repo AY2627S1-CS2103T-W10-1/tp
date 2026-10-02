@@ -360,6 +360,43 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case resumes at step 2.
 
+**Use case: UC4 - Undo a delete**
+
+**MSS**
+
+1. User requests to undo a deletion.
+2. AddressBook restores the most recently deleted contact that has
+   not yet been restored in the current session, including its details.
+3. AddressBook displays the restored contact's details.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. The undo request includes additional arguments.
+
+  * 1a1. AddressBook shows an error message explaining that undo
+    does not accept arguments.
+
+  Use case resumes at step 1.
+
+* 1b. There are no deletions available to undo in the current session.
+
+  * 1b1. AddressBook informs the user that there are no deletions
+    left to undo.
+
+  Use case ends.
+
+* 2a. An existing contact has both the same phone number and
+  email address as the contact being restored.
+
+  * 2a1. AddressBook rejects the restoration and identifies the
+    existing contact that prevents it.
+  * 2a2. AddressBook retains the deleted contact for a later
+    undo attempt.
+
+  Use case ends.
+
 
 *{More to be added}*
 
