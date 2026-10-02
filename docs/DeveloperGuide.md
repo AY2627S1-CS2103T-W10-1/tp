@@ -8,8 +8,9 @@ title: Developer Guide
 --------------------------------------------------------------------------------------------------------------------
 
 ## **Acknowledgements**
+This project is based on the AddressBook-Level3 project created by the [SE-EDU initiative](https://se-education.org).
 
-* _{List the sources of reused or adapted ideas, code, documentation, and third-party libraries here, with links to the originals.}_
+* [SE-EDU initiative](https://se-education.org)
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -331,28 +332,72 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **MSS**
 
-1. User <u>lists all contacts (UC1)</u>
-2. User requests to delete a specific contact in the list
-3. AddressBook deletes the contact
+1. User <u>lists all contacts (UC1)</u>.
+2. User requests to delete a contact using its index in the currently
+   displayed list.
+3. AddressBook deletes the selected contact.
+4. AddressBook displays the deleted contact's details and informs the
+   user that the deletion can be undone.
 
-    Use case ends.
+   Use case ends.
 
 **Extensions**
 
-* 1a. <u>User sorts contacts by department/tag (UC2)</u>
+* 1a. User filters the contacts or <u>sorts contacts by
+  department/tag (UC2)</u>.
 
-    Use case resumes at step 2
-* 1b. The list is empty.
-  
+  Use case resumes at step 2 using the resulting displayed list.
+
+* 1b. The displayed list is empty.
+
   Use case ends.
-  
-* 2a. The given index is invalid.
 
-    * 2a1. AddressBook shows an error message.
+* 2a. The deletion request has an invalid format or the index is
+  missing, invalid, or outside the displayed list's range.
 
-      Use case resumes at step 2.
+  * 2a1. AddressBook shows an error message and indicates the
+    required format or valid index range.
 
-**Use Case: UC4 - View available commands and their usage**
+  Use case resumes at step 2.
+
+**Use case: UC4 - Undo a delete**
+
+**MSS**
+
+1. User requests to undo a deletion.
+2. AddressBook restores the most recently deleted contact that has
+   not yet been restored in the current session, including its details.
+3. AddressBook displays the restored contact's details.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. The undo request includes additional arguments.
+
+  * 1a1. AddressBook shows an error message explaining that undo
+    does not accept arguments.
+
+  Use case resumes at step 1.
+
+* 1b. There are no deletions available to undo in the current session.
+
+  * 1b1. AddressBook informs the user that there are no deletions
+    left to undo.
+
+  Use case ends.
+
+* 2a. An existing contact has both the same phone number and
+  email address as the contact being restored.
+
+  * 2a1. AddressBook rejects the restoration and identifies the
+    existing contact that prevents it.
+  * 2a2. AddressBook retains the deleted contact for a later
+    undo attempt.
+
+  Use case ends.
+
+**Use Case: UC5 - View available commands and their usage**
  
   **Actor:** User
  
