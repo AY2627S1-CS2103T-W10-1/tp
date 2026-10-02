@@ -301,6 +301,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 **Extensions**
 
 * 1a. The list is empty.
+*    1a1. shows a message indicating that there are no contacts.
 
   Use case ends.
 
@@ -330,6 +331,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
     Use case resumes at step 2
 * 1b. The list is empty.
+  
   Use case ends.
   
 * 2a. The given index is invalid.
