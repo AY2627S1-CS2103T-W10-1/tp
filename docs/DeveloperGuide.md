@@ -397,6 +397,98 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case ends.
 
+**System:** sudoContact
+
+**Use case:** UC5 - Record which department a contact belongs to
+
+**Actor:** User
+
+**MSS:**
+
+1.  User requests to assign a department to a contact.
+2.  User enters `depart CONTACT_ID --set DEPARTMENT`.
+3.  sudoContact validates the contact ID and department.
+4.  sudoContact assigns the specified department to the contact.
+5.  sudoContact displays a confirmation showing the contact and its updated department.
+
+    Use case ends.
+
+**Extensions:**
+
+* 3a. The contact ID format is invalid.
+
+    * 3a1. sudoContact displays `Invalid Contact ID: Must be a positive integer.`
+
+      Use case ends.
+
+* 3b. The specified contact does not exist.
+
+    * 3b1. sudoContact displays `Contact non-existent: No contact found with ID '[INPUT]'.`
+
+      Use case ends.
+
+* 3c. The department value is missing.
+
+    * 3c1. sudoContact displays `Department name cannot be empty.`
+
+      Use case ends.
+
+* 3d. The department value does not satisfy the required format or length.
+
+    * 3d1. sudoContact displays `Invalid Department: Must be 2-50 characters using only letters, numbers, spaces, '-', or '&'.`
+
+      Use case ends.
+
+* 4a. The contact already has a department.
+
+    * 4a1. sudoContact overwrites the existing department with the newly specified department.
+
+      Use case resumes at step 5.
+
+**System:** sudoContact
+
+**Use case:** UC6 - Search contacts by tags
+
+**Actor:** User
+
+**MSS:**
+
+1.  User requests to search for contacts with one or more tags.
+2.  User enters a `find` command with one or more `--tag` values.
+3.  sudoContact validates all specified tags.
+4.  sudoContact searches the contacts for those matching the specified tags.
+5.  sudoContact displays each matching contact once.
+6.  sudoContact displays the matching contacts to the user.
+
+    Use case ends.
+
+**Extensions:**
+
+* 3a. A specified tag contains invalid characters or spaces.
+
+    * 3a1. sudoContact displays `Invalid Tag: '[INPUT]' must be 1-30 characters using only letters, numbers, hyphens (-), and underscores (_), with no spaces.`
+
+      Use case ends.
+
+* 3b. A tag value is missing.
+
+    * 3b1. sudoContact displays `Tag cannot be empty: Please provide a valid tag after '--tag'.`
+
+      Use case ends.
+
+* 4a. No contacts match the specified tag(s).
+
+    * 4a1. sudoContact displays `No contacts found with the specified tag(s).`
+
+      Use case ends.
+
+* 4b. Multiple tags are specified and a contact matches more than one of them.
+
+    * 4b1. sudoContact displays the matching contact only once.
+
+      Use case resumes at step 5.
+
+
 
 *{More to be added}*
 
