@@ -397,6 +397,140 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case ends.
 
+**Use case: UC8 - View one contact's full details**
+
+**System:** sudoContact
+
+**Actor:** User
+
+**MSS**
+
+1. User displays a list of contacts (UC1), which may be filtered or sorted.
+2. User enters `view INDEX`, using an index in the currently displayed list.
+3. sudoContact identifies the contact at that index.
+4. sudoContact displays all available details of that contact, including
+   fields not shown in the list.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. The displayed list is empty.
+
+  * 1a1. sudoContact informs the user that there is no contact to view.
+
+  Use case ends.
+
+* 2a. The command format or index is invalid, or the index is outside
+  the currently displayed list.
+
+  * 2a1. sudoContact displays an error and indicates the required format
+    or valid index range.
+
+  Use case resumes at step 2.
+
+* 3a. The selected contact's stored data cannot be read.
+
+  * 3a1. sudoContact reports that the contact details cannot be displayed.
+
+  Use case ends.
+
+**Use case: UC9 - Add a contact with partial information**
+
+**System:** sudoContact
+
+**Actor:** User
+
+**MSS**
+
+1. User enters `add --name NAME`, including any optional information they
+   know, such as a phone number, email address, department, or tags.
+2. sudoContact validates the supplied information and checks for a contact
+   with the same name, phone number, and email address. A matching name
+   alone does not prevent the contact from being added.
+3. sudoContact saves the new contact with the supplied information, leaving
+   omitted optional fields unprovided.
+4. sudoContact confirms that the contact was added and shows omitted fields
+   as `Not provided` or, for tags, `None`.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. The name is missing or empty.
+
+  * 2a1. sudoContact displays an error and does not add the contact.
+
+  Use case resumes at step 1.
+
+* 2b. A supplied field is invalid, an option is unknown, or the command
+  format is invalid.
+
+  * 2b1. sudoContact displays an error and does not add the contact.
+
+  Use case resumes at step 1.
+
+* 2c. A contact with the same name, phone number, and email address
+  already exists.
+
+  * 2c1. sudoContact informs the user that the contact is a duplicate
+    and does not add it.
+
+  Use case ends.
+
+* 3a. sudoContact cannot save the new contact.
+
+  * 3a1. sudoContact reports the failure without confirming that the
+    contact was added.
+
+  Use case ends.
+
+**Use case: UC10 - Export contacts to a CSV file**
+
+**System:** sudoContact
+
+**Actor:** User
+
+**MSS**
+
+1. User enters `export --csv [FILENAME]`.
+2. sudoContact validates the supplied filename, or selects `contacts.csv`
+   if no filename was supplied.
+3. sudoContact retrieves all stored contacts.
+4. sudoContact creates a UTF-8 CSV file with a header row and a separate
+   row for each contact. It escapes values containing commas or quotation
+   marks.
+5. sudoContact confirms the number of contacts exported and the filename.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. The supplied filename is invalid.
+
+  * 2a1. sudoContact displays an error and does not export the contacts.
+
+  Use case resumes at step 1.
+
+* 3a. There are no contacts to export.
+
+  * 3a1. sudoContact informs the user that the contact list is empty.
+
+  Use case ends.
+
+* 3b. Contact data cannot be read.
+
+  * 3b1. sudoContact reports that the export could not be completed.
+
+  Use case ends.
+
+* 4a. The CSV file cannot be created or written.
+
+  * 4a1. sudoContact reports the file error without confirming a
+    successful export.
+
+  Use case ends.
+
 
 *{More to be added}*
 
