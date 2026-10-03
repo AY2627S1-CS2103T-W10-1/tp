@@ -637,6 +637,10 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * **Mainstream OS**: Windows, Linux, Unix, or macOS
 * **Private contact detail**: A contact detail that is not meant to be shared with others
+* **Currently displayed list**: The contacts shown after any filtering or sorting. The index used to view a contact refers to its position in this list.
+* **Partial contact**: A contact with a name but without some optional details, such as a phone number, email address, department, or tags.
+* **Duplicate contact**: An existing contact with the same name, phone number, and email address as a contact being added.
+* **CSV export**: A UTF-8 comma-separated values file containing a header row and one row for each stored contact.
 
 --------------------------------------------------------------------------------------------------------------------
 
