@@ -638,8 +638,13 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 ### Glossary
 
+* **Contact**: A stored record for a person or organisation, containing a name and any available contact details, department, and tags.
+* **Contact ID**: A positive integer that identifies the contact to be updated by the `depart` command.
+* **Department**: An optional organisational unit associated with a contact. Setting a new department replaces that contact's existing department.
 * **Mainstream OS**: Windows, Linux, Unix, or macOS
+* **Matching contact**: For a tag search, a contact that has every tag specified in the command. A matching contact is displayed once even when it has more than one specified tag.
 * **Private contact detail**: A contact detail that is not meant to be shared with others
+* **Tag**: An optional label attached to a contact to support categorisation and searching. Tag matching is case-insensitive.
 
 --------------------------------------------------------------------------------------------------------------------
 
