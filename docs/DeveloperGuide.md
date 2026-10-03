@@ -631,6 +631,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 2.  Should be able to hold up to 1000 persons without noticeable sluggishness in performance for typical usage.
 3.  A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
 4.  Contact data must be stored locally in a human-editable text file (e.g., JSON). If the file is missing, malformed, or corrupted at startup, the application must show a clear diagnostic message and either recover safely or exit without an unhandled exception.
+5.  After a successful add, edit, or delete command, the updated contact list must be restored when the application is closed and reopened.
+6.  If saving contact data fails, the application must report the failure and leave the last successfully saved data file intact.
 
 *{More to be added}*
 
