@@ -632,6 +632,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 3.  The system should maintain responsiveness with command execution times of under 1 second when handling a dataset of up to 1,000 records under typical usage conditions.
 4.  The system should provide smooth scrolling when displaying a dataset of up to 1,000 records under typical usage conditions.
 5.  A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
+6.  Contact data must be stored locally in a human-editable text file (e.g., JSON). If the file is missing, malformed, or corrupted at startup, the application must show a clear diagnostic message and either recover safely or exit without an unhandled exception.
+7.  After a successful add, edit, or delete command, the updated contact list must be restored when the application is closed and reopened.
+8.  If saving contact data fails, the application must report the failure and leave the last successfully saved data file intact.
 
 *{More to be added}*
 
