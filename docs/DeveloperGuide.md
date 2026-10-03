@@ -397,7 +397,233 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case ends.
 
-**Use Case: UC5 - View available commands and their usage**
+**System:** sudoContact
+
+**Use case:** UC5 - Record which department a contact belongs to
+
+**Actor:** User
+
+**MSS:**
+
+1.  User requests to assign a department to a contact.
+2.  User enters `depart CONTACT_ID --set DEPARTMENT`.
+3.  sudoContact validates the contact ID and department.
+4.  sudoContact assigns the specified department to the contact.
+5.  sudoContact displays a confirmation showing the contact and its updated department.
+
+    Use case ends.
+
+**Extensions:**
+
+* 3a. The contact ID format is invalid.
+
+    * 3a1. sudoContact displays `Invalid Contact ID: Must be a positive integer.`
+
+      Use case ends.
+
+* 3b. The specified contact does not exist.
+
+    * 3b1. sudoContact displays `Contact non-existent: No contact found with ID '[INPUT]'.`
+
+      Use case ends.
+
+* 3c. The department value is missing.
+
+    * 3c1. sudoContact displays `Department name cannot be empty.`
+
+      Use case ends.
+
+* 3d. The department value does not satisfy the required format or length.
+
+    * 3d1. sudoContact displays `Invalid Department: Must be 2-50 characters using only letters, numbers, spaces, '-', or '&'.`
+
+      Use case ends.
+
+* 4a. The contact already has a department.
+
+    * 4a1. sudoContact overwrites the existing department with the newly specified department.
+
+      Use case resumes at step 5.
+
+**System:** sudoContact
+
+**Use case:** UC6 - Search contacts by tags
+
+**Actor:** User
+
+**MSS:**
+
+1.  User requests to search for contacts with one or more tags.
+2.  User enters a `find` command with one or more `--tag` values.
+3.  sudoContact validates all specified tags.
+4.  sudoContact searches the contacts for those matching the specified tags.
+5.  sudoContact displays each matching contact once.
+6.  sudoContact displays the matching contacts to the user.
+
+    Use case ends.
+
+**Extensions:**
+
+* 3a. A specified tag contains invalid characters or spaces.
+
+    * 3a1. sudoContact displays `Invalid Tag: '[INPUT]' must be 1-30 characters using only letters, numbers, hyphens (-), and underscores (_), with no spaces.`
+
+      Use case ends.
+
+* 3b. A tag value is missing.
+
+    * 3b1. sudoContact displays `Tag cannot be empty: Please provide a valid tag after '--tag'.`
+
+      Use case ends.
+
+* 4a. No contacts match the specified tag(s).
+
+    * 4a1. sudoContact displays `No contacts found with the specified tag(s).`
+
+      Use case ends.
+
+* 4b. Multiple tags are specified and a contact matches more than one of them.
+
+    * 4b1. sudoContact displays the matching contact only once.
+
+      Use case resumes at step 5.
+
+
+**Use case: UC8 - View one contact's full details**
+
+**System:** sudoContact
+
+**Actor:** User
+
+**MSS**
+
+1. User displays a list of contacts (UC1), which may be filtered or sorted.
+2. User enters `view INDEX`, using an index in the currently displayed list.
+3. sudoContact identifies the contact at that index.
+4. sudoContact displays all available details of that contact, including
+   fields not shown in the list.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. The displayed list is empty.
+
+  * 1a1. sudoContact informs the user that there is no contact to view.
+
+  Use case ends.
+
+* 2a. The command format or index is invalid, or the index is outside
+  the currently displayed list.
+
+  * 2a1. sudoContact displays an error and indicates the required format
+    or valid index range.
+
+  Use case resumes at step 2.
+
+* 3a. The selected contact's stored data cannot be read.
+
+  * 3a1. sudoContact reports that the contact details cannot be displayed.
+
+  Use case ends.
+
+**Use case: UC9 - Add a contact with partial information**
+
+**System:** sudoContact
+
+**Actor:** User
+
+**MSS**
+
+1. User enters `add --name NAME`, including any optional information they
+   know, such as a phone number, email address, department, or tags.
+2. sudoContact validates the supplied information and checks for a contact
+   with the same name, phone number, and email address. A matching name
+   alone does not prevent the contact from being added.
+3. sudoContact saves the new contact with the supplied information, leaving
+   omitted optional fields unprovided.
+4. sudoContact confirms that the contact was added and shows omitted fields
+   as `Not provided` or, for tags, `None`.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. The name is missing or empty.
+
+  * 2a1. sudoContact displays an error and does not add the contact.
+
+  Use case resumes at step 1.
+
+* 2b. A supplied field is invalid, an option is unknown, or the command
+  format is invalid.
+
+  * 2b1. sudoContact displays an error and does not add the contact.
+
+  Use case resumes at step 1.
+
+* 2c. A contact with the same name, phone number, and email address
+  already exists.
+
+  * 2c1. sudoContact informs the user that the contact is a duplicate
+    and does not add it.
+
+  Use case ends.
+
+* 3a. sudoContact cannot save the new contact.
+
+  * 3a1. sudoContact reports the failure without confirming that the
+    contact was added.
+
+  Use case ends.
+
+**Use case: UC10 - Export contacts to a CSV file**
+
+**System:** sudoContact
+
+**Actor:** User
+
+**MSS**
+
+1. User enters `export --csv [FILENAME]`.
+2. sudoContact validates the supplied filename, or selects `contacts.csv`
+   if no filename was supplied.
+3. sudoContact retrieves all stored contacts.
+4. sudoContact creates a UTF-8 CSV file with a header row and a separate
+   row for each contact. It escapes values containing commas or quotation
+   marks.
+5. sudoContact confirms the number of contacts exported and the filename.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. The supplied filename is invalid.
+
+  * 2a1. sudoContact displays an error and does not export the contacts.
+
+  Use case resumes at step 1.
+
+* 3a. There are no contacts to export.
+
+  * 3a1. sudoContact informs the user that the contact list is empty.
+
+  Use case ends.
+
+* 3b. Contact data cannot be read.
+
+  * 3b1. sudoContact reports that the export could not be completed.
+
+  Use case ends.
+
+* 4a. The CSV file cannot be created or written.
+
+  * 4a1. sudoContact reports the file error without confirming a
+    successful export.
+
+  Use case ends.
+
+**Use Case: UC11 - View available commands and their usage**
  
   **Actor:** User
  
@@ -432,13 +658,21 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 1.  Should work on any _mainstream OS_ as long as it has Java `25` or above installed.
 2.  Should be able to hold up to 1000 persons without noticeable sluggishness in performance for typical usage.
 3.  A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
+4.  Contact data must be stored locally in a human-editable text file (e.g., JSON). If the file is missing, malformed, or corrupted at startup, the application must show a clear diagnostic message and either recover safely or exit without an unhandled exception.
+5.  After a successful add, edit, or delete command, the updated contact list must be restored when the application is closed and reopened.
+6.  If saving contact data fails, the application must report the failure and leave the last successfully saved data file intact.
 
 *{More to be added}*
 
 ### Glossary
 
+* **Contact**: A stored record for a person or organisation, containing a name and any available contact details, department, and tags.
+* **Contact ID**: A positive integer that identifies the contact to be updated by the `depart` command.
+* **Department**: An optional organisational unit associated with a contact. Setting a new department replaces that contact's existing department.
 * **Mainstream OS**: Windows, Linux, Unix, or macOS
+* **Matching contact**: For a tag search, a contact that has every tag specified in the command. A matching contact is displayed once even when it has more than one specified tag.
 * **Private contact detail**: A contact detail that is not meant to be shared with others
+* **Tag**: An optional label attached to a contact to support categorisation and searching. Tag matching is case-insensitive.
 
 --------------------------------------------------------------------------------------------------------------------
 
