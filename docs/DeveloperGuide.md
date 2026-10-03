@@ -623,6 +623,34 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case ends.
 
+**Use Case: UC11 - View available commands and their usage**
+ 
+  **Actor:** User
+ 
+  **MSS**
+ 
+  1. User enters `help`.
+  2. sudoContact displays the available commands and their usage.
+  3. User enters `help COMMAND` to learn more about a specific command.
+  4. sudoContact displays the usage of that command.
+ 
+     Use case ends.
+ 
+  **Extensions**
+ 
+* 1a. User enters `help COMMAND` directly.
+    * 1a1. Use case resumes at step 4.
+
+* 3a. User enters `help COMMAND` wrongly/for a command that does not exist
+    * 3a1. Inform user it is an unrecognized command
+
+      Use case ends
+ 
+* 4a. The specified command does not exist.
+    * 4a1. sudoContact displays `Command not found`.
+ 
+      Use case ends
+
 *{More to be added}*
 
 ### Non-Functional Requirements
@@ -630,17 +658,25 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 1.  Should work on any _mainstream OS_ as long as it has Java `25` or above installed.
 2.  Should be able to hold up to 1000 persons without noticeable sluggishness in performance for typical usage.
 3.  A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
+4.  Contact data must be stored locally in a human-editable text file (e.g., JSON). If the file is missing, malformed, or corrupted at startup, the application must show a clear diagnostic message and either recover safely or exit without an unhandled exception.
+5.  After a successful add, edit, or delete command, the updated contact list must be restored when the application is closed and reopened.
+6.  If saving contact data fails, the application must report the failure and leave the last successfully saved data file intact.
 
 *{More to be added}*
 
 ### Glossary
 
+* **Contact**: A stored record for a person or organisation, containing a name and any available contact details, department, and tags.
+* **Contact ID**: A positive integer that identifies the contact to be updated by the `depart` command.
+* **Department**: An optional organisational unit associated with a contact. Setting a new department replaces that contact's existing department.
 * **Mainstream OS**: Windows, Linux, Unix, or macOS
+* **Matching contact**: For a tag search, a contact that has every tag specified in the command. A matching contact is displayed once even when it has more than one specified tag.
 * **Private contact detail**: A contact detail that is not meant to be shared with others
 * **Currently displayed list**: The contacts shown after any filtering or sorting. The index used to view a contact refers to its position in this list.
 * **Partial contact**: A contact with a name but without some optional details, such as a phone number, email address, department, or tags.
 * **Duplicate contact**: An existing contact with the same name, phone number, and email address as a contact being added.
 * **CSV export**: A UTF-8 comma-separated values file containing a header row and one row for each stored contact.
+* **Tag**: An optional label attached to a contact to support categorisation and searching. Tag matching is case-insensitive.
 
 --------------------------------------------------------------------------------------------------------------------
 
