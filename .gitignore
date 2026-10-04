@@ -29,3 +29,8 @@ CLAUDE.md
 
 # Temp files
 _temp/
+
+/.classpath
+/.project
+/.settings
+/bin
