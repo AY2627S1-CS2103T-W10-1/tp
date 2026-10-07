@@ -29,11 +29,7 @@ public class DepartCommandParser implements Parser<DepartCommand> {
         if (!Department.isValidDepartment(departmentName)) {
             throw new ParseException(Department.MESSAGE_CONSTRAINTS);
         }
-        try {
-            return new DepartCommand(Index.fromOneBased(Integer.parseInt(contactId)), contactId,
-                    new Department(departmentName));
-        } catch (NumberFormatException exception) {
-            throw new ParseException(MESSAGE_INVALID_CONTACT_ID);
-        }
+        return new DepartCommand(Index.fromOneBased(Integer.parseInt(contactId)), contactId,
+                new Department(departmentName));
     }
 }

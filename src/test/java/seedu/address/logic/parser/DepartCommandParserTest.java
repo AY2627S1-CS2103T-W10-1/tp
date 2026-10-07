@@ -24,5 +24,9 @@ class DepartCommandParserTest {
                 DepartCommandParser.MESSAGE_INVALID_CONTACT_ID);
         assertParseFailure(parser, " 1 --set ", DepartCommandParser.MESSAGE_EMPTY_DEPARTMENT);
         assertParseFailure(parser, " 1 --set !", Department.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, " 999999999999999999999 --set Engineering",
+                DepartCommandParser.MESSAGE_INVALID_CONTACT_ID);
+        assertParseFailure(parser, " 1 --set Engineering --set Sales",
+                DepartCommandParser.MESSAGE_EMPTY_DEPARTMENT);
     }
 }
