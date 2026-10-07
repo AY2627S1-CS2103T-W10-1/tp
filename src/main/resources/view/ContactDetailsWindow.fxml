@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.net.URL?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.Scene?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.stage.Stage?>
+
+<Stage xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+       title="Contact details" minWidth="350" minHeight="300">
+  <scene>
+    <Scene>
+      <stylesheets>
+        <URL value="@DarkTheme.css" />
+        <URL value="@Extensions.css" />
+      </stylesheets>
+      <VBox spacing="10" prefWidth="620" prefHeight="450" styleClass="pane-with-border">
+        <padding>
+          <Insets top="15" right="15" bottom="15" left="15" />
+        </padding>
+        <TextArea fx:id="contactDetails" editable="false" wrapText="true" VBox.vgrow="ALWAYS"
+                  styleClass="result-display" />
+        <Label text="To refresh these details, run view INDEX again." styleClass="label-bright"
+               wrapText="true" />
+      </VBox>
+    </Scene>
+  </scene>
+</Stage>

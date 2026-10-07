@@ -36,6 +36,7 @@ public class MainWindow extends UiPart<Stage> {
     private PersonListPanel personListPanel;
     private ResultDisplay resultDisplay;
     private HelpWindow helpWindow;
+    private ContactDetailsWindow contactDetailsWindow;
 
     @FXML
     private StackPane commandBoxPlaceholder;
@@ -70,6 +71,7 @@ public class MainWindow extends UiPart<Stage> {
         setAccelerators();
 
         helpWindow = new HelpWindow();
+        contactDetailsWindow = new ContactDetailsWindow(primaryStage);
     }
 
     public Stage getPrimaryStage() {
@@ -164,6 +166,7 @@ public class MainWindow extends UiPart<Stage> {
                 (int) primaryStage.getX(), (int) primaryStage.getY());
         logic.setGuiSettings(guiSettings);
         helpWindow.hide();
+        contactDetailsWindow.hide();
         primaryStage.hide();
     }
 
@@ -184,6 +187,10 @@ public class MainWindow extends UiPart<Stage> {
 
             if (commandResult.isShowHelp()) {
                 handleHelp();
+            }
+
+            if (commandResult.isShowDetails()) {
+                contactDetailsWindow.showDetails(commandResult.getFeedbackToUser());
             }
 
             if (commandResult.isExit()) {

@@ -11,6 +11,9 @@ title: Developer Guide
 This project is based on the AddressBook-Level3 project created by the [SE-EDU initiative](https://se-education.org).
 
 * [SE-EDU initiative](https://se-education.org)
+* He Qianyi used OpenAI Codex to assist with the feature 3 `view INDEX` implementation, including the
+  command/parser, details window, command-result and read-only persistence integration, tests, and related
+  User Guide/Developer Guide documentation.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -155,6 +158,24 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 ## **Implementation**
 
 This section describes some noteworthy details on how certain features are implemented.
+
+### Viewing contact details
+
+`AddressBookParser` routes `view INDEX` to `ViewCommandParser`, which validates the index using
+`ParserUtil.parseIndex`. `ViewCommand` resolves that index against `Model.getFilteredPersonList()` so that
+filtering (and future sorting) determines the selected row. It reports an empty list or the valid index range
+before accessing the contact.
+
+The command formats all currently supported fields as labelled, untruncated lines, sorts tags for stable output,
+and returns a `CommandResult` with `showDetails` set. `MainWindow` forwards the details to a reusable,
+owner-linked `ContactDetailsWindow` containing a read-only, wrapping, scrollable text area. Each successful
+`view` updates the window with a snapshot; later model changes do not silently change the displayed snapshot.
+
+`ViewCommand.isReadOnly()` returns true, allowing `LogicManager` to return its result without writing storage.
+Other commands retain their existing persistence behaviour. Contacts are already validated and loaded into the
+model at startup, so `view` does not re-read potentially modified or corrupted files on disk.
+
+Department display will be added when the Department model implementation tracked by issue #65 is available.
 
 ### \[Proposed\] Undo/redo feature
 
@@ -708,6 +729,32 @@ testers are expected to do more *exploratory* testing.
        Expected: The most recent window size and location are retained.
 
 1. _{ more test cases …​ }_
+
+### Viewing a contact's details
+
+1. Displayed-list indexing
+
+   1. Run `list`, then `view 2`. Expected: the second contact's supported fields appear in the details window.
+   1. Run `find Betsy`, then `view 1`. Expected: Betsy's details appear, and the filtered list remains unchanged.
+   1. Run `view 2` when only one search result is displayed. Expected: an error gives the range `1-1`.
+   1. Run `find NoSuchContact`, then `view 1`. Expected: an error says there is no contact to view.
+   1. Try `view`, `view 0`, `view -1`, `view 1.5`, `view 1 2`, and `view 2147483648`.
+      Expected: each reports that the index must be a positive integer and shows the usage.
+
+1. Details window
+
+   1. View a contact with a long name/address and multiple tags. Resize the details window and scroll.
+      Expected: all values remain readable without truncation; tags are separated by commas.
+   1. View a contact without tags. Expected: `Tags: None`.
+   1. View another contact. Expected: the existing window updates rather than creating another window.
+   1. Close the details window, then run `view 1`. Expected: the window reopens with the current details.
+   1. Edit the viewed contact. Expected: the snapshot stays unchanged until another `view` command is run.
+   1. Exit the application while details are visible. Expected: the details window closes with the main window.
+
+1. Read-only behaviour
+
+   1. Compare the data file contents and modification time before and after a valid `view` command.
+      Expected: neither changes. The command still works if the data file cannot be written.
 
 ### Deleting a person
 

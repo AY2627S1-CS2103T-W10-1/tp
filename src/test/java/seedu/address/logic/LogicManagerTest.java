@@ -1,6 +1,7 @@
 package seedu.address.logic;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static seedu.address.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;
@@ -12,6 +13,7 @@ import static seedu.address.testutil.TypicalPersons.AMY;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -80,6 +82,36 @@ public class LogicManagerTest {
     public void execute_storageThrowsAdException_throwsCommandException() {
         assertCommandFailureForExceptionFromStorage(DUMMY_AD_EXCEPTION, String.format(
                 LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT, DUMMY_AD_EXCEPTION.getMessage()));
+    }
+
+    @Test
+    public void execute_viewCommand_doesNotWriteDataFile() throws Exception {
+        model.addPerson(AMY);
+        Path dataPath = temporaryFolder.resolve("addressBook.json");
+        Files.writeString(dataPath, "Existing data must remain unchanged");
+
+        CommandResult result = logic.execute("view 1");
+
+        assertTrue(result.isShowDetails());
+        assertTrue(result.getFeedbackToUser().contains("Name: " + AMY.getName() + "\n"));
+        assertEquals("Existing data must remain unchanged", Files.readString(dataPath));
+    }
+
+    @Test
+    public void execute_viewCommand_succeedsWhenStorageCannotWrite() throws Exception {
+        model.addPerson(AMY);
+        JsonAddressBookStorage addressBookStorage =
+                new JsonAddressBookStorage(temporaryFolder.resolve("readOnlyAddressBook.json")) {
+                    @Override
+                    public void saveAddressBook(ReadOnlyAddressBook addressBook) throws IOException {
+                        throw DUMMY_AD_EXCEPTION;
+                    }
+                };
+        StorageManager storage = new StorageManager(addressBookStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("readOnlyUserPrefs.json")));
+        logic = new LogicManager(model, storage);
+
+        assertTrue(logic.execute("view 1").isShowDetails());
     }
 
     @Test
