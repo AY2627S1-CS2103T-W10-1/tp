@@ -26,6 +26,7 @@ checkstyle {
 
 test {
     useJUnitPlatform()
+    systemProperty 'prism.order', 'sw'
     finalizedBy jacocoTestReport
 }
 

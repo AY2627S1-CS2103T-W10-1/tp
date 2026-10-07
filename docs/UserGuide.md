@@ -73,19 +73,42 @@ Shows a message explaining how to access the help page.
 Format: `help`
 
 
-### Adding a person: `add`
+### Adding a contact with partial information: `add`
 
-Adds a person to the address book.
+Adds a contact even if you only know their name. You can fill in other details later.
 
-Format: `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [t/TAG]…​`
+Format: `add --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMENT] [--address ADDRESS] [--tag TAG ...]`
 
-<div markdown="span" class="alert alert-primary">:bulb: **Tip:**
-A person can have any number of tags, including zero.
-</div>
+* Only `--name` is required. Names must be nonblank and contain letters, numbers or spaces.
+* Options can appear in any order. Use matching single or double quotes around multiword values,
+  for example `--name "Alice Tan"` or `--department "Human Resources"`.
+* Phone numbers supplied to `add` must contain 7–15 digits, with no spaces or `+` sign.
+* A supplied email must be valid, such as `alice@example.com`.
+* Department names use the `depart` rules: 2–50 letters, numbers, spaces, hyphens or `&`.
+* Addresses are optional and must be nonblank when supplied.
+* Tags contain 1–30 letters, numbers, hyphens or underscores. Leading `#` or `/` is removed.
+  Repeat `--tag`, or put multiple tags after one flag. Identical tags are deduplicated; display preserves case.
+* Omit an unknown field entirely. An option with an empty value is rejected.
+* Unknown options, unmatched quotes and repeated options other than `--tag` are rejected.
+* Omitted phone, email, address and department show `Not provided`; omitted tags show `None`.
+* Contacts with the same name are allowed when their phone or email differs. The same name, phone **and**
+  email is a duplicate, including when those optional fields are absent. Different departments or tags alone
+  do not distinguish duplicate contacts.
+
+Existing syntax also works: `add n/NAME [p/PHONE] [e/EMAIL] [d/DEPARTMENT] [a/ADDRESS] [t/TAG]…`.
+Use one syntax per command. Slash-prefix values do not need quotes; repeat `t/` for multiple tags.
 
 Examples:
-* `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`
+
+* `add --name "Alice Tan" --email alice@example.com`
+* `add --name "Bob Lee" --phone 91234567`
+* `add --name "Chen Wei" --department Engineering --tag intern new-client`
+* `add --name "Dana Lim"`
 * `add n/Betsy Crowe t/friend e/betsycrowe@example.com a/Newgate Prison p/1234567 t/criminal`
+
+To complete a contact, find their name and use the displayed row number with the existing commands,
+for example `find Dana`, `edit 1 p/91234567 e/dana@example.com`, then `depart 1 --set Engineering`.
+Contacts are saved automatically and retain their supplied and omitted fields after restarting.
 
 ### Listing all persons: `list`
 
@@ -189,7 +212,7 @@ _Details coming soon ..._
 
 Action | Format, Examples
 --------|------------------
-**Add** | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [t/TAG]…​` <br> e.g., `add n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd, 1234665 t/friend t/colleague`
+**Add** | `add --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMENT] [--address ADDRESS] [--tag TAG ...]` <br> e.g., `add --name "James Ho" --email jamesho@example.com`
 **Clear** | `clear`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit** | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
