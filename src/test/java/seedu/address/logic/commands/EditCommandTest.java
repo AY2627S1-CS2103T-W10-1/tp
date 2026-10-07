@@ -71,6 +71,23 @@ public class EditCommandTest {
     }
 
     @Test
+    public void execute_existingDepartment_preservesDepartment() {
+        Person personWithDepartment = new PersonBuilder().withDepartment("Engineering").build();
+        AddressBook addressBook = new AddressBook();
+        addressBook.addPerson(personWithDepartment);
+        Model modelWithDepartment = new ModelManager(addressBook, new UserPrefs());
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withPhone(VALID_PHONE_BOB).build();
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
+
+        Person editedPerson = new PersonBuilder(personWithDepartment).withPhone(VALID_PHONE_BOB).build();
+        Model expectedModel = new ModelManager(new AddressBook(addressBook), new UserPrefs());
+        expectedModel.setPerson(personWithDepartment, editedPerson);
+
+        assertCommandSuccess(editCommand, modelWithDepartment,
+                String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)), expectedModel);
+    }
+
+    @Test
     public void execute_noFieldSpecifiedUnfilteredList_success() {
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, new EditPersonDescriptor());
         Person editedPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
