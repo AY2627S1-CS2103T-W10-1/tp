@@ -55,6 +55,7 @@ public class ViewCommandUiTest {
                     .findFirst().orElseThrow();
             TextArea text = (TextArea) details.getScene().lookup("#contactDetails");
             assertTrue(text.getText().contains("Name: Benson Meier\n"));
+            assertTrue(text.getText().contains("Department: Not provided\n"));
             assertTrue(details.isShowing());
             assertEquals(1, model.getFilteredPersonList().size());
             assertEquals("", input.getText());
@@ -62,6 +63,17 @@ public class ViewCommandUiTest {
             enter(input, "view 2");
             assertTrue(input.getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS));
             assertTrue(text.getText().contains("Name: Benson Meier\n"));
+
+            enter(input, "depart 1 --set R&D Engineering");
+            assertFalse(input.getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS));
+            assertTrue(text.getText().contains("Department: Not provided\n"));
+            enter(input, "view 1");
+            assertTrue(text.getText().contains("Department: R&D Engineering\n"));
+            assertEquals(1, model.getFilteredPersonList().size());
+            assertEquals(details, Window.getWindows().stream()
+                    .filter(window -> window instanceof Stage candidate
+                            && "Contact details".equals(candidate.getTitle()))
+                    .findFirst().orElseThrow());
 
             enter(input, "exit");
             assertFalse(details.isShowing());

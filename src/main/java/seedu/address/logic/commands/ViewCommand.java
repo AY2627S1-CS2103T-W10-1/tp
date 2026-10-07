@@ -58,6 +58,8 @@ public class ViewCommand extends Command {
                 + "Name: " + person.getName() + "\n"
                 + "Phone: " + person.getPhone() + "\n"
                 + "Email: " + person.getEmail() + "\n"
+                + "Department: " + person.getDepartment().map(department -> department.value)
+                        .orElse("Not provided") + "\n"
                 + "Address: " + person.getAddress() + "\n"
                 + "Tags: " + (tags.isEmpty() ? "None" : tags);
     }

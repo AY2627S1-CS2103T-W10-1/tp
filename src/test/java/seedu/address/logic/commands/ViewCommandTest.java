@@ -34,11 +34,28 @@ public class ViewCommandTest {
         CommandResult result = new ViewCommand(Index.fromOneBased(index)).execute(model);
 
         assertEquals("Contact details:\nName: Amy Bee\nPhone: 85355255\nEmail: amy@gmail.com\n"
-                + "Address: 123, Jurong West Ave 6, #08-111\nTags: client, vendor", result.getFeedbackToUser());
+                + "Department: Not provided\nAddress: 123, Jurong West Ave 6, #08-111\nTags: client, vendor",
+                result.getFeedbackToUser());
         assertTrue(result.isShowDetails());
         assertFalse(result.isShowHelp());
         assertFalse(result.isExit());
         assertEquals(expectedModel, model);
+    }
+
+    @Test
+    public void execute_departmentInFilteredList_displaysFullValueWithoutChangingModel() throws Exception {
+        String department = "R&D " + "E".repeat(46);
+        Person person = new PersonBuilder().withDepartment(department).build();
+        model.addPerson(person);
+        model.updateFilteredPersonList(person::equals);
+        List<Person> displayedBefore = List.copyOf(model.getFilteredPersonList());
+        List<Person> storedBefore = List.copyOf(model.getAddressBook().getPersonList());
+
+        CommandResult result = new ViewCommand(Index.fromOneBased(1)).execute(model);
+
+        assertTrue(result.getFeedbackToUser().contains("Department: " + department + "\n"));
+        assertEquals(displayedBefore, model.getFilteredPersonList());
+        assertEquals(storedBefore, model.getAddressBook().getPersonList());
     }
 
     @Test

@@ -176,7 +176,10 @@ owner-linked `ContactDetailsWindow` containing a read-only, wrapping, scrollable
 Other commands retain their existing persistence behaviour. Contacts are already validated and loaded into the
 model at startup, so `view` does not re-read potentially modified or corrupted files on disk.
 
-Department display will be added when the Department model implementation tracked by issue #65 is available.
+Department display reads `Person.getDepartment()` from the Department implementation tracked by issue #65.
+The optional value is shown in full, or as `Department: Not provided` when absent. The `view` command uses
+the same displayed-list position as `depart`, so setting a department and then viewing that contact remains
+consistent after filtering.
 
 ### \[Proposed\] Undo/redo feature
 
@@ -747,6 +750,11 @@ testers are expected to do more *exploratory* testing.
    1. View a contact with a long name/address and multiple tags. Resize the details window and scroll.
       Expected: all values remain readable without truncation; tags are separated by commas.
    1. View a contact without tags. Expected: `Tags: None`.
+   1. View a contact without a department. Expected: `Department: Not provided`.
+   1. Run `find Benson`, then `depart 1 --set R&D Engineering` and `view 1`.
+      Expected: the selected contact's details include `Department: R&D Engineering`, with the filter unchanged.
+   1. Change the selected contact's department with `depart 1 --set Sales`.
+      Expected: the details snapshot stays unchanged until `view 1` displays `Department: Sales`.
    1. View another contact. Expected: the existing window updates rather than creating another window.
    1. Close the details window, then run `view 1`. Expected: the window reopens with the current details.
    1. Edit the viewed contact. Expected: the snapshot stays unchanged until another `view` command is run.

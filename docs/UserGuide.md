@@ -95,9 +95,10 @@ Format: `list`
 
 ### Viewing a contact's details: `view`
 
-Shows the selected contact's name, phone, email, address and tags in a separate contact details window.
+Shows the selected contact's name, phone, email, department, address and tags in a separate contact details window.
 Long values wrap onto multiple lines; scroll to read all the details. Text can be selected and copied.
 Contacts without tags show `Tags: None`.
+Contacts without a department show `Department: Not provided`.
 
 Format: `view CONTACT_ID`
 
@@ -113,6 +114,7 @@ Format: `view CONTACT_ID`
 Examples:
 
 * `list` followed by `view 2` shows the second contact in the full list.
+* `depart 1 --set Engineering` followed by `view 1` shows `Department: Engineering` for the first displayed contact.
 * `find Betsy` followed by `view 1` shows the first contact in the search results.
 
 ### Editing a person: `edit`
