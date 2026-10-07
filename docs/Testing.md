@@ -34,3 +34,11 @@ This project has three types of tests:
    For example: `seedu.address.storage.StorageManagerTest`
 1. *Hybrid tests* combine unit and integration testing. These tests check both the individual units and how they work together.<br>
    For example: `seedu.address.logic.LogicManagerTest`
+
+### CSV export tests
+
+`ExportCommandParserTest`, `ExportCommandTest` and `CsvContactExporterTest` cover argument validation,
+all stored contacts, UTF-8 CSV escaping, duplicate rows, existing destinations and failed-write cleanup.
+`ExportCommandUiTest` runs the real JavaFX command box with temporary JSON storage and uniquely named
+CSV files, which it deletes afterward. GUI tests use software rendering. On headless Linux run
+`xvfb-run -a ./gradlew check coverage`; the Linux CI job provides the virtual display.
