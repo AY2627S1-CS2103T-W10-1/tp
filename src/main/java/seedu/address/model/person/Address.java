@@ -5,7 +5,7 @@ import static seedu.address.commons.util.AppUtil.checkArgument;
 
 /**
  * Represents a Person's address in the address book.
- * Guarantees: immutable; is valid as declared in {@link #isValidAddress(String)}
+ * Guarantees: immutable; omitted or valid as declared in {@link #isValidAddress(String)}
  */
 public class Address {
 
@@ -30,6 +30,20 @@ public class Address {
         value = address;
     }
 
+    private Address() {
+        value = "";
+    }
+
+    /** Returns an omitted optional field, without accepting blank user input. */
+    public static Address notProvided() {
+        return new Address();
+    }
+
+    /** Returns whether this field contains supplied information. */
+    public boolean isProvided() {
+        return !value.isEmpty();
+    }
+
     /**
      * Returns true if a given string is a valid address.
      */
@@ -39,7 +53,7 @@ public class Address {
 
     @Override
     public String toString() {
-        return value;
+        return isProvided() ? value : "Not provided";
     }
 
     @Override

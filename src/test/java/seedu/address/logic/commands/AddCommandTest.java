@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test;
 
 import javafx.collections.ObservableList;
 import seedu.address.commons.core.GuiSettings;
-import seedu.address.logic.Messages;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.AddressBook;
 import seedu.address.model.Model;
@@ -38,7 +37,8 @@ public class AddCommandTest {
 
         CommandResult commandResult = new AddCommand(validPerson).execute(modelStub);
 
-        assertEquals(String.format(AddCommand.MESSAGE_SUCCESS, Messages.format(validPerson)),
+        assertEquals("Contact added successfully: Amy Bee | Phone: 85355255 | Email: amy@gmail.com"
+                + " | Department: Not provided | Address: 123, Jurong West Ave 6, #08-111 | Tags: None",
                 commandResult.getFeedbackToUser());
         assertEquals(List.of(validPerson), modelStub.personsAdded);
     }

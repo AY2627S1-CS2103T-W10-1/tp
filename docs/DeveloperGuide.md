@@ -11,6 +11,8 @@ title: Developer Guide
 This project is based on the AddressBook-Level3 project created by the [SE-EDU initiative](https://se-education.org).
 
 * [SE-EDU initiative](https://se-education.org)
+* He Qianyi used OpenAI Codex to assist with feature 4 (partial-contact addition): parser/options,
+  omitted-field representation, duplicate identity, storage/UI integration, tests and related UG/DG documentation.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -155,6 +157,31 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 ## **Implementation**
 
 This section describes some noteworthy details on how certain features are implemented.
+
+### Adding contacts with partial information
+
+`AddCommandParser` supports both the existing slash prefixes and add-specific long options. The latter
+use `AddArgumentTokenizer` to preserve quoted multiword values and distinguish literal text from option names.
+Only name is required. Omitted phone, email and address use immutable `notProvided()` value objects whose
+stored values are empty strings and whose display strings are `Not provided`. Their public constructors and
+parser validators still reject empty supplied values. Department uses the existing optional model from #71;
+its command and validation remain in the teammate's implementation.
+
+`JsonAdaptedPerson` maps null, omitted or empty phone/email/address fields to the missing value objects;
+nonempty invalid data still causes a loading error. Existing fully populated data retains its fields.
+New `add` input validates phone numbers as 7–15 digits and tags as 1–30 characters with the team-specified
+hyphen/underscore support and leading `#`/`/` normalization. Model/storage validation retains compatibility
+with previously valid short phone numbers and longer tags, avoiding an unrelated migration of old data.
+Tag search and matching are outside this feature's scope.
+
+`Person.isSamePerson` compares name, phone and email, including missing values. Address, Department and
+tags do not contribute to identity. The shared uniqueness check allows same-name contacts with different
+phone/email and rejects edit operations that would create a duplicate identity. Existing `edit` and `depart`
+commands can complete partial contacts while preserving their other fields.
+
+`AddCommand` returns full labelled feedback, sorted tags and missing-field placeholders. `PersonCard` shows
+those same placeholders for missing fields and `None` for no tags. `LogicManager` retains the existing save
+failure behaviour: it reports the error instead of returning an addition-success result.
 
 ### \[Proposed\] Undo/redo feature
 
@@ -708,6 +735,25 @@ testers are expected to do more *exploratory* testing.
        Expected: The most recent window size and location are retained.
 
 1. _{ more test cases …​ }_
+
+### Adding and completing a partial contact
+
+1. Add `add --name "Dana Lim"` to an address book that has no Dana Lim contact.
+   Expected: successful addition, phone/email/address/department show `Not provided`, tags show `None`.
+1. Restart the app. Expected: Dana Lim is still present with the same omitted fields.
+1. Run `find Dana`, `edit 1 p/91234567 e/dana@example.com a/Main Road`, then `depart 1 --set Engineering`.
+   Expected: the contact has the supplied details; restart preserves all fields.
+1. Add another `Dana Lim` with a different phone or email. Expected: the same name is accepted.
+   Repeat the exact name/phone/email with different tags or department. Expected: duplicate error, no new entry.
+1. Try `add --name ""`, `add --name Alice --phone 123456`, `add --name Alice --email broken`,
+   `add --name Alice --department !`, `add --name Alice --tag "two words"`, and
+   `add --name Alice --unknown value`. Expected: errors; existing contacts and the saved file stay unchanged.
+1. Try an unmatched quote and repeated `--name`, `--phone`, `--email`, `--address` or `--department`.
+   Expected: format or duplicate-option error. Multiple `--tag` flags are accepted.
+1. Run `add --name Chen --tag #intern new-client team_intern --tag intern`.
+   Expected: three distinct tags, displayed without the leading `#` and preserved after restart.
+1. Run the equivalent slash-prefix form, for example `add n/Bob Lee p/91234567 d/Engineering`.
+   Expected: equivalent partial-contact support; omitted fields remain unprovided.
 
 ### Deleting a person
 

@@ -2,60 +2,80 @@ package seedu.address.logic.parser;
 
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_ADDRESS;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_DEPARTMENT;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_EMAIL;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
 
+import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Stream;
+import java.util.regex.Pattern;
 
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.Address;
+import seedu.address.model.person.Department;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
 import seedu.address.model.tag.Tag;
 
-/**
- * Parses input arguments and creates a new AddCommand object
- */
+/** Parses an add command with required name and optional contact information. */
 public class AddCommandParser implements Parser<AddCommand> {
+    private static final Pattern LONG_OPTION = Pattern.compile("(?<!\\S)--\\S+");
 
-    /**
-     * Parses the given {@code String} of arguments in the context of the AddCommand
-     * and returns an AddCommand object for execution.
-     * @throws ParseException if the user input does not conform to the expected format
-     */
+    @Override
     public AddCommand parse(String args) throws ParseException {
-        ArgumentMultimap argMultimap =
-                ArgumentTokenizer.tokenize(args, PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ADDRESS, PREFIX_TAG);
-
-        if (!arePrefixesPresent(argMultimap, PREFIX_NAME, PREFIX_ADDRESS, PREFIX_PHONE, PREFIX_EMAIL)
-                || !argMultimap.getPreamble().isEmpty()) {
+        boolean longOptions = args.stripLeading().startsWith("--");
+        if (!longOptions && LONG_OPTION.matcher(args).find()) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE));
         }
+        ArgumentMultimap arguments = longOptions ? AddArgumentTokenizer.tokenize(args)
+                : ArgumentTokenizer.tokenize(" " + args, PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL,
+                        PREFIX_ADDRESS, PREFIX_DEPARTMENT, PREFIX_TAG);
 
-        argMultimap.verifyNoDuplicatePrefixesFor(PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ADDRESS);
-        Name name = ParserUtil.parseName(argMultimap.getValue(PREFIX_NAME).get());
-        Phone phone = ParserUtil.parsePhone(argMultimap.getValue(PREFIX_PHONE).get());
-        Email email = ParserUtil.parseEmail(argMultimap.getValue(PREFIX_EMAIL).get());
-        Address address = ParserUtil.parseAddress(argMultimap.getValue(PREFIX_ADDRESS).get());
-        Set<Tag> tagList = ParserUtil.parseTags(argMultimap.getAllValues(PREFIX_TAG));
-
-        Person person = new Person(name, phone, email, address, tagList);
-
-        return new AddCommand(person);
+        if (!arguments.getPreamble().isEmpty() || arguments.getValue(PREFIX_NAME).isEmpty()) {
+            throw new ParseException(longOptions ? AddCommand.MESSAGE_NAME_REQUIRED
+                    : String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE));
+        }
+        arguments.verifyNoDuplicatePrefixesFor(PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL,
+                PREFIX_ADDRESS, PREFIX_DEPARTMENT);
+        String nameValue = arguments.getValue(PREFIX_NAME).orElseThrow();
+        if (longOptions && nameValue.isBlank()) {
+            throw new ParseException(AddCommand.MESSAGE_NAME_REQUIRED);
+        }
+        Name name = ParserUtil.parseName(nameValue);
+        Phone phone = Phone.notProvided();
+        if (arguments.getValue(PREFIX_PHONE).isPresent()) {
+            String value = arguments.getValue(PREFIX_PHONE).orElseThrow().trim();
+            if (!value.matches("[0-9]{7,15}")) {
+                throw new ParseException(AddCommand.MESSAGE_INVALID_PHONE);
+            }
+            phone = ParserUtil.parsePhone(value);
+        }
+        Email email = arguments.getValue(PREFIX_EMAIL).isPresent()
+                ? ParserUtil.parseEmail(arguments.getValue(PREFIX_EMAIL).orElseThrow()) : Email.notProvided();
+        Address address = arguments.getValue(PREFIX_ADDRESS).isPresent()
+                ? ParserUtil.parseAddress(arguments.getValue(PREFIX_ADDRESS).orElseThrow()) : Address.notProvided();
+        Department department = null;
+        if (arguments.getValue(PREFIX_DEPARTMENT).isPresent()) {
+            String value = arguments.getValue(PREFIX_DEPARTMENT).orElseThrow().trim();
+            if (!Department.isValidDepartment(value)) {
+                throw new ParseException(Department.MESSAGE_CONSTRAINTS);
+            }
+            department = new Department(value);
+        }
+        Set<Tag> tags = new HashSet<>();
+        for (String value : arguments.getAllValues(PREFIX_TAG)) {
+            String normalized = value.trim().replaceFirst("^[#/]+", "");
+            Tag tag = ParserUtil.parseTag(normalized);
+            if (normalized.length() > 30) {
+                throw new ParseException(AddCommand.MESSAGE_INVALID_TAG);
+            }
+            tags.add(tag);
+        }
+        return new AddCommand(new Person(name, phone, email, address, tags, department));
     }
-
-    /**
-     * Returns true if none of the prefixes contains empty {@code Optional} values in the given
-     * {@code ArgumentMultimap}.
-     */
-    private static boolean arePrefixesPresent(ArgumentMultimap argumentMultimap, Prefix... prefixes) {
-        return Stream.of(prefixes).allMatch(prefix -> argumentMultimap.getValue(prefix).isPresent());
-    }
-
 }

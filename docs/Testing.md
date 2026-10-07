@@ -34,3 +34,9 @@ This project has three types of tests:
    For example: `seedu.address.storage.StorageManagerTest`
 1. *Hybrid tests* combine unit and integration testing. These tests check both the individual units and how they work together.<br>
    For example: `seedu.address.logic.LogicManagerTest`
+
+### GUI checks for partial contacts
+
+`PartialAddUiTest` exercises real FXML and the MainWindow add/edit/depart flow, missing-field display,
+identity errors and persistence. On headless Linux run `xvfb-run -a ./gradlew check coverage`; GUI tests use
+software rendering. Other platforms can use `./gradlew check coverage`.
