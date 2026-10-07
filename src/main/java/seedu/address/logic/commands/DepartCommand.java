@@ -22,6 +22,9 @@ public class DepartCommand extends Command {
     private final String contactId;
     private final Department department;
 
+    /**
+     * Creates a command to set {@code department} for the contact at {@code index}.
+     */
     public DepartCommand(Index index, String contactId, Department department) {
         this.index = requireNonNull(index);
         this.contactId = requireNonNull(contactId);

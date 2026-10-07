@@ -13,6 +13,9 @@ public class Department {
 
     public final String value;
 
+    /**
+     * Creates a department with a valid name.
+     */
     public Department(String department) {
         requireNonNull(department);
         if (!isValidDepartment(department)) {
