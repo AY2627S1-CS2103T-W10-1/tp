@@ -11,6 +11,9 @@ title: Developer Guide
 This project is based on the AddressBook-Level3 project created by the [SE-EDU initiative](https://se-education.org).
 
 * [SE-EDU initiative](https://se-education.org)
+* He Qianyi used OpenAI Codex to assist with the feature 3 `view CONTACT_ID` implementation, including the
+  command/parser, details window, command-result integration, tests, and related
+  User Guide/Developer Guide documentation.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -155,6 +158,29 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 ## **Implementation**
 
 This section describes some noteworthy details on how certain features are implemented.
+
+### Viewing contact details
+
+`AddressBookParser` routes `view CONTACT_ID` to `ViewCommandParser`, which validates the contact ID using
+`ParserUtil.parseIndex`. `ViewCommand` resolves that contact ID against `Model.getFilteredPersonList()` so that
+filtering (and future sorting) determines the selected row. `CONTACT_ID` is the same one-based displayed-list
+position used by `depart`, represented internally by `Index`. It reports an empty list or the valid contact ID range
+before accessing the contact.
+
+The command formats all currently supported fields as labelled, untruncated lines, sorts tags for stable output,
+and returns a `CommandResult` with separate short feedback and an optional `contactDetails` payload.
+`MainWindow` displays only the short feedback in the main result box and forwards the payload to a reusable,
+owner-linked `ContactDetailsWindow` containing a read-only, wrapping, scrollable text area. Each successful
+`view` updates the window with a snapshot; later model changes do not silently change the displayed snapshot.
+
+`view` follows the existing `LogicManager` save flow, like `list`, `find` and `help`, while preserving contact data
+and the current filter. Standard save errors are reported before a new details result reaches the UI. Contacts
+are validated and loaded into the model at startup, so `view` does not re-read contact data from disk.
+
+Department display reads `Person.getDepartment()` from the Department implementation tracked by issue #65.
+The optional value is shown in full, or as `Department: Not provided` when absent. The `view` command uses
+the same displayed-list position as `depart`, so setting a department and then viewing that contact remains
+consistent after filtering.
 
 ### \[Proposed\] Undo/redo feature
 
@@ -498,8 +524,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 **MSS**
 
 1. User displays a list of contacts (UC1), which may be filtered or sorted.
-2. User enters `view INDEX`, using an index in the currently displayed list.
-3. sudoContact identifies the contact at that index.
+2. User enters `view CONTACT_ID`, using the contact ID (one-based row number) in the currently displayed list.
+3. sudoContact identifies the contact using that contact ID.
 4. sudoContact displays all available details of that contact, including
    fields not shown in the list.
 
@@ -513,11 +539,11 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case ends.
 
-* 2a. The command format or index is invalid, or the index is outside
+* 2a. The command format or contact ID is invalid, or the contact ID is outside
   the currently displayed list.
 
   * 2a1. sudoContact displays an error and indicates the required format
-    or valid index range.
+    or valid contact ID range.
 
   Use case resumes at step 2.
 
@@ -674,7 +700,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * **Mainstream OS**: Windows, Linux, Unix, or macOS
 * **Matching contact**: For a tag search, a contact that has every tag specified in the command. A matching contact is displayed once even when it has more than one specified tag.
 * **Private contact detail**: A contact detail that is not meant to be shared with others
-* **Currently displayed list**: The contacts shown after any filtering or sorting. The index used to view a contact refers to its position in this list.
+* **Currently displayed list**: The contacts shown after any filtering or sorting. The `CONTACT_ID` used to view a contact refers to its one-based position in this list.
 * **Partial contact**: A contact with a name but without some optional details, such as a phone number, email address, department, or tags.
 * **Duplicate contact**: An existing contact with the same name, phone number, and email address as a contact being added.
 * **CSV export**: A UTF-8 comma-separated values file containing a header row and one row for each stored contact.
@@ -708,6 +734,40 @@ testers are expected to do more *exploratory* testing.
        Expected: The most recent window size and location are retained.
 
 1. _{ more test cases …​ }_
+
+### Viewing a contact's details
+
+1. Displayed-list contact IDs
+
+   1. Run `list`, then `view 2`. Expected: the second contact's supported fields appear in the details window.
+   1. Run `find Betsy`, then `view 1`. Expected: Betsy's details appear, and the filtered list remains unchanged.
+   1. Run `view 2` when only one search result is displayed. Expected: an error gives the range `1-1`.
+   1. Run `find NoSuchContact`, then `view 1`. Expected: an error says there is no contact to view.
+   1. Try `view`, `view 0`, `view -1`, `view 1.5`, `view 1 2`, and `view 2147483648`.
+      Expected: each reports that the contact ID must be a positive integer and shows the usage.
+
+1. Details window
+
+   1. View a contact with a long name/address and multiple tags. Resize the details window and scroll.
+      Expected: all values remain readable without truncation; tags are separated by commas.
+      The main result box shows only `Showing details of contact CONTACT_ID: NAME`.
+   1. View a contact without tags. Expected: `Tags: None`.
+   1. View a contact without a department. Expected: `Department: Not provided`.
+   1. Run `find Benson`, then `depart 1 --set R&D Engineering` and `view 1`.
+      Expected: the selected contact's details include `Department: R&D Engineering`, with the filter unchanged.
+   1. Change the selected contact's department with `depart 1 --set Sales`.
+      Expected: the details snapshot stays unchanged until `view 1` displays `Department: Sales`.
+   1. View another contact. Expected: the existing window updates rather than creating another window.
+   1. Close the details window, then run `view 1`. Expected: the window reopens with the current details.
+   1. Edit the viewed contact. Expected: the snapshot stays unchanged until another `view` command is run.
+   1. Exit the application while details are visible. Expected: the details window closes with the main window.
+
+1. Data and persistence
+
+   1. Filter contacts, then run a valid `view` command. Compare contact values before and after.
+      Expected: contact data and the filter remain unchanged; the normal saving flow persists all contacts.
+   1. Run `view` when the save location cannot be written.
+      Expected: the standard save error appears, with no new details window or snapshot update.
 
 ### Deleting a person
 
