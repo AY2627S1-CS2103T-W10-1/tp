@@ -3,6 +3,8 @@ package seedu.address.model;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 
@@ -21,6 +23,7 @@ public class ModelManager implements Model {
     private final AddressBook addressBook;
     private final UserPrefs userPrefs;
     private final FilteredList<Person> filteredPersons;
+    private final List<Person> deletedPersons = new ArrayList<>();
 
     /**
      * Initializes a ModelManager with the given addressBook and userPrefs.
@@ -78,6 +81,23 @@ public class ModelManager implements Model {
     @Override
     public void deletePerson(Person target) {
         addressBook.removePerson(target);
+        deletedPersons.add(target);
+    }
+
+    @Override
+    public boolean hasDeletedPerson() {
+        return !deletedPersons.isEmpty();
+    }
+
+    @Override
+    public Person getLastDeletedPerson() {
+        return deletedPersons.getLast();
+    }
+
+    @Override
+    public void restoreLastDeletedPerson() {
+        addPerson(deletedPersons.getLast());
+        deletedPersons.removeLast();
     }
 
     @Override
@@ -123,7 +143,8 @@ public class ModelManager implements Model {
 
         return addressBook.equals(otherModelManager.addressBook)
                 && userPrefs.equals(otherModelManager.userPrefs)
-                && filteredPersons.equals(otherModelManager.filteredPersons);
+                && filteredPersons.equals(otherModelManager.filteredPersons)
+                && deletedPersons.equals(otherModelManager.deletedPersons);
     }
 
 }
