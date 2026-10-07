@@ -1,6 +1,7 @@
 package seedu.address.logic;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
@@ -15,6 +16,7 @@ import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -85,33 +87,41 @@ public class LogicManagerTest {
     }
 
     @Test
-    public void execute_viewCommand_doesNotWriteDataFile() throws Exception {
+    public void execute_viewCommand_savesUnchangedContactsAndPreservesFilter() throws Exception {
         model.addPerson(AMY);
+        model.addPerson(new PersonBuilder().withName("Bob").build());
+        model.updateFilteredPersonList(AMY::equals);
+        List<Person> storedBefore = List.copyOf(model.getAddressBook().getPersonList());
+        List<Person> displayedBefore = List.copyOf(model.getFilteredPersonList());
         Path dataPath = temporaryFolder.resolve("addressBook.json");
-        Files.writeString(dataPath, "Existing data must remain unchanged");
+        assertFalse(Files.exists(dataPath));
 
         CommandResult result = logic.execute("view 1");
 
-        assertTrue(result.isShowDetails());
-        assertTrue(result.getFeedbackToUser().contains("Name: " + AMY.getName() + "\n"));
-        assertEquals("Existing data must remain unchanged", Files.readString(dataPath));
+        assertEquals("Showing details of contact 1: Amy Bee", result.getFeedbackToUser());
+        assertTrue(result.getContactDetails().orElseThrow().contains("Name: Amy Bee\n"));
+        assertEquals(storedBefore, model.getAddressBook().getPersonList());
+        assertEquals(displayedBefore, model.getFilteredPersonList());
+        assertEquals(model.getAddressBook(), new JsonAddressBookStorage(dataPath).readAddressBook().orElseThrow());
     }
 
     @Test
-    public void execute_viewCommand_succeedsWhenStorageCannotWrite() throws Exception {
+    public void execute_viewCommand_reportsStandardSaveErrorWhenStorageCannotWrite() throws Exception {
         model.addPerson(AMY);
         JsonAddressBookStorage addressBookStorage =
-                new JsonAddressBookStorage(temporaryFolder.resolve("readOnlyAddressBook.json")) {
+                new JsonAddressBookStorage(temporaryFolder.resolve("blockedAddressBook.json")) {
                     @Override
                     public void saveAddressBook(ReadOnlyAddressBook addressBook) throws IOException {
                         throw DUMMY_AD_EXCEPTION;
                     }
                 };
         StorageManager storage = new StorageManager(addressBookStorage,
-                new JsonUserPrefsStorage(temporaryFolder.resolve("readOnlyUserPrefs.json")));
+                new JsonUserPrefsStorage(temporaryFolder.resolve("blockedUserPrefs.json")));
         logic = new LogicManager(model, storage);
 
-        assertTrue(logic.execute("view 1").isShowDetails());
+        assertThrows(CommandException.class, String.format(LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT,
+                DUMMY_AD_EXCEPTION.getMessage()), () -> logic.execute("view 1"));
+        assertEquals(List.of(AMY), model.getAddressBook().getPersonList());
     }
 
     @Test

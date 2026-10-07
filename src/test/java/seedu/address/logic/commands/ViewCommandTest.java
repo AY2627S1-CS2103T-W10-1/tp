@@ -35,7 +35,8 @@ public class ViewCommandTest {
 
         assertEquals("Contact details:\nName: Amy Bee\nPhone: 85355255\nEmail: amy@gmail.com\n"
                 + "Department: Not provided\nAddress: 123, Jurong West Ave 6, #08-111\nTags: client, vendor",
-                result.getFeedbackToUser());
+                result.getContactDetails().orElseThrow());
+        assertEquals("Showing details of contact " + index + ": Amy Bee", result.getFeedbackToUser());
         assertTrue(result.isShowDetails());
         assertFalse(result.isShowHelp());
         assertFalse(result.isExit());
@@ -53,7 +54,7 @@ public class ViewCommandTest {
 
         CommandResult result = new ViewCommand(Index.fromOneBased(1)).execute(model);
 
-        assertTrue(result.getFeedbackToUser().contains("Department: " + department + "\n"));
+        assertTrue(result.getContactDetails().orElseThrow().contains("Department: " + department + "\n"));
         assertEquals(displayedBefore, model.getFilteredPersonList());
         assertEquals(storedBefore, model.getAddressBook().getPersonList());
     }
@@ -67,7 +68,7 @@ public class ViewCommandTest {
 
         CommandResult result = new ViewCommand(Index.fromOneBased(1)).execute(model);
 
-        assertTrue(result.getFeedbackToUser().contains("Name: " + target.getName() + "\n"));
+        assertTrue(result.getContactDetails().orElseThrow().contains("Name: " + target.getName() + "\n"));
         assertEquals(displayedBefore, model.getFilteredPersonList());
         assertEquals(storedBefore, model.getAddressBook().getPersonList());
     }
@@ -85,7 +86,7 @@ public class ViewCommandTest {
         };
 
         CommandResult result = new ViewCommand(Index.fromOneBased(1)).execute(displayedModel);
-        assertTrue(result.getFeedbackToUser().contains("Phone: 87654321\n"));
+        assertTrue(result.getContactDetails().orElseThrow().contains("Phone: 87654321\n"));
         assertEquals(List.of(second, first), displayedModel.getFilteredPersonList());
     }
 
@@ -94,7 +95,7 @@ public class ViewCommandTest {
         model.addPerson(new PersonBuilder().withTags().build());
         CommandResult result = new ViewCommand(Index.fromOneBased(model.getFilteredPersonList().size()))
                 .execute(model);
-        assertTrue(result.getFeedbackToUser().endsWith("Tags: None"));
+        assertTrue(result.getContactDetails().orElseThrow().endsWith("Tags: None"));
     }
 
     @Test
@@ -104,8 +105,8 @@ public class ViewCommandTest {
         model.addPerson(new PersonBuilder().withName(longName).withAddress(longAddress).build());
         CommandResult result = new ViewCommand(Index.fromOneBased(model.getFilteredPersonList().size()))
                 .execute(model);
-        assertTrue(result.getFeedbackToUser().contains("Name: " + longName + "\n"));
-        assertTrue(result.getFeedbackToUser().contains("Address: " + longAddress + "\n"));
+        assertTrue(result.getContactDetails().orElseThrow().contains("Name: " + longName + "\n"));
+        assertTrue(result.getContactDetails().orElseThrow().contains("Address: " + longAddress + "\n"));
     }
 
     @Test
@@ -143,12 +144,6 @@ public class ViewCommandTest {
     @Test
     public void execute_nullModel_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> new ViewCommand(Index.fromOneBased(1)).execute(null));
-    }
-
-    @Test
-    public void isReadOnly_returnsTrue() {
-        assertTrue(new ViewCommand(Index.fromOneBased(1)).isReadOnly());
-        assertFalse(new DeleteCommand(Index.fromOneBased(1)).isReadOnly());
     }
 
     @Test

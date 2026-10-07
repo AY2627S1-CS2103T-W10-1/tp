@@ -189,9 +189,7 @@ public class MainWindow extends UiPart<Stage> {
                 handleHelp();
             }
 
-            if (commandResult.isShowDetails()) {
-                contactDetailsWindow.showDetails(commandResult.getFeedbackToUser());
-            }
+            commandResult.getContactDetails().ifPresent(contactDetailsWindow::showDetails);
 
             if (commandResult.isExit()) {
                 handleExit();

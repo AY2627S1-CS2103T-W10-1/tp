@@ -21,6 +21,7 @@ public class ViewCommand extends Command {
             + ": Shows the full details of the contact identified by CONTACT_ID in the displayed list.\n"
             + "Parameters: CONTACT_ID (must be a positive integer)\n"
             + "Example: " + COMMAND_WORD + " 1";
+    public static final String MESSAGE_SUCCESS = "Showing details of contact %1$d: %2$s";
     public static final String MESSAGE_EMPTY_LIST = "There is no contact to view in the currently displayed list.";
     public static final String MESSAGE_INVALID_CONTACT_ID =
             "Error: Please enter a Contact ID in the range 1-%1$d.";
@@ -43,7 +44,8 @@ public class ViewCommand extends Command {
         }
 
         Person person = displayedPersons.get(targetIndex.getZeroBased());
-        return new CommandResult(formatDetails(person), false, false, true);
+        String feedback = String.format(MESSAGE_SUCCESS, targetIndex.getOneBased(), person.getName());
+        return new CommandResult(feedback, formatDetails(person));
     }
 
     /**
@@ -62,11 +64,6 @@ public class ViewCommand extends Command {
                         .orElse("Not provided") + "\n"
                 + "Address: " + person.getAddress() + "\n"
                 + "Tags: " + (tags.isEmpty() ? "None" : tags);
-    }
-
-    @Override
-    public boolean isReadOnly() {
-        return true;
     }
 
     @Override

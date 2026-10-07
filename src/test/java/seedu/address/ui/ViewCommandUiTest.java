@@ -48,6 +48,8 @@ public class ViewCommandUiTest {
 
             enter(input, "find Benson");
             enter(input, "view 1");
+            TextArea feedback = (TextArea) stage.getScene().lookup("#resultDisplay");
+            assertEquals("Showing details of contact 1: Benson Meier", feedback.getText());
 
             Stage details = (Stage) Window.getWindows().stream()
                     .filter(window -> window instanceof Stage candidate
@@ -69,6 +71,7 @@ public class ViewCommandUiTest {
             assertTrue(text.getText().contains("Department: Not provided\n"));
             enter(input, "view 1");
             assertTrue(text.getText().contains("Department: R&D Engineering\n"));
+            assertEquals("Showing details of contact 1: Benson Meier", feedback.getText());
             assertEquals(1, model.getFilteredPersonList().size());
             assertEquals(details, Window.getWindows().stream()
                     .filter(window -> window instanceof Stage candidate

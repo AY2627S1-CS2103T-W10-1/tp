@@ -3,6 +3,7 @@ package seedu.address.logic.commands;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import seedu.address.commons.util.ToStringBuilder;
 
@@ -19,24 +20,28 @@ public class CommandResult {
     /** The application should exit. */
     private final boolean exit;
 
-    /** Full contact details should be shown to the user. */
-    private final boolean showDetails;
+    /** Full contact details for the separate window, absent for other commands. */
+    private final String contactDetails;
 
     /**
      * Constructs a {@code CommandResult} with the specified fields.
      */
     public CommandResult(String feedbackToUser, boolean showHelp, boolean exit) {
-        this(feedbackToUser, showHelp, exit, false);
+        this(feedbackToUser, showHelp, exit, null);
     }
 
     /**
-     * Constructs a {@code CommandResult} including whether to open the contact details window.
+     * Constructs a result with separate main-window feedback and contact details.
      */
-    public CommandResult(String feedbackToUser, boolean showHelp, boolean exit, boolean showDetails) {
+    public CommandResult(String feedbackToUser, String contactDetails) {
+        this(feedbackToUser, false, false, requireNonNull(contactDetails));
+    }
+
+    private CommandResult(String feedbackToUser, boolean showHelp, boolean exit, String contactDetails) {
         this.feedbackToUser = requireNonNull(feedbackToUser);
         this.showHelp = showHelp;
         this.exit = exit;
-        this.showDetails = showDetails;
+        this.contactDetails = contactDetails;
     }
 
     /**
@@ -60,7 +65,11 @@ public class CommandResult {
     }
 
     public boolean isShowDetails() {
-        return showDetails;
+        return contactDetails != null;
+    }
+
+    public Optional<String> getContactDetails() {
+        return Optional.ofNullable(contactDetails);
     }
 
     @Override
@@ -77,12 +86,12 @@ public class CommandResult {
         return feedbackToUser.equals(otherCommandResult.feedbackToUser)
                 && showHelp == otherCommandResult.showHelp
                 && exit == otherCommandResult.exit
-                && showDetails == otherCommandResult.showDetails;
+                && Objects.equals(contactDetails, otherCommandResult.contactDetails);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(feedbackToUser, showHelp, exit, showDetails);
+        return Objects.hash(feedbackToUser, showHelp, exit, contactDetails);
     }
 
     @Override
@@ -91,7 +100,8 @@ public class CommandResult {
                 .add("feedbackToUser", feedbackToUser)
                 .add("showHelp", showHelp)
                 .add("exit", exit)
-                .add("showDetails", showDetails)
+                .add("showDetails", isShowDetails())
+                .add("contactDetails", contactDetails)
                 .toString();
     }
 

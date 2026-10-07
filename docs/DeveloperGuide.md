@@ -12,7 +12,7 @@ This project is based on the AddressBook-Level3 project created by the [SE-EDU i
 
 * [SE-EDU initiative](https://se-education.org)
 * He Qianyi used OpenAI Codex to assist with the feature 3 `view CONTACT_ID` implementation, including the
-  command/parser, details window, command-result and read-only persistence integration, tests, and related
+  command/parser, details window, command-result integration, tests, and related
   User Guide/Developer Guide documentation.
 
 --------------------------------------------------------------------------------------------------------------------
@@ -168,13 +168,14 @@ position used by `depart`, represented internally by `Index`. It reports an empt
 before accessing the contact.
 
 The command formats all currently supported fields as labelled, untruncated lines, sorts tags for stable output,
-and returns a `CommandResult` with `showDetails` set. `MainWindow` forwards the details to a reusable,
+and returns a `CommandResult` with separate short feedback and an optional `contactDetails` payload.
+`MainWindow` displays only the short feedback in the main result box and forwards the payload to a reusable,
 owner-linked `ContactDetailsWindow` containing a read-only, wrapping, scrollable text area. Each successful
 `view` updates the window with a snapshot; later model changes do not silently change the displayed snapshot.
 
-`ViewCommand.isReadOnly()` returns true, allowing `LogicManager` to return its result without writing storage.
-Other commands retain their existing persistence behaviour. Contacts are already validated and loaded into the
-model at startup, so `view` does not re-read potentially modified or corrupted files on disk.
+`view` follows the existing `LogicManager` save flow, like `list`, `find` and `help`, while preserving contact data
+and the current filter. Standard save errors are reported before a new details result reaches the UI. Contacts
+are validated and loaded into the model at startup, so `view` does not re-read contact data from disk.
 
 Department display reads `Person.getDepartment()` from the Department implementation tracked by issue #65.
 The optional value is shown in full, or as `Department: Not provided` when absent. The `view` command uses
@@ -749,6 +750,7 @@ testers are expected to do more *exploratory* testing.
 
    1. View a contact with a long name/address and multiple tags. Resize the details window and scroll.
       Expected: all values remain readable without truncation; tags are separated by commas.
+      The main result box shows only `Showing details of contact CONTACT_ID: NAME`.
    1. View a contact without tags. Expected: `Tags: None`.
    1. View a contact without a department. Expected: `Department: Not provided`.
    1. Run `find Benson`, then `depart 1 --set R&D Engineering` and `view 1`.
@@ -760,10 +762,12 @@ testers are expected to do more *exploratory* testing.
    1. Edit the viewed contact. Expected: the snapshot stays unchanged until another `view` command is run.
    1. Exit the application while details are visible. Expected: the details window closes with the main window.
 
-1. Read-only behaviour
+1. Data and persistence
 
-   1. Compare the data file contents and modification time before and after a valid `view` command.
-      Expected: neither changes. The command still works if the data file cannot be written.
+   1. Filter contacts, then run a valid `view` command. Compare contact values before and after.
+      Expected: contact data and the filter remain unchanged; the normal saving flow persists all contacts.
+   1. Run `view` when the save location cannot be written.
+      Expected: the standard save error appears, with no new details window or snapshot update.
 
 ### Deleting a person
 

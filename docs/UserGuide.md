@@ -96,7 +96,8 @@ Format: `list`
 ### Viewing a contact's details: `view`
 
 Shows the selected contact's name, phone, email, department, address and tags in a separate contact details window.
-Long values wrap onto multiple lines; scroll to read all the details. Text can be selected and copied.
+The main result box shows a brief confirmation, such as `Showing details of contact 1: Amy Bee`.
+Long values in the details window wrap onto multiple lines; scroll to read them. Text can be selected and copied.
 Contacts without tags show `Tags: None`.
 Contacts without a department show `Department: Not provided`.
 
@@ -107,7 +108,7 @@ Format: `view CONTACT_ID`
 * Surrounding spaces are ignored. Missing contact IDs, zero, negative numbers, decimals and extra arguments are rejected.
 * A contact ID outside the displayed list produces an error showing the valid range.
 * An empty displayed list produces `There is no contact to view in the currently displayed list.`
-* Viewing leaves contact data and the current filter unchanged, and does not write the data file.
+* Viewing leaves contact data and the current filter unchanged and uses the same automatic saving flow as other commands.
 * The window shows a snapshot. Run `view CONTACT_ID` again after editing, deleting or filtering to refresh it.
   Viewing another contact updates the same window. Closing the window does not exit sudoContact.
 
@@ -178,7 +179,7 @@ Format: `exit`
 
 ### Saving the data
 
-AddressBook automatically saves data after every command except `view`, which only reads contacts. You do not need to save manually.
+AddressBook automatically saves data after every successful command. You do not need to save manually.
 
 ### Editing the data file
 

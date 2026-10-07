@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static seedu.address.testutil.Assert.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
@@ -54,14 +55,25 @@ public class CommandResultTest {
 
     @Test
     public void detailsResult_preservesFlagsAndEquality() {
-        CommandResult details = new CommandResult("details", false, false, true);
+        CommandResult details = new CommandResult("feedback", "details");
         assertTrue(details.isShowDetails());
         assertFalse(details.isShowHelp());
         assertFalse(details.isExit());
         assertFalse(new CommandResult("details").isShowDetails());
-        assertEquals(details, new CommandResult("details", false, false, true));
-        assertEquals(details.hashCode(), new CommandResult("details", false, false, true).hashCode());
-        assertNotEquals(details, new CommandResult("details"));
+        assertEquals(details, new CommandResult("feedback", "details"));
+        assertEquals(details.hashCode(), new CommandResult("feedback", "details").hashCode());
+        assertEquals("feedback", details.getFeedbackToUser());
+        assertEquals("details", details.getContactDetails().orElseThrow());
+        assertTrue(new CommandResult("feedback").getContactDetails().isEmpty());
+        assertNotEquals(details, new CommandResult("feedback"));
+        assertNotEquals(details, new CommandResult("feedback", "different details"));
+        assertNotEquals(details.hashCode(), new CommandResult("feedback", "different details").hashCode());
+    }
+
+    @Test
+    public void detailsResult_nullFeedbackOrDetails_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> new CommandResult(null, "details"));
+        assertThrows(NullPointerException.class, () -> new CommandResult("feedback", null));
     }
 
     @Test
@@ -69,7 +81,8 @@ public class CommandResultTest {
         CommandResult commandResult = new CommandResult("feedback");
         String expected = CommandResult.class.getCanonicalName() + "{feedbackToUser="
                 + commandResult.getFeedbackToUser() + ", showHelp=" + commandResult.isShowHelp()
-                + ", exit=" + commandResult.isExit() + ", showDetails=" + commandResult.isShowDetails() + "}";
+                + ", exit=" + commandResult.isExit() + ", showDetails=" + commandResult.isShowDetails()
+                + ", contactDetails=" + commandResult.getContactDetails().orElse(null) + "}";
         assertEquals(expected, commandResult.toString());
     }
 }
