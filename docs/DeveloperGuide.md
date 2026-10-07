@@ -11,7 +11,7 @@ title: Developer Guide
 This project is based on the AddressBook-Level3 project created by the [SE-EDU initiative](https://se-education.org).
 
 * [SE-EDU initiative](https://se-education.org)
-* He Qianyi used OpenAI Codex to assist with the feature 3 `view INDEX` implementation, including the
+* He Qianyi used OpenAI Codex to assist with the feature 3 `view CONTACT_ID` implementation, including the
   command/parser, details window, command-result and read-only persistence integration, tests, and related
   User Guide/Developer Guide documentation.
 
@@ -161,9 +161,10 @@ This section describes some noteworthy details on how certain features are imple
 
 ### Viewing contact details
 
-`AddressBookParser` routes `view INDEX` to `ViewCommandParser`, which validates the index using
-`ParserUtil.parseIndex`. `ViewCommand` resolves that index against `Model.getFilteredPersonList()` so that
-filtering (and future sorting) determines the selected row. It reports an empty list or the valid index range
+`AddressBookParser` routes `view CONTACT_ID` to `ViewCommandParser`, which validates the contact ID using
+`ParserUtil.parseIndex`. `ViewCommand` resolves that contact ID against `Model.getFilteredPersonList()` so that
+filtering (and future sorting) determines the selected row. `CONTACT_ID` is the same one-based displayed-list
+position used by `depart`, represented internally by `Index`. It reports an empty list or the valid contact ID range
 before accessing the contact.
 
 The command formats all currently supported fields as labelled, untruncated lines, sorts tags for stable output,
@@ -519,8 +520,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 **MSS**
 
 1. User displays a list of contacts (UC1), which may be filtered or sorted.
-2. User enters `view INDEX`, using an index in the currently displayed list.
-3. sudoContact identifies the contact at that index.
+2. User enters `view CONTACT_ID`, using the contact ID (one-based row number) in the currently displayed list.
+3. sudoContact identifies the contact using that contact ID.
 4. sudoContact displays all available details of that contact, including
    fields not shown in the list.
 
@@ -534,11 +535,11 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case ends.
 
-* 2a. The command format or index is invalid, or the index is outside
+* 2a. The command format or contact ID is invalid, or the contact ID is outside
   the currently displayed list.
 
   * 2a1. sudoContact displays an error and indicates the required format
-    or valid index range.
+    or valid contact ID range.
 
   Use case resumes at step 2.
 
@@ -695,7 +696,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * **Mainstream OS**: Windows, Linux, Unix, or macOS
 * **Matching contact**: For a tag search, a contact that has every tag specified in the command. A matching contact is displayed once even when it has more than one specified tag.
 * **Private contact detail**: A contact detail that is not meant to be shared with others
-* **Currently displayed list**: The contacts shown after any filtering or sorting. The index used to view a contact refers to its position in this list.
+* **Currently displayed list**: The contacts shown after any filtering or sorting. The `CONTACT_ID` used to view a contact refers to its one-based position in this list.
 * **Partial contact**: A contact with a name but without some optional details, such as a phone number, email address, department, or tags.
 * **Duplicate contact**: An existing contact with the same name, phone number, and email address as a contact being added.
 * **CSV export**: A UTF-8 comma-separated values file containing a header row and one row for each stored contact.
@@ -732,14 +733,14 @@ testers are expected to do more *exploratory* testing.
 
 ### Viewing a contact's details
 
-1. Displayed-list indexing
+1. Displayed-list contact IDs
 
    1. Run `list`, then `view 2`. Expected: the second contact's supported fields appear in the details window.
    1. Run `find Betsy`, then `view 1`. Expected: Betsy's details appear, and the filtered list remains unchanged.
    1. Run `view 2` when only one search result is displayed. Expected: an error gives the range `1-1`.
    1. Run `find NoSuchContact`, then `view 1`. Expected: an error says there is no contact to view.
    1. Try `view`, `view 0`, `view -1`, `view 1.5`, `view 1 2`, and `view 2147483648`.
-      Expected: each reports that the index must be a positive integer and shows the usage.
+      Expected: each reports that the contact ID must be a positive integer and shows the usage.
 
 1. Details window
 

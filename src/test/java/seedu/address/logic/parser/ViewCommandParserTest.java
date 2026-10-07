@@ -15,7 +15,7 @@ public class ViewCommandParserTest {
     private final ViewCommandParser parser = new ViewCommandParser();
 
     @Test
-    public void parse_positiveIndexWithWhitespace_success() {
+    public void parse_positiveContactIdWithWhitespace_success() {
         assertParseSuccess(parser, "1", new ViewCommand(Index.fromOneBased(1)));
         assertParseSuccess(parser, " \t2 \t", new ViewCommand(Index.fromOneBased(2)));
         assertParseSuccess(parser, "2147483647", new ViewCommand(Index.fromOneBased(Integer.MAX_VALUE)));
@@ -23,7 +23,7 @@ public class ViewCommandParserTest {
 
     @Test
     public void parse_invalidInputs_reportsUsage() {
-        String expectedMessage = ViewCommandParser.MESSAGE_INVALID_INDEX + "\n" + ViewCommand.MESSAGE_USAGE;
+        String expectedMessage = ViewCommandParser.MESSAGE_INVALID_CONTACT_ID + "\n" + ViewCommand.MESSAGE_USAGE;
         String[] invalidInputs = {"", " ", "0", "-1", "+1", "1.0", "abc", "1 2", "1 extra",
             "1\n2", "2147483648", "999999999999999999999999"};
         for (String input : invalidInputs) {

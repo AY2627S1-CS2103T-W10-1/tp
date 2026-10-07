@@ -94,14 +94,14 @@ public class ViewCommandTest {
     @Test
     public void execute_outOfRange_reportsDisplayedRange() {
         int size = model.getFilteredPersonList().size();
-        assertThrows(CommandException.class, String.format(ViewCommand.MESSAGE_INVALID_INDEX, size), ()
+        assertThrows(CommandException.class, String.format(ViewCommand.MESSAGE_INVALID_CONTACT_ID, size), ()
             -> new ViewCommand(Index.fromOneBased(size + 1)).execute(model));
     }
 
     @Test
     public void execute_indexOnlyInUnfilteredList_throwsCommandException() {
         model.updateFilteredPersonList(person -> person.equals(model.getAddressBook().getPersonList().get(0)));
-        assertThrows(CommandException.class, String.format(ViewCommand.MESSAGE_INVALID_INDEX, 1), ()
+        assertThrows(CommandException.class, String.format(ViewCommand.MESSAGE_INVALID_CONTACT_ID, 1), ()
             -> new ViewCommand(Index.fromOneBased(2)).execute(model));
     }
 

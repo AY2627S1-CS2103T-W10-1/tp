@@ -7,11 +7,11 @@ import seedu.address.logic.commands.ViewCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 
 /**
- * Parses the displayed index for a ViewCommand.
+ * Parses CONTACT_ID, the contact's one-based position in the displayed list, for a ViewCommand.
  */
 public class ViewCommandParser implements Parser<ViewCommand> {
 
-    public static final String MESSAGE_INVALID_INDEX = "Invalid index: must be a positive integer.";
+    public static final String MESSAGE_INVALID_CONTACT_ID = "Invalid Contact ID: Must be a positive integer.";
 
     @Override
     public ViewCommand parse(String args) throws ParseException {
@@ -20,7 +20,7 @@ public class ViewCommandParser implements Parser<ViewCommand> {
             Index index = ParserUtil.parseIndex(args);
             return new ViewCommand(index);
         } catch (ParseException e) {
-            throw new ParseException(MESSAGE_INVALID_INDEX + "\n" + ViewCommand.MESSAGE_USAGE, e);
+            throw new ParseException(MESSAGE_INVALID_CONTACT_ID + "\n" + ViewCommand.MESSAGE_USAGE, e);
         }
     }
 }

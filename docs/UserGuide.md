@@ -99,15 +99,15 @@ Shows the selected contact's name, phone, email, address and tags in a separate 
 Long values wrap onto multiple lines; scroll to read all the details. Text can be selected and copied.
 Contacts without tags show `Tags: None`.
 
-Format: `view INDEX`
+Format: `view CONTACT_ID`
 
-* The index is the positive integer shown beside a contact in the **currently displayed list**.
-* After filtering, use the index in the filtered results, rather than its position in the full address book.
-* Surrounding spaces are ignored. Missing indices, zero, negative numbers, decimals and extra arguments are rejected.
-* An index outside the displayed list produces an error showing the valid range.
+* `CONTACT_ID` is the positive integer shown beside a contact in the **currently displayed list**.
+* After filtering, use the `CONTACT_ID` in the filtered results, rather than its position in the full address book.
+* Surrounding spaces are ignored. Missing contact IDs, zero, negative numbers, decimals and extra arguments are rejected.
+* A contact ID outside the displayed list produces an error showing the valid range.
 * An empty displayed list produces `There is no contact to view in the currently displayed list.`
 * Viewing leaves contact data and the current filter unchanged, and does not write the data file.
-* The window shows a snapshot. Run `view INDEX` again after editing, deleting or filtering to refresh it.
+* The window shows a snapshot. Run `view CONTACT_ID` again after editing, deleting or filtering to refresh it.
   Viewing another contact updates the same window. Closing the window does not exit sudoContact.
 
 Examples:
@@ -216,6 +216,6 @@ Action | Format, Examples
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit** | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
-**View** | `view INDEX`<br> e.g., `view 2`
+**View** | `view CONTACT_ID`<br> e.g., `view 2`
 **List** | `list`
 **Help** | `help`

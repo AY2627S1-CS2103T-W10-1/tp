@@ -22,7 +22,7 @@
         </padding>
         <TextArea fx:id="contactDetails" editable="false" wrapText="true" VBox.vgrow="ALWAYS"
                   styleClass="result-display" />
-        <Label text="To refresh these details, run view INDEX again." styleClass="label-bright"
+        <Label text="To refresh these details, run view CONTACT_ID again." styleClass="label-bright"
                wrapText="true" />
       </VBox>
     </Scene>

@@ -18,12 +18,12 @@ public class ViewCommand extends Command {
 
     public static final String COMMAND_WORD = "view";
     public static final String MESSAGE_USAGE = COMMAND_WORD
-            + ": Shows the full details of the contact at the displayed index.\n"
-            + "Parameters: INDEX (must be a positive integer)\n"
+            + ": Shows the full details of the contact identified by CONTACT_ID in the displayed list.\n"
+            + "Parameters: CONTACT_ID (must be a positive integer)\n"
             + "Example: " + COMMAND_WORD + " 1";
     public static final String MESSAGE_EMPTY_LIST = "There is no contact to view in the currently displayed list.";
-    public static final String MESSAGE_INVALID_INDEX =
-            "Error: Please enter an index in the range 1-%1$d.";
+    public static final String MESSAGE_INVALID_CONTACT_ID =
+            "Error: Please enter a Contact ID in the range 1-%1$d.";
 
     private final Index targetIndex;
 
@@ -39,7 +39,7 @@ public class ViewCommand extends Command {
             throw new CommandException(MESSAGE_EMPTY_LIST);
         }
         if (targetIndex.getZeroBased() >= displayedPersons.size()) {
-            throw new CommandException(String.format(MESSAGE_INVALID_INDEX, displayedPersons.size()));
+            throw new CommandException(String.format(MESSAGE_INVALID_CONTACT_ID, displayedPersons.size()));
         }
 
         Person person = displayedPersons.get(targetIndex.getZeroBased());
