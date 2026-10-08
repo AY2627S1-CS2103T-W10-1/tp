@@ -17,4 +17,11 @@ public abstract class Command {
      */
     public abstract CommandResult execute(Model model) throws CommandException;
 
+    /**
+     * Returns whether the command requires the normal address book save after execution.
+     */
+    public boolean requiresStorageSave() {
+        return true;
+    }
+
 }
