@@ -3,29 +3,23 @@ package seedu.address.ui;
 import java.util.logging.Logger;
 
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.ClipboardContent;
+import javafx.scene.control.TextArea;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 import seedu.address.commons.core.LogsCenter;
+import seedu.address.logic.commands.HelpCommand;
 
 /**
- * Controller for a help page
+ * Controller for the command help window.
  */
 public class HelpWindow extends UiPart<Stage> {
-
-    public static final String USERGUIDE_URL = "https://se-education.org/addressbook-level3/UserGuide.html";
-    public static final String HELP_MESSAGE = "Refer to the user guide: " + USERGUIDE_URL;
 
     private static final Logger logger = LogsCenter.getLogger(HelpWindow.class);
     private static final String FXML = "HelpWindow.fxml";
 
     @FXML
-    private Button copyButton;
-
-    @FXML
-    private Label helpMessage;
+    private TextArea helpText;
 
     /**
      * Creates a new HelpWindow.
@@ -34,7 +28,16 @@ public class HelpWindow extends UiPart<Stage> {
      */
     public HelpWindow(Stage root) {
         super(FXML, root);
-        helpMessage.setText(HELP_MESSAGE);
+        helpText.setText(HelpCommand.HELP_TEXT);
+        getRoot().setWidth(560);
+        getRoot().setHeight(420);
+        getRoot().getScene().addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            if (event.getCode() == KeyCode.Q && !event.isAltDown() && !event.isControlDown()
+                    && !event.isMetaDown() && !event.isShiftDown()) {
+                hide();
+                event.consume();
+            }
+        });
     }
 
     /**
@@ -63,7 +66,7 @@ public class HelpWindow extends UiPart<Stage> {
      *     </ul>
      */
     public void show() {
-        logger.fine("Showing help page about the application.");
+        logger.fine("Showing available commands.");
         getRoot().show();
         getRoot().centerOnScreen();
     }
@@ -87,16 +90,5 @@ public class HelpWindow extends UiPart<Stage> {
      */
     public void focus() {
         getRoot().requestFocus();
-    }
-
-    /**
-     * Copies the URL to the user guide to the clipboard.
-     */
-    @FXML
-    private void copyUrl() {
-        final Clipboard clipboard = Clipboard.getSystemClipboard();
-        final ClipboardContent url = new ClipboardContent();
-        url.putString(USERGUIDE_URL);
-        clipboard.setContent(url);
     }
 }
