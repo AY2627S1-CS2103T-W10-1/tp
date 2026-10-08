@@ -23,7 +23,7 @@ sudoContact is a **desktop application for managing contacts, optimized for use 
    A GUI similar to the one below should appear in a few seconds. Note how the app contains some sample data.<br>
    ![Ui](images/Ui.png)
 
-1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
+1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the scrollable command list. Press `q` while the Help window is active to close it.<br>
    Some example commands you can try:
 
    * `list` : Lists all contacts.
@@ -66,9 +66,7 @@ sudoContact is a **desktop application for managing contacts, optimized for use 
 
 ### Viewing help: `help`
 
-Shows a message explaining how to access the help page.
-
-![help message](images/helpMessage.png)
+Opens a scrollable window listing every available command with a short description. You can also open it from the Help menu or with `F1`. Press `q` while the Help window is active to close it.
 
 Format: `help`
 
