@@ -76,4 +76,9 @@ public interface Model {
      * @throws IllegalArgumentException If a contact contains invalid sorting data.
      */
     void sortFilteredPersonList(SortField field);
+
+    /**
+     * Returns the contact loading status recorded at application startup.
+     */
+    ContactLoadStatus getContactLoadStatus();
 }

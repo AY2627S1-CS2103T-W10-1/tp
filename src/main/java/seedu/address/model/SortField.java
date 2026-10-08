@@ -32,11 +32,7 @@ public enum SortField {
      */
     public Optional<String> getKey(Person person) {
         requireNonNull(person);
-        if (this == DEPARTMENT) {
-            return Optional.empty();
-        }
-
-        return person.getTags().stream()
+        Optional<String> firstTag = person.getTags().stream()
                 .map(tag -> {
                     if (tag == null || tag.tagName == null || !Tag.isValidTagName(tag.tagName)) {
                         throw new IllegalArgumentException("Invalid stored tag.");
@@ -44,5 +40,6 @@ public enum SortField {
                     return tag.tagName;
                 })
                 .min(String.CASE_INSENSITIVE_ORDER);
+        return this == DEPARTMENT ? Optional.empty() : firstTag;
     }
 }

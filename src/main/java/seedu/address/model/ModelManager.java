@@ -25,6 +25,7 @@ public class ModelManager implements Model {
 
     private final AddressBook addressBook;
     private final UserPrefs userPrefs;
+    private final ContactLoadStatus contactLoadStatus;
     private final ObservableList<Person> displayPersons;
     private final FilteredList<Person> filteredPersons;
 
@@ -32,7 +33,15 @@ public class ModelManager implements Model {
      * Initializes a ModelManager with the given addressBook and userPrefs.
      */
     public ModelManager(ReadOnlyAddressBook addressBook, ReadOnlyUserPrefs userPrefs) {
-        requireAllNonNull(addressBook, userPrefs);
+        this(addressBook, userPrefs, ContactLoadStatus.READY);
+    }
+
+    /**
+     * Initializes the model with contact data and the outcome of loading it at startup.
+     */
+    public ModelManager(ReadOnlyAddressBook addressBook, ReadOnlyUserPrefs userPrefs, ContactLoadStatus loadStatus) {
+        requireAllNonNull(addressBook, userPrefs, loadStatus);
+        contactLoadStatus = loadStatus;
 
         logger.fine("Initializing with address book: " + addressBook + " and user prefs " + userPrefs);
 
@@ -135,6 +144,11 @@ public class ModelManager implements Model {
     }
 
     @Override
+    public ContactLoadStatus getContactLoadStatus() {
+        return contactLoadStatus;
+    }
+
+    @Override
     public boolean equals(Object other) {
         if (other == this) {
             return true;
@@ -147,6 +161,7 @@ public class ModelManager implements Model {
 
         return addressBook.equals(otherModelManager.addressBook)
                 && userPrefs.equals(otherModelManager.userPrefs)
+                && contactLoadStatus == otherModelManager.contactLoadStatus
                 && filteredPersons.equals(otherModelManager.filteredPersons);
     }
 

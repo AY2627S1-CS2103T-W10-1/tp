@@ -88,6 +88,11 @@ public class AddCommandTest {
      */
     private class ModelStub implements Model {
         @Override
+        public seedu.address.model.ContactLoadStatus getContactLoadStatus() {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
         public void sortFilteredPersonList(seedu.address.model.SortField field) {
             throw new AssertionError("This method should not be called.");
         }

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import seedu.address.logic.commands.exceptions.CommandException;
+import seedu.address.model.ContactLoadStatus;
 import seedu.address.model.Model;
 import seedu.address.model.SortField;
 import seedu.address.model.person.Person;
@@ -17,6 +18,8 @@ public class SortCommand extends Command {
     public static final String COMMAND_WORD = "sort";
     public static final String MESSAGE_USAGE = "sort -b/--by <department|dept|tag|tags>";
     public static final String MESSAGE_EMPTY = "No contacts found to sort.";
+    public static final String MESSAGE_LOAD_FAILURE =
+            "Unable to load contacts for sorting. Please restart the application or check the data file.";
     public static final String MESSAGE_INVALID_DATA =
             "Unable to sort contacts because some stored contact data is invalid.";
 
@@ -36,6 +39,12 @@ public class SortCommand extends Command {
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
+        if (model.getContactLoadStatus() == ContactLoadStatus.UNREADABLE) {
+            throw new CommandException(MESSAGE_LOAD_FAILURE);
+        }
+        if (model.getContactLoadStatus() == ContactLoadStatus.INVALID) {
+            throw new CommandException(MESSAGE_INVALID_DATA);
+        }
         if (model.getFilteredPersonList().isEmpty()) {
             return new CommandResult(MESSAGE_EMPTY);
         }
