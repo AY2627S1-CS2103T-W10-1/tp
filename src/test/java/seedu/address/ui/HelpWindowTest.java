@@ -31,10 +31,14 @@ public class HelpWindowTest {
             assertTrue(text.isWrapText());
             assertTrue(window.isShowing());
 
-            text.fireEvent(keyPress(true));
+            text.fireEvent(keyPress(KeyCode.A, false, false, false, false));
+            text.fireEvent(keyPress(KeyCode.Q, false, false, true, false));
+            text.fireEvent(keyPress(KeyCode.Q, false, true, false, false));
+            text.fireEvent(keyPress(KeyCode.Q, false, false, false, true));
+            text.fireEvent(keyPress(KeyCode.Q, true, false, false, false));
             assertTrue(window.isShowing());
 
-            text.fireEvent(keyPress(false));
+            text.fireEvent(keyPress(KeyCode.Q, false, false, false, false));
             assertFalse(window.isShowing());
 
             window.show();
@@ -42,8 +46,9 @@ public class HelpWindowTest {
         });
     }
 
-    private static KeyEvent keyPress(boolean controlDown) {
-        return new KeyEvent(KeyEvent.KEY_PRESSED, "q", "q", KeyCode.Q,
-                false, controlDown, false, false);
+    private static KeyEvent keyPress(KeyCode code, boolean shiftDown, boolean controlDown,
+            boolean altDown, boolean metaDown) {
+        return new KeyEvent(KeyEvent.KEY_PRESSED, code.getChar(), code.getChar(), code,
+                shiftDown, controlDown, altDown, metaDown);
     }
 }
