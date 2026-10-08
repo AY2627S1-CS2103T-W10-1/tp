@@ -13,7 +13,9 @@ import seedu.address.model.person.Person;
 /**
  * Creates stable contact orderings without modifying the input or collapsing duplicates.
  */
-public class ContactSorter {
+public final class ContactSorter {
+
+    private ContactSorter() {}
 
     /**
      * Returns an ascending, case-insensitive copy with absent keys last and equal keys in encounter order.

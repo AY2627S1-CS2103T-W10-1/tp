@@ -3,6 +3,7 @@ package seedu.address.logic.commands;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashSet;
 import java.util.List;
@@ -22,6 +23,16 @@ public class SortCommandTest {
     private final ModelManager model = new ModelManager();
     private final Person alex = new PersonBuilder().withName("Alex").withTags("mentor", "Zulu").build();
     private final Person beatrice = new PersonBuilder().withName("Beatrice").withTags("client").build();
+
+    @Test
+    public void equals() {
+        SortCommand command = new SortCommand(SortField.TAGS);
+        assertTrue(command.equals(command));
+        assertTrue(command.equals(new SortCommand(SortField.TAGS)));
+        assertFalse(command.equals(new SortCommand(SortField.DEPARTMENT)));
+        assertFalse(command.equals(null));
+        assertFalse(command.equals(new ListCommand()));
+    }
 
     @Test
     public void execute_tags_formatsNumberedContactsWithMissingDepartments() throws Exception {

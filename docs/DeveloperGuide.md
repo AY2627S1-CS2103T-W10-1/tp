@@ -180,8 +180,8 @@ The address book listener keeps direct changes through the existing read-only li
 It keeps duplicate occurrences and never mutates input. Stability uses the current display order, including when
 switching fields. No contact-name tie-breaker is applied. Sorting a canonical-source `SortedList` without preserving current tie order would violate this rule.
 
-`SortField.DEPARTMENT` reads the optional stored value from `Person.getDepartment()`. Both department and tag
-keys are validated before changing the display. Missing departments sort last and display as `Not assigned`.
+`SortField.DEPARTMENT` reads the optional stored value from `Person.getDepartment()`. Department and tag
+constructors validate their immutable values; sorting rejects null tag elements before changing the display. Missing departments sort last and display as `Not assigned`.
 Tag keys use the case-insensitive minimum of the unordered tag set; empty tag sets are absent keys.
 Tag sorting does not group a contact by all of its tags, and does not change the stored tag set.
 `ContactSorterTest` verifies real department values, case-insensitive ordering, missing values, and stable ties.
@@ -189,7 +189,7 @@ Tag sorting does not group a contact by all of its tags, and does not change the
 
 `MainApp` records `ContactLoadStatus`: successful or missing-file/sample loading is `READY`; ordinary I/O failures
 are `UNREADABLE`; malformed JSON and invalid model values are `INVALID`. Sorting checks this status before reporting
-an empty list and validates stored tags before publishing a new order. Failure status lasts until restart.
+an empty list and rejects null tag elements before publishing a new order. Failure status lasts until restart.
 
 Regression coverage includes parser boundaries, aliases and errors; stable department and tag ordering; observable
 display/filter behavior; editing and deleting sorted indices; unchanged storage; and startup error messages.

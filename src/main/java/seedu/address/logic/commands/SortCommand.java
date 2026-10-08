@@ -32,10 +32,6 @@ public class SortCommand extends Command {
         this.field = requireNonNull(field);
     }
 
-    public SortField getField() {
-        return field;
-    }
-
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
