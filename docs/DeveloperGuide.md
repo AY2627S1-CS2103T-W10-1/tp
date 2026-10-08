@@ -413,8 +413,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case ends.
 
-* 2a. An existing contact has both the same phone number and
-  email address as the contact being restored.
+* 2a. A duplicate contact already exists.
 
   * 2a1. AddressBook rejects the restoration and identifies the
     existing contact that prevents it.
@@ -588,8 +587,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case resumes at step 1.
 
-* 2c. A contact with the same name, phone number, and email address
-  already exists.
+* 2c. A duplicate contact already exists.
 
   * 2c1. sudoContact informs the user that the contact is a duplicate
     and does not add it.
@@ -702,7 +700,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * **Private contact detail**: A contact detail that is not meant to be shared with others
 * **Currently displayed list**: The contacts shown after any filtering or sorting. The `CONTACT_ID` used to view a contact refers to its one-based position in this list.
 * **Partial contact**: A contact with a name but without some optional details, such as a phone number, email address, department, or tags.
-* **Duplicate contact**: An existing contact with the same name, phone number, and email address as a contact being added.
+* **Duplicate contact**: An existing contact with the same name as a contact being added, edited, or restored. Only names are compared, and the comparison is case-sensitive.
 * **CSV export**: A UTF-8 comma-separated values file containing a header row and one row for each stored contact.
 * **Tag**: An optional label attached to a contact to support categorisation and searching. Tag matching is case-insensitive.
 

@@ -176,7 +176,8 @@ Format: `undo`
 * Run `undo` again to restore earlier deletions, most recent first.
 * Deletions are remembered only until you close the app.
 * The restored person is added to the end of the list, and the full list is shown.
-* If the same person already exists (e.g. you added them again), `undo` fails and shows that person.
+* If a person with the same name (case-sensitive) already exists, e.g. because you added them again, `undo` fails
+  and shows that person.
   To restore the deleted person, first `edit` the existing person's name, then run `undo` again.
 * `undo` does not take any parameters. For example, `undo 2` shows an error.
 
