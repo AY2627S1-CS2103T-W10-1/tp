@@ -68,4 +68,12 @@ public interface Model {
      * @throws NullPointerException if {@code predicate} is null.
      */
     void updateFilteredPersonList(Predicate<Person> predicate);
+
+    /**
+     * Sorts the displayed contacts without changing the filter or stored contact order.
+     * Preserves the current relative order of contacts with equal sorting keys.
+     *
+     * @throws IllegalArgumentException If a contact contains invalid sorting data.
+     */
+    void sortFilteredPersonList(SortField field);
 }

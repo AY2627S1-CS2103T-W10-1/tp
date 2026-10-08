@@ -3,9 +3,14 @@ package seedu.address.model;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import seedu.address.commons.core.GuiSettings;
@@ -20,6 +25,7 @@ public class ModelManager implements Model {
 
     private final AddressBook addressBook;
     private final UserPrefs userPrefs;
+    private final ObservableList<Person> displayPersons;
     private final FilteredList<Person> filteredPersons;
 
     /**
@@ -32,7 +38,10 @@ public class ModelManager implements Model {
 
         this.addressBook = new AddressBook(addressBook);
         this.userPrefs = new UserPrefs(userPrefs);
-        filteredPersons = new FilteredList<>(this.addressBook.getPersonList());
+        displayPersons = FXCollections.observableArrayList(this.addressBook.getPersonList());
+        filteredPersons = new FilteredList<>(displayPersons);
+        this.addressBook.getPersonList().addListener((ListChangeListener<Person>) change ->
+                displayPersons.setAll(this.addressBook.getPersonList()));
     }
 
     public ModelManager() {
@@ -96,8 +105,8 @@ public class ModelManager implements Model {
     //=========== Filtered Person List Accessors =============================================================
 
     /**
-     * Returns an unmodifiable view of the list of {@code Person} backed by the internal list of
-     * {@code addressBook}
+     * Returns an unmodifiable view of the filtered display order.
+     * Sorting the display does not reorder the stored address book.
      */
     @Override
     public ObservableList<Person> getFilteredPersonList() {
@@ -107,7 +116,22 @@ public class ModelManager implements Model {
     @Override
     public void updateFilteredPersonList(Predicate<Person> predicate) {
         requireNonNull(predicate);
+        displayPersons.setAll(addressBook.getPersonList());
         filteredPersons.setPredicate(predicate);
+    }
+
+    @Override
+    public void sortFilteredPersonList(SortField field) {
+        requireNonNull(field);
+        Iterator<Person> sortedPersons = ContactSorter.sortedCopy(filteredPersons, field::getKey).iterator();
+        List<Person> displayOrder = new ArrayList<>(displayPersons);
+        Predicate<? super Person> predicate = filteredPersons.getPredicate();
+        for (int i = 0; i < displayOrder.size(); i++) {
+            if (predicate == null || predicate.test(displayOrder.get(i))) {
+                displayOrder.set(i, sortedPersons.next());
+            }
+        }
+        displayPersons.setAll(displayOrder);
     }
 
     @Override
