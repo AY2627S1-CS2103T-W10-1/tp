@@ -66,9 +66,10 @@ public class SortCommandTest {
         tags.add(null);
         Person invalid = new Person(alex.getName(), alex.getPhone(), alex.getEmail(), alex.getAddress(), tags);
         model.addPerson(invalid);
-        CommandException error = assertThrows(CommandException.class, () ->
-                new SortCommand(SortField.TAGS).execute(model));
-        assertEquals(SortCommand.MESSAGE_INVALID_DATA, error.getMessage());
-        assertEquals(List.of(invalid), model.getFilteredPersonList());
+        for (SortField field : SortField.values()) {
+            CommandException error = assertThrows(CommandException.class, () -> new SortCommand(field).execute(model));
+            assertEquals(SortCommand.MESSAGE_INVALID_DATA, error.getMessage());
+            assertEquals(List.of(invalid), model.getFilteredPersonList());
+        }
     }
 }

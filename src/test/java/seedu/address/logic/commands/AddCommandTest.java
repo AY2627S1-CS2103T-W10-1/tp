@@ -18,9 +18,11 @@ import seedu.address.commons.core.GuiSettings;
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.AddressBook;
+import seedu.address.model.ContactLoadStatus;
 import seedu.address.model.Model;
 import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.ReadOnlyUserPrefs;
+import seedu.address.model.SortField;
 import seedu.address.model.person.Person;
 import seedu.address.testutil.PersonBuilder;
 
@@ -88,12 +90,12 @@ public class AddCommandTest {
      */
     private class ModelStub implements Model {
         @Override
-        public seedu.address.model.ContactLoadStatus getContactLoadStatus() {
+        public ContactLoadStatus getContactLoadStatus() {
             throw new AssertionError("This method should not be called.");
         }
 
         @Override
-        public void sortFilteredPersonList(seedu.address.model.SortField field) {
+        public void sortFilteredPersonList(SortField field) {
             throw new AssertionError("This method should not be called.");
         }
 

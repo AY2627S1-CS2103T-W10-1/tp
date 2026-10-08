@@ -155,6 +155,35 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
+### Contact display sorting
+
+`AddressBookParser` delegates `sort` to `SortCommandParser`, which accepts complete option tokens and normalizes
+aliases to `SortField`. `SortCommand` requests ordering from the model and produces numbered feedback.
+Its `requiresStorageSave()` override skips the save normally performed by `LogicManager`; existing commands retain
+their previous save behavior.
+
+`ModelManager` maintains an observable display projection separate from `AddressBook`. `FilteredList` is backed by
+this projection, so the UI and index-based commands share the same displayed order. Sorting only rearranges visible
+positions and preserves the filter. Canonical contact changes refresh the projection; new filters also reset it.
+The address book listener keeps direct changes through the existing read-only list's observable backing synchronized.
+
+`ContactSorter` precomputes keys, then stably sorts a copy using case-insensitive comparison and missing values last.
+It keeps duplicate occurrences and never mutates input. Stability uses the current display order, including when
+switching fields. Sorting a canonical-source `SortedList` without preserving current tie order would violate this rule.
+
+`SortField.DEPARTMENT` returns an absent key until department storage is available. Replace that branch with the
+future department accessor without changing parser aliases or ordering mechanics. `ContactSorterTest` supplies
+department fixtures to verify case-insensitive ordering, absent values, and stable ties independently of storage.
+The current feedback explicitly shows placeholder departments rather than inventing assignments.
+
+`MainApp` records `ContactLoadStatus`: successful or missing-file/sample loading is `READY`; ordinary I/O failures
+are `UNREADABLE`; malformed JSON and invalid model values are `INVALID`. Sorting checks this status before reporting
+an empty list and validates stored tags before publishing a new order. Failure status lasts until restart.
+
+Regression coverage includes parser boundaries, aliases and errors; stable ordering and placeholders; observable
+display/filter behavior; editing and deleting sorted indices; unchanged storage; and startup error messages.
+Run `./gradlew check coverage` (Windows: `.\gradlew.bat check coverage`) with Java 25.
+
 ### \[Proposed\] Undo/redo feature
 
 #### Proposed Implementation
@@ -380,3 +409,15 @@ testers are expected to do more *exploratory* testing.
    1. _{Explain how to simulate missing or corrupted data files and state the expected behavior.}_
 
 1. _{ more test cases …​ }_
+
+### Sorting contacts
+
+1. Add contacts with multiple tags, including mixed-case tags and contacts without tags.
+2. Run `sort --by tags`; confirm ordering by the smallest tag, missing tags last, and updated displayed indices.
+3. Run `sort -b dept`; confirm the same order and `Not assigned` department placeholders.
+4. Run `find NAME`, then sort; confirm hidden contacts remain hidden. Run `list` to restore the normal order.
+5. Sort again and edit or delete index 1; confirm the first displayed contact is affected and the remaining display resets.
+6. Try a repeated option, an invalid field, and `--descending`; confirm exact errors without changing display order.
+7. Compare the contact data file before and after sorting; its contents should be unchanged.
+8. Using a disposable copy of the application, start with malformed contact JSON; confirm sorting reports invalid data.
+   Fix the file and restart before testing successful sorting again.

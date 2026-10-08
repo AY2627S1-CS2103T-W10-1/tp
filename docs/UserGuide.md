@@ -93,6 +93,61 @@ Shows a list of all persons in the address book.
 
 Format: `list`
 
+### Sorting contacts by department or tags: `sort`
+
+Sorts the currently displayed contacts in ascending order while preserving any active `find` filter.
+
+Format: `sort -b FIELD` or `sort --by FIELD`
+
+* `FIELD` must be `department`, `dept`, `tag`, or `tags`. The aliases select the same two sorting fields.
+* Department and tag comparisons are alphabetical and case-insensitive.
+* Tag sorting uses each contact's alphabetically smallest tag, not the order tags were entered.
+* Contacts without the selected field appear last. Equal sorting keys retain their current relative order.
+* **Department storage is not implemented on this branch.** Department values are placeholders: every contact
+  has an absent department, so department sorting preserves the current displayed order. Output shows `Not assigned`.
+* Empty tag collections are displayed as `None`; multiple tags are displayed alphabetically, separated by commas.
+* Only the display order changes. Contacts and their saved order remain unchanged, and sorting does not save the file.
+* Displayed index numbers are updated, so `edit 1` and `delete 1` target the first contact after sorting.
+* The sort lasts until another sort, `list`, `find`, or a contact mutation. `list`, `find`, and mutations restore
+  the normal stored order. Sort order is not retained after restarting.
+* Options and field aliases are lowercase. Use ordinary hyphens, not Unicode dashes. Exactly one option and one
+  field are required; quoted fields, `--by=tags`, combined options, extra arguments, and descending order are rejected.
+
+Examples:
+
+* `sort -b department`
+* `sort -b dept`
+* `sort --by tag`
+* `sort --by tags`
+
+Example tag-sort feedback:
+
+```text
+Contacts sorted by tags:
+1. Beatrice Lim | Department: Not assigned | Tags: client
+2. Chen Wei | Department: Not assigned | Tags: intern
+3. Alex Tan | Department: Not assigned | Tags: mentor
+```
+
+For an empty displayed list, the feedback is `No contacts found to sort.`
+
+Problem | Feedback
+--------|---------
+Missing option or field | `Missing sorting option. Usage: sort -b/--by <department|dept|tag|tags>`
+Unknown field | `Invalid sorting field. Use department, dept, tag, or tags.`
+Unsupported or repeated argument | `Unsupported argument. Usage: sort -b/--by <department|dept|tag|tags>`
+`--descending` supplied | `Descending order is not supported. Contacts are sorted in ascending order.`
+Contacts failed to load at startup | `Unable to load contacts for sorting. Please restart the application or check the data file.`
+Invalid stored contact data | `Unable to sort contacts because some stored contact data is invalid.`
+
+When several input problems occur, an explicit `--descending` token takes precedence, followed by unsupported
+argument structure, missing option/value, and an invalid field. Failed input or invalid sorting data leaves the
+current display order unchanged. Sorting preserves separate contact occurrences rather than deduplicating them;
+the application's existing rules still prevent duplicate contacts from being added or loaded.
+
+Startup loading failures remain recorded for the session. Fix the contact file and restart to retry loading.
+Sorting uses the loaded contacts; it does not reread the file. A missing file follows the existing sample-data behavior.
+
 ### Editing a person: `edit`
 
 Edits an existing person in the address book.
@@ -195,4 +250,5 @@ Action | Format, Examples
 **Edit** | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
 **List** | `list`
+**Sort** | `sort -b/--by <department|dept|tag|tags>`<br> e.g., `sort --by tags`
 **Help** | `help`

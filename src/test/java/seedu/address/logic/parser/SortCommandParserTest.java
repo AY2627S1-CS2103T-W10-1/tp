@@ -39,7 +39,7 @@ public class SortCommandParserTest {
     public void parse_unsupportedSyntax_failure() {
         for (String args : new String[] {"department", "--unknown tags", "--by=tags", "-btags",
             "--bytags", "-b tags extra", "-b tags --by tags", "-b --unknown", "--by \"tags\"",
-            "\u2013by tags"}) {
+            "--by 'tags'", "\u2013by tags"}) {
             assertParseFailure(parser, args, SortCommandParser.MESSAGE_UNSUPPORTED_ARGUMENT);
         }
     }

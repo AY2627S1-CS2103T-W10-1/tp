@@ -36,7 +36,7 @@ public class SortCommandParser implements Parser<SortCommand> {
             throw new ParseException(MESSAGE_DESCENDING);
         }
         if ((!tokens[0].equals("-b") && !tokens[0].equals("--by")) || tokens.length > 2
-                || (tokens.length == 2 && (tokens[1].startsWith("-") || tokens[1].contains("\"")))) {
+                || (tokens.length == 2 && isUnsupportedValue(tokens[1]))) {
             throw new ParseException(MESSAGE_UNSUPPORTED_ARGUMENT);
         }
         if (tokens.length == 1) {
@@ -49,5 +49,9 @@ public class SortCommandParser implements Parser<SortCommand> {
             default -> throw new ParseException(MESSAGE_INVALID_FIELD);
         };
         return new SortCommand(field);
+    }
+
+    private boolean isUnsupportedValue(String token) {
+        return token.startsWith("-") || token.contains("\"") || token.contains("'");
     }
 }
