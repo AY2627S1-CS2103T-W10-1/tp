@@ -17,6 +17,7 @@ import seedu.address.logic.parser.SortCommandParser;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyAddressBook;
+import seedu.address.model.SortField;
 import seedu.address.model.person.Person;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
@@ -101,5 +102,71 @@ public class SortLogicIntegrationTest {
     @Test
     public void execute_emptySort_succeedsWithoutSaving() throws Exception {
         assertEquals(SortCommand.MESSAGE_EMPTY, createLogic(true).execute("sort -b dept").getFeedbackToUser());
+    }
+
+    @Test
+    public void execute_departmentSort_ordersRealDepartmentsAndPreservesStoredData() throws Exception {
+        Person engineering = new PersonBuilder(alex).withDepartment("Engineering").build();
+        Person marketing = new PersonBuilder(beatrice).withDepartment("Marketing").build();
+        Person sameDepartment = new PersonBuilder().withName("Chen").withDepartment("engineering").build();
+        Person missing = new PersonBuilder().withName("Dana").build();
+        model.addPerson(marketing);
+        model.addPerson(missing);
+        model.addPerson(sameDepartment);
+        model.addPerson(engineering);
+        Logic logic = createLogic(true);
+        CommandResult result = logic.execute("sort -b department");
+        assertEquals(List.of(sameDepartment, engineering, marketing, missing), logic.getFilteredPersonList());
+        assertEquals(List.of(marketing, missing, sameDepartment, engineering), model.getAddressBook().getPersonList());
+        assertEquals("Contacts sorted by department:\n"
+                + "1. Chen | Department: engineering | Tags: None\n"
+                + "2. Alex | Department: Engineering | Tags: zulu\n"
+                + "3. Beatrice | Department: Marketing | Tags: alpha\n"
+                + "4. Dana | Department: Not assigned | Tags: None", result.getFeedbackToUser());
+    }
+
+    @Test
+    public void execute_sortThenDepartAndView_resolvesSortedIndices() throws Exception {
+        model.addPerson(new PersonBuilder(alex).withDepartment("Marketing").build());
+        model.addPerson(new PersonBuilder(beatrice).withDepartment("Engineering").build());
+        Logic logic = createLogic(false);
+        logic.execute("sort -b dept");
+        assertEquals("Showing details of contact 1: Beatrice", logic.execute("view 1").getFeedbackToUser());
+        logic.execute("depart 1 --set Support");
+        Person updated = new PersonBuilder(beatrice).withDepartment("Support").build();
+        assertEquals(updated, model.getAddressBook().getPersonList().get(1));
+        assertEquals("Marketing", model.getAddressBook().getPersonList().get(0).getDepartment().orElseThrow().value);
+        logic.execute("sort --by department");
+        assertEquals("Showing details of contact 1: Alex", logic.execute("view 1").getFeedbackToUser());
+    }
+
+    @Test
+    public void execute_sortDeleteUndo_restoresDepartmentAndResetsDisplayOrder() throws Exception {
+        Person engineering = new PersonBuilder(beatrice).withDepartment("Engineering").build();
+        model.addPerson(alex);
+        model.addPerson(engineering);
+        Logic logic = createLogic(false);
+        logic.execute("sort -b dept");
+        logic.execute("delete 1");
+        assertEquals(List.of(alex), logic.getFilteredPersonList());
+        logic.execute("undo");
+        assertEquals(List.of(alex, engineering), logic.getFilteredPersonList());
+        assertEquals(engineering, new JsonAddressBookStorage(temporaryFolder.resolve("contacts.json"))
+                .readAddressBook().orElseThrow().getPersonList().get(1));
+    }
+
+    @Test
+    public void execute_switchSortFields_preservesCurrentOrderOfDepartmentTies() throws Exception {
+        Person first = new PersonBuilder(alex).withDepartment("Engineering").build();
+        Person second = new PersonBuilder(beatrice).withDepartment("engineering").build();
+        model.addPerson(first);
+        model.addPerson(second);
+        Logic logic = createLogic(false);
+        logic.execute("sort -b tags");
+        logic.execute("sort -b department");
+        assertEquals(List.of(second, first), logic.getFilteredPersonList());
+        model.updateFilteredPersonList(person -> person.equals(first));
+        model.sortFilteredPersonList(SortField.DEPARTMENT);
+        assertEquals(List.of(first), logic.getFilteredPersonList());
     }
 }

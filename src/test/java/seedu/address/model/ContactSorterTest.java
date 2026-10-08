@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -31,14 +30,19 @@ public class ContactSorterTest {
     }
 
     @Test
-    public void sortedCopy_departmentFixtures_sortsAbsentLastAndPreservesTies() {
-        Map<Person, String> departments = Map.of(alex, "Engineering", beatrice, "Marketing", chen, "engineering");
-        assertEquals(List.of(chen, alex, beatrice, dana), ContactSorter.sortedCopy(
-                List.of(dana, chen, beatrice, alex), person -> Optional.ofNullable(departments.get(person))));
+    public void sortedCopy_departments_sortsAbsentLastAndPreservesTies() {
+        Person engineering = new PersonBuilder(alex).withDepartment("Engineering").build();
+        Person marketing = new PersonBuilder(beatrice).withDepartment("Marketing").build();
+        Person sameDepartment = new PersonBuilder(chen).withDepartment("engineering").build();
+        List<Person> original = List.of(dana, sameDepartment, marketing, engineering);
+        assertEquals(List.of(sameDepartment, engineering, marketing, dana),
+                ContactSorter.sortedCopy(original, SortField.DEPARTMENT::getKey));
+        assertEquals("Engineering", SortField.DEPARTMENT.getKey(engineering).orElseThrow());
+        assertEquals(List.of(dana, sameDepartment, marketing, engineering), original);
     }
 
     @Test
-    public void sortedCopy_departmentPlaceholders_preservesOrderAndDuplicateOccurrences() {
+    public void sortedCopy_missingDepartments_preservesOrderAndDuplicateOccurrences() {
         List<Person> persons = List.of(chen, alex, chen, dana);
         assertEquals(persons, ContactSorter.sortedCopy(persons, SortField.DEPARTMENT::getKey));
         assertEquals(Optional.empty(), SortField.DEPARTMENT.getKey(alex));

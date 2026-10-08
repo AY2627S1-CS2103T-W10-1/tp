@@ -88,6 +88,22 @@ public class PersonTest {
         // different tags -> returns false
         editedAlice = new PersonBuilder(ALICE).withTags(VALID_TAG_HUSBAND).build();
         assertFalse(ALICE.equals(editedAlice));
+
+        editedAlice = new PersonBuilder(ALICE).withDepartment("Engineering").build();
+        assertFalse(ALICE.equals(editedAlice));
+    }
+
+    @Test
+    public void getDepartment() {
+        assertTrue(ALICE.getDepartment().isEmpty());
+        assertEquals(new Department("Engineering"), new PersonBuilder(ALICE)
+                .withDepartment("Engineering").build().getDepartment().orElseThrow());
+    }
+
+    @Test
+    public void hashCode_withDepartment() {
+        assertEquals(new PersonBuilder(ALICE).withDepartment("Engineering").build().hashCode(),
+                new PersonBuilder(ALICE).withDepartment("Engineering").build().hashCode());
     }
 
     @Test

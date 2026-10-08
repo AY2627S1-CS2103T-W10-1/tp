@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Optional;
 
+import seedu.address.model.person.Department;
 import seedu.address.model.person.Person;
 import seedu.address.model.tag.Tag;
 
@@ -26,9 +27,8 @@ public enum SortField {
 
     /**
      * Returns the contact's sorting key, or an empty optional when the field is absent.
-     * Departments are placeholders until department storage is implemented.
      *
-     * @throws IllegalArgumentException If a stored tag is invalid.
+     * @throws IllegalArgumentException If a stored department or tag is invalid.
      */
     public Optional<String> getKey(Person person) {
         requireNonNull(person);
@@ -40,6 +40,12 @@ public enum SortField {
                     return tag.tagName;
                 })
                 .min(String.CASE_INSENSITIVE_ORDER);
-        return this == DEPARTMENT ? Optional.empty() : firstTag;
+        Optional<String> departmentKey = person.getDepartment().map(department -> {
+            if (!Department.isValidDepartment(department.value)) {
+                throw new IllegalArgumentException("Invalid stored department.");
+            }
+            return department.value;
+        });
+        return this == DEPARTMENT ? departmentKey : firstTag;
     }
 }

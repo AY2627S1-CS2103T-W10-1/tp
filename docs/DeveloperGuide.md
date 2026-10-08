@@ -8,8 +8,12 @@ title: Developer Guide
 --------------------------------------------------------------------------------------------------------------------
 
 ## **Acknowledgements**
+This project is based on the AddressBook-Level3 project created by the [SE-EDU initiative](https://se-education.org).
 
-* _{List the sources of reused or adapted ideas, code, documentation, and third-party libraries here, with links to the originals.}_
+* [SE-EDU initiative](https://se-education.org)
+* He Qianyi used OpenAI Codex to assist with the feature 3 `view CONTACT_ID` implementation, including the
+  command/parser, details window, command-result integration, tests, and related
+  User Guide/Developer Guide documentation.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -171,18 +175,40 @@ The address book listener keeps direct changes through the existing read-only li
 It keeps duplicate occurrences and never mutates input. Stability uses the current display order, including when
 switching fields. Sorting a canonical-source `SortedList` without preserving current tie order would violate this rule.
 
-`SortField.DEPARTMENT` returns an absent key until department storage is available. Replace that branch with the
-future department accessor without changing parser aliases or ordering mechanics. `ContactSorterTest` supplies
-department fixtures to verify case-insensitive ordering, absent values, and stable ties independently of storage.
-The current feedback explicitly shows placeholder departments rather than inventing assignments.
+`SortField.DEPARTMENT` reads the optional stored value from `Person.getDepartment()`. Both department and tag
+keys are validated before changing the display. Missing departments sort last and display as `Not assigned`.
+`ContactSorterTest` verifies real department values, case-insensitive ordering, missing values, and stable ties.
+`view`, `depart`, `edit`, and `delete` resolve indices against the same sorted display; undo preserves department data.
 
 `MainApp` records `ContactLoadStatus`: successful or missing-file/sample loading is `READY`; ordinary I/O failures
 are `UNREADABLE`; malformed JSON and invalid model values are `INVALID`. Sorting checks this status before reporting
 an empty list and validates stored tags before publishing a new order. Failure status lasts until restart.
 
-Regression coverage includes parser boundaries, aliases and errors; stable ordering and placeholders; observable
+Regression coverage includes parser boundaries, aliases and errors; stable department and tag ordering; observable
 display/filter behavior; editing and deleting sorted indices; unchanged storage; and startup error messages.
 Run `./gradlew check coverage` (Windows: `.\gradlew.bat check coverage`) with Java 25.
+### Viewing contact details
+
+`AddressBookParser` routes `view CONTACT_ID` to `ViewCommandParser`, which validates the contact ID using
+`ParserUtil.parseIndex`. `ViewCommand` resolves that contact ID against `Model.getFilteredPersonList()` so that
+filtering and sorting determine the selected row. `CONTACT_ID` is the same one-based displayed-list
+position used by `depart`, represented internally by `Index`. It reports an empty list or the valid contact ID range
+before accessing the contact.
+
+The command formats all currently supported fields as labelled, untruncated lines, sorts tags for stable output,
+and returns a `CommandResult` with separate short feedback and an optional `contactDetails` payload.
+`MainWindow` displays only the short feedback in the main result box and forwards the payload to a reusable,
+owner-linked `ContactDetailsWindow` containing a read-only, wrapping, scrollable text area. Each successful
+`view` updates the window with a snapshot; later model changes do not silently change the displayed snapshot.
+
+`view` follows the existing `LogicManager` save flow, like `list`, `find` and `help`, while preserving contact data
+and the current filter. Standard save errors are reported before a new details result reaches the UI. Contacts
+are validated and loaded into the model at startup, so `view` does not re-read contact data from disk.
+
+Department display reads `Person.getDepartment()` from the Department implementation tracked by issue #65.
+The optional value is shown in full, or as `Department: Not provided` when absent. The `view` command uses
+the same displayed-list position as `depart`, so setting a department and then viewing that contact remains
+consistent after filtering.
 
 ### \[Proposed\] Undo/redo feature
 
@@ -290,27 +316,39 @@ _{Explain here how the data archiving feature will be implemented}_
 
 **Target user profile**:
 
+* is a secretary of a department head at a tech firm
+* needs to be able to store contact information offline
 * has a need to manage a significant number of contacts
 * prefers desktop apps over other types of applications
 * can type fast
 * prefers typing to mouse interactions
 * is reasonably comfortable using CLI apps
 
-**Value proposition**: Manage contacts faster than with a typical mouse-driven GUI application.
+**Value proposition**: sudoContact is a lightweight address book that strips away clunky GUIs. It allows you to search, update and route VIP contact data instantly using standard Unix syntax. SudoContact can instantly pipe a filtered list of investors directly into a csv for quick sharing.
 
 
 ### User stories
 
 Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unlikely to have) - `*`
 
-| Priority | As a …​                                    | I want to …​                     | So that I can…​                                                        |
-| -------- | ------------------------------------------ | ------------------------------ | ---------------------------------------------------------------------- |
-| `* * *`  | new user                                   | see usage instructions         | refer to instructions when I forget how to use the App                 |
-| `* * *`  | user                                       | add a new person               |                                                                        |
-| `* * *`  | user                                       | delete a person                | remove entries that I no longer need                                   |
-| `* * *`  | user                                       | find a person by name          | locate details of persons without having to go through the entire list |
-| `* *`    | user                                       | hide private contact details   | minimize chance of someone else seeing them by accident                |
-| `*`      | user with many persons in the address book | sort persons by name           | locate a person easily                                                 |
+| Priority | As a …​                                    | I want to …​                                  | So that I can…​                                                               |
+| -------- |-------------------------------------------|----------------------------------------------|------------------------------------------------------------------------------|
+| `* * *`  | new user / forgetful user                 | see usage instructions                       | refer to instructions when I do not know/forget how to use the App           |
+| `* * *`  | forgetful user                            | see usage instructions                       | refer to instructions when I do not know/forget how to use the App           |
+| `* * *`  | user                                      | add a new person                             |                                                                              |
+| `* * *`  | user                                      | delete a person                              | remove entries that I no longer need                                         |
+| `* * *`  | user                                      | find a person by name                        | locate details of persons without having to go through the entire list       |
+| `* * *`  | user                                      | record which department a contact belongs to | categorise employees for easier filtering                                    |
+| `* * *`  | user                                      | search across all tags                       | find someone when I only remember where they work/fragmented info            |
+| `* * *`  | user                                      | view one contact's full details              | see all the fields of a person that may be cut off in the list view          |
+| `* * *`  | user                                      | add a contact with only partial information  | capture an person's incomplete information if I do not have all their info   |
+| `* * *`  | user                                      | undo a delete                                | recover from a mistaken delete                                               |
+| `* * *`  | user with many contacts                   | List all contacts                            | quickly review the contacts I have stored                                    |
+| `* * *`  | user with many contacts                   | sort contacts by department/tags             | quickly review contact list of people with the same tag                      |
+| `* * *`  | user                                      | use unix syntax                              | type faster coming from a unix background                                    |
+| `* *`  | user                                      | generate a .csv of the contact list          | Easily copy and paste their email address to quickly send out an email blast |
+| `* *`    | user                                      | hide private contact details                 | minimize chance of someone else seeing them by accident                      |
+| `*`      | user with many persons in the address book | sort persons by name                         | locate a person easily                                                       |
 
 *{More to be added}*
 
@@ -318,28 +356,352 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 (For all use cases below, the **System** is the `AddressBook` and the **Actor** is the `user`, unless specified otherwise)
 
-**Use case: Delete a person**
+**Use Case: UC1 - List all contacts**
 
 **MSS**
 
-1.  User requests to list persons
-2.  AddressBook shows a list of persons
-3.  User requests to delete a specific person in the list
-4.  AddressBook deletes the person
+1. User requests to list all contacts
+2. AddressBook shows a list of contacts
 
-    Use case ends.
+   use case ends
 
 **Extensions**
 
-* 2a. The list is empty.
+* 1a. The list is empty.
+*    1a1. shows a message indicating that there are no contacts.
 
   Use case ends.
 
-* 3a. The given index is invalid.
+**Use Case: UC2 - User sorts contacts by department/tag**
 
-    * 3a1. AddressBook shows an error message.
+**MSS**
 
-      Use case resumes at step 2.
+1. User <u>lists all contacts (UC1)</u>
+2. User sorts the contact by either the department or tag field.
+3. AddressBook shows a sorted list of contacts according to field selected.
+
+   use case ends
+
+**Use case: UC3 - Delete a contact**
+
+**MSS**
+
+1. User <u>lists all contacts (UC1)</u>.
+2. User requests to delete a contact using its index in the currently
+   displayed list.
+3. AddressBook deletes the selected contact.
+4. AddressBook displays the deleted contact's details and informs the
+   user that the deletion can be undone.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. User filters the contacts or <u>sorts contacts by
+  department/tag (UC2)</u>.
+
+  Use case resumes at step 2 using the resulting displayed list.
+
+* 1b. The displayed list is empty.
+
+  Use case ends.
+
+* 2a. The deletion request has an invalid format or the index is
+  missing, invalid, or outside the displayed list's range.
+
+  * 2a1. AddressBook shows an error message and indicates the
+    required format or valid index range.
+
+  Use case resumes at step 2.
+
+**Use case: UC4 - Undo a delete**
+
+**MSS**
+
+1. User requests to undo a deletion.
+2. AddressBook restores the most recently deleted contact that has
+   not yet been restored in the current session, including its details.
+3. AddressBook displays the restored contact's details.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. The undo request includes additional arguments.
+
+  * 1a1. AddressBook shows an error message explaining that undo
+    does not accept arguments.
+
+  Use case resumes at step 1.
+
+* 1b. There are no deletions available to undo in the current session.
+
+  * 1b1. AddressBook informs the user that there are no deletions
+    left to undo.
+
+  Use case ends.
+
+* 2a. A duplicate contact already exists.
+
+  * 2a1. AddressBook rejects the restoration and identifies the
+    existing contact that prevents it.
+  * 2a2. AddressBook retains the deleted contact for a later
+    undo attempt.
+
+  Use case ends.
+
+**System:** sudoContact
+
+**Use case:** UC5 - Record which department a contact belongs to
+
+**Actor:** User
+
+**MSS:**
+
+1.  User requests to assign a department to a contact.
+2.  User enters `depart CONTACT_ID --set DEPARTMENT`.
+3.  sudoContact validates the contact ID and department.
+4.  sudoContact assigns the specified department to the contact.
+5.  sudoContact displays a confirmation showing the contact and its updated department.
+
+    Use case ends.
+
+**Extensions:**
+
+* 3a. The contact ID format is invalid.
+
+    * 3a1. sudoContact displays `Invalid Contact ID: Must be a positive integer.`
+
+      Use case ends.
+
+* 3b. The specified contact does not exist.
+
+    * 3b1. sudoContact displays `Contact non-existent: No contact found with ID '[INPUT]'.`
+
+      Use case ends.
+
+* 3c. The department value is missing.
+
+    * 3c1. sudoContact displays `Department name cannot be empty.`
+
+      Use case ends.
+
+* 3d. The department value does not satisfy the required format or length.
+
+    * 3d1. sudoContact displays `Invalid Department: Must be 2-50 characters using only letters, numbers, spaces, '-', or '&'.`
+
+      Use case ends.
+
+* 4a. The contact already has a department.
+
+    * 4a1. sudoContact overwrites the existing department with the newly specified department.
+
+      Use case resumes at step 5.
+
+**System:** sudoContact
+
+**Use case:** UC6 - Search contacts by tags
+
+**Actor:** User
+
+**MSS:**
+
+1.  User requests to search for contacts with one or more tags.
+2.  User enters a `find` command with one or more `--tag` values.
+3.  sudoContact validates all specified tags.
+4.  sudoContact searches the contacts for those matching the specified tags.
+5.  sudoContact displays each matching contact once.
+6.  sudoContact displays the matching contacts to the user.
+
+    Use case ends.
+
+**Extensions:**
+
+* 3a. A specified tag contains invalid characters or spaces.
+
+    * 3a1. sudoContact displays `Invalid Tag: '[INPUT]' must be 1-30 characters using only letters, numbers, hyphens (-), and underscores (_), with no spaces.`
+
+      Use case ends.
+
+* 3b. A tag value is missing.
+
+    * 3b1. sudoContact displays `Tag cannot be empty: Please provide a valid tag after '--tag'.`
+
+      Use case ends.
+
+* 4a. No contacts match the specified tag(s).
+
+    * 4a1. sudoContact displays `No contacts found with the specified tag(s).`
+
+      Use case ends.
+
+* 4b. Multiple tags are specified and a contact matches more than one of them.
+
+    * 4b1. sudoContact displays the matching contact only once.
+
+      Use case resumes at step 5.
+
+
+**Use case: UC8 - View one contact's full details**
+
+**System:** sudoContact
+
+**Actor:** User
+
+**MSS**
+
+1. User displays a list of contacts (UC1), which may be filtered or sorted.
+2. User enters `view CONTACT_ID`, using the contact ID (one-based row number) in the currently displayed list.
+3. sudoContact identifies the contact using that contact ID.
+4. sudoContact displays all available details of that contact, including
+   fields not shown in the list.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. The displayed list is empty.
+
+  * 1a1. sudoContact informs the user that there is no contact to view.
+
+  Use case ends.
+
+* 2a. The command format or contact ID is invalid, or the contact ID is outside
+  the currently displayed list.
+
+  * 2a1. sudoContact displays an error and indicates the required format
+    or valid contact ID range.
+
+  Use case resumes at step 2.
+
+* 3a. The selected contact's stored data cannot be read.
+
+  * 3a1. sudoContact reports that the contact details cannot be displayed.
+
+  Use case ends.
+
+**Use case: UC9 - Add a contact with partial information**
+
+**System:** sudoContact
+
+**Actor:** User
+
+**MSS**
+
+1. User enters `add --name NAME`, including any optional information they
+   know, such as a phone number, email address, department, or tags.
+2. sudoContact validates the supplied information and checks for a contact
+   with the same name, phone number, and email address. A matching name
+   alone does not prevent the contact from being added.
+3. sudoContact saves the new contact with the supplied information, leaving
+   omitted optional fields unprovided.
+4. sudoContact confirms that the contact was added and shows omitted fields
+   as `Not provided` or, for tags, `None`.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. The name is missing or empty.
+
+  * 2a1. sudoContact displays an error and does not add the contact.
+
+  Use case resumes at step 1.
+
+* 2b. A supplied field is invalid, an option is unknown, or the command
+  format is invalid.
+
+  * 2b1. sudoContact displays an error and does not add the contact.
+
+  Use case resumes at step 1.
+
+* 2c. A duplicate contact already exists.
+
+  * 2c1. sudoContact informs the user that the contact is a duplicate
+    and does not add it.
+
+  Use case ends.
+
+* 3a. sudoContact cannot save the new contact.
+
+  * 3a1. sudoContact reports the failure without confirming that the
+    contact was added.
+
+  Use case ends.
+
+**Use case: UC10 - Export contacts to a CSV file**
+
+**System:** sudoContact
+
+**Actor:** User
+
+**MSS**
+
+1. User enters `export --csv [FILENAME]`.
+2. sudoContact validates the supplied filename, or selects `contacts.csv`
+   if no filename was supplied.
+3. sudoContact retrieves all stored contacts.
+4. sudoContact creates a UTF-8 CSV file with a header row and a separate
+   row for each contact. It escapes values containing commas or quotation
+   marks.
+5. sudoContact confirms the number of contacts exported and the filename.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. The supplied filename is invalid.
+
+  * 2a1. sudoContact displays an error and does not export the contacts.
+
+  Use case resumes at step 1.
+
+* 3a. There are no contacts to export.
+
+  * 3a1. sudoContact informs the user that the contact list is empty.
+
+  Use case ends.
+
+* 3b. Contact data cannot be read.
+
+  * 3b1. sudoContact reports that the export could not be completed.
+
+  Use case ends.
+
+* 4a. The CSV file cannot be created or written.
+
+  * 4a1. sudoContact reports the file error without confirming a
+    successful export.
+
+  Use case ends.
+
+**Use Case: UC11 - View available commands and their usage**
+
+  **Actor:** User
+
+  **MSS**
+
+  1. User enters `help`.
+  2. sudoContact displays the available commands and their usage.
+  3. User enters `help COMMAND` to learn more about a specific command.
+  4. sudoContact displays the usage of that command.
+
+     Use case ends.
+
+  **Extensions**
+
+* 1a. User enters `help COMMAND` directly.
+    * 1a1. Use case resumes at step 4.
+
+* 3a. User enters `help COMMAND` wrongly/for a command that does not exist
+    * 3a1. Inform user it is an unrecognized command
+
+      Use case ends
+
+* 4a. The specified command does not exist.
+    * 4a1. sudoContact displays `Command not found`.
+
+      Use case ends
 
 *{More to be added}*
 
@@ -347,14 +709,28 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 1.  Should work on any _mainstream OS_ as long as it has Java `25` or above installed.
 2.  Should be able to hold up to 1000 persons without noticeable sluggishness in performance for typical usage.
-3.  A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
+3.  The system should maintain responsiveness with command execution times of under 1 second when handling a dataset of up to 1,000 records under typical usage conditions.
+4.  The system should provide smooth scrolling when displaying a dataset of up to 1,000 records under typical usage conditions.
+5.  A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
+6.  Contact data must be stored locally in a human-editable text file (e.g., JSON). If the file is missing, malformed, or corrupted at startup, the application must show a clear diagnostic message and either recover safely or exit without an unhandled exception.
+7.  After a successful add, edit, or delete command, the updated contact list must be restored when the application is closed and reopened.
+8.  If saving contact data fails, the application must report the failure and leave the last successfully saved data file intact.
 
 *{More to be added}*
 
 ### Glossary
 
+* **Contact**: A stored record for a person or organisation, containing a name and any available contact details, department, and tags.
+* **Contact ID**: A positive integer that identifies the contact to be updated by the `depart` command.
+* **Department**: An optional organisational unit associated with a contact. Setting a new department replaces that contact's existing department.
 * **Mainstream OS**: Windows, Linux, Unix, or macOS
+* **Matching contact**: For a tag search, a contact that has every tag specified in the command. A matching contact is displayed once even when it has more than one specified tag.
 * **Private contact detail**: A contact detail that is not meant to be shared with others
+* **Currently displayed list**: The contacts shown after any filtering or sorting. The `CONTACT_ID` used to view a contact refers to its one-based position in this list.
+* **Partial contact**: A contact with a name but without some optional details, such as a phone number, email address, department, or tags.
+* **Duplicate contact**: An existing contact with the same name as a contact being added, edited, or restored. Only names are compared, and the comparison is case-sensitive.
+* **CSV export**: A UTF-8 comma-separated values file containing a header row and one row for each stored contact.
+* **Tag**: An optional label attached to a contact to support categorisation and searching. Tag matching is case-insensitive.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -385,6 +761,40 @@ testers are expected to do more *exploratory* testing.
 
 1. _{ more test cases …​ }_
 
+### Viewing a contact's details
+
+1. Displayed-list contact IDs
+
+   1. Run `list`, then `view 2`. Expected: the second contact's supported fields appear in the details window.
+   1. Run `find Betsy`, then `view 1`. Expected: Betsy's details appear, and the filtered list remains unchanged.
+   1. Run `view 2` when only one search result is displayed. Expected: an error gives the range `1-1`.
+   1. Run `find NoSuchContact`, then `view 1`. Expected: an error says there is no contact to view.
+   1. Try `view`, `view 0`, `view -1`, `view 1.5`, `view 1 2`, and `view 2147483648`.
+      Expected: each reports that the contact ID must be a positive integer and shows the usage.
+
+1. Details window
+
+   1. View a contact with a long name/address and multiple tags. Resize the details window and scroll.
+      Expected: all values remain readable without truncation; tags are separated by commas.
+      The main result box shows only `Showing details of contact CONTACT_ID: NAME`.
+   1. View a contact without tags. Expected: `Tags: None`.
+   1. View a contact without a department. Expected: `Department: Not provided`.
+   1. Run `find Benson`, then `depart 1 --set R&D Engineering` and `view 1`.
+      Expected: the selected contact's details include `Department: R&D Engineering`, with the filter unchanged.
+   1. Change the selected contact's department with `depart 1 --set Sales`.
+      Expected: the details snapshot stays unchanged until `view 1` displays `Department: Sales`.
+   1. View another contact. Expected: the existing window updates rather than creating another window.
+   1. Close the details window, then run `view 1`. Expected: the window reopens with the current details.
+   1. Edit the viewed contact. Expected: the snapshot stays unchanged until another `view` command is run.
+   1. Exit the application while details are visible. Expected: the details window closes with the main window.
+
+1. Data and persistence
+
+   1. Filter contacts, then run a valid `view` command. Compare contact values before and after.
+      Expected: contact data and the filter remain unchanged; the normal saving flow persists all contacts.
+   1. Run `view` when the save location cannot be written.
+      Expected: the standard save error appears, with no new details window or snapshot update.
+
 ### Deleting a person
 
 1. Deleting a person while all persons are being shown
@@ -414,7 +824,7 @@ testers are expected to do more *exploratory* testing.
 
 1. Add contacts with multiple tags, including mixed-case tags and contacts without tags.
 2. Run `sort --by tags`; confirm ordering by the smallest tag, missing tags last, and updated displayed indices.
-3. Run `sort -b dept`; confirm the same order and `Not assigned` department placeholders.
+3. Assign departments using `depart`, then run `sort -b dept`; confirm alphabetical order and absent departments last.
 4. Run `find NAME`, then sort; confirm hidden contacts remain hidden. Run `list` to restore the normal order.
 5. Sort again and edit or delete index 1; confirm the first displayed contact is affected and the remaining display resets.
 6. Try a repeated option, an invalid field, and `--descending`; confirm exact errors without changing display order.

@@ -24,7 +24,7 @@ public class SortCommandTest {
     private final Person beatrice = new PersonBuilder().withName("Beatrice").withTags("client").build();
 
     @Test
-    public void execute_tags_formatsNumberedContactsWithPlaceholderDepartments() throws Exception {
+    public void execute_tags_formatsNumberedContactsWithMissingDepartments() throws Exception {
         model.addPerson(alex);
         model.addPerson(beatrice);
         CommandResult result = new SortCommand(SortField.TAGS).execute(model);

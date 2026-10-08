@@ -28,6 +28,7 @@ public class ModelManager implements Model {
     private final ContactLoadStatus contactLoadStatus;
     private final ObservableList<Person> displayPersons;
     private final FilteredList<Person> filteredPersons;
+    private final List<Person> deletedPersons = new ArrayList<>();
 
     /**
      * Initializes a ModelManager with the given addressBook and userPrefs.
@@ -96,6 +97,23 @@ public class ModelManager implements Model {
     @Override
     public void deletePerson(Person target) {
         addressBook.removePerson(target);
+        deletedPersons.add(target);
+    }
+
+    @Override
+    public boolean hasDeletedPerson() {
+        return !deletedPersons.isEmpty();
+    }
+
+    @Override
+    public Person getLastDeletedPerson() {
+        return deletedPersons.getLast();
+    }
+
+    @Override
+    public void restoreLastDeletedPerson() {
+        addPerson(deletedPersons.getLast());
+        deletedPersons.removeLast();
     }
 
     @Override
@@ -162,7 +180,8 @@ public class ModelManager implements Model {
         return addressBook.equals(otherModelManager.addressBook)
                 && userPrefs.equals(otherModelManager.userPrefs)
                 && contactLoadStatus == otherModelManager.contactLoadStatus
-                && filteredPersons.equals(otherModelManager.filteredPersons);
+                && filteredPersons.equals(otherModelManager.filteredPersons)
+                && deletedPersons.equals(otherModelManager.deletedPersons);
     }
 
 }

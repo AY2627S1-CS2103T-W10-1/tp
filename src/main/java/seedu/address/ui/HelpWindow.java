@@ -18,8 +18,7 @@ public class HelpWindow extends UiPart<Stage> {
 
     public static final String USERGUIDE_URL = "https://se-education.org/addressbook-level3/UserGuide.html";
     public static final String HELP_MESSAGE = "Refer to the user guide: " + USERGUIDE_URL
-            + "\nSort displayed contacts: " + SortCommand.MESSAGE_USAGE
-            + "\nDepartment values are placeholders until department storage is available.";
+            + "\nSort displayed contacts: " + SortCommand.MESSAGE_USAGE;
 
     private static final Logger logger = LogsCenter.getLogger(HelpWindow.class);
     private static final String FXML = "HelpWindow.fxml";

@@ -62,7 +62,9 @@ public class SortCommand extends Command {
         for (int i = 0; i < persons.size(); i++) {
             Person person = persons.get(i);
             output.append("\n").append(i + 1).append(". ").append(person.getName())
-                    .append(" | Department: Not assigned | Tags: ").append(formatTags(person));
+                    .append(" | Department: ")
+                    .append(person.getDepartment().map(department -> department.value).orElse("Not assigned"))
+                    .append(" | Tags: ").append(formatTags(person));
         }
         return output.toString();
     }

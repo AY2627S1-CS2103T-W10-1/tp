@@ -3,6 +3,7 @@ package seedu.address.logic.commands;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import seedu.address.commons.util.ToStringBuilder;
 
@@ -19,13 +20,28 @@ public class CommandResult {
     /** The application should exit. */
     private final boolean exit;
 
+    /** Full contact details for the separate window, absent for other commands. */
+    private final String contactDetails;
+
     /**
      * Constructs a {@code CommandResult} with the specified fields.
      */
     public CommandResult(String feedbackToUser, boolean showHelp, boolean exit) {
+        this(feedbackToUser, showHelp, exit, null);
+    }
+
+    /**
+     * Constructs a result with separate main-window feedback and contact details.
+     */
+    public CommandResult(String feedbackToUser, String contactDetails) {
+        this(feedbackToUser, false, false, requireNonNull(contactDetails));
+    }
+
+    private CommandResult(String feedbackToUser, boolean showHelp, boolean exit, String contactDetails) {
         this.feedbackToUser = requireNonNull(feedbackToUser);
         this.showHelp = showHelp;
         this.exit = exit;
+        this.contactDetails = contactDetails;
     }
 
     /**
@@ -48,6 +64,14 @@ public class CommandResult {
         return exit;
     }
 
+    public boolean isShowDetails() {
+        return contactDetails != null;
+    }
+
+    public Optional<String> getContactDetails() {
+        return Optional.ofNullable(contactDetails);
+    }
+
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -61,12 +85,13 @@ public class CommandResult {
 
         return feedbackToUser.equals(otherCommandResult.feedbackToUser)
                 && showHelp == otherCommandResult.showHelp
-                && exit == otherCommandResult.exit;
+                && exit == otherCommandResult.exit
+                && Objects.equals(contactDetails, otherCommandResult.contactDetails);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(feedbackToUser, showHelp, exit);
+        return Objects.hash(feedbackToUser, showHelp, exit, contactDetails);
     }
 
     @Override
@@ -75,6 +100,8 @@ public class CommandResult {
                 .add("feedbackToUser", feedbackToUser)
                 .add("showHelp", showHelp)
                 .add("exit", exit)
+                .add("showDetails", isShowDetails())
+                .add("contactDetails", contactDetails)
                 .toString();
     }
 

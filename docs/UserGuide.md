@@ -3,7 +3,7 @@ layout: page
 title: User Guide
 ---
 
-AddressBook Level 3 (AB3) is a **desktop application for managing contacts, optimized for use through a Command Line Interface (CLI)** while retaining the benefits of a Graphical User Interface (GUI). If you type quickly, AB3 can help you manage contacts faster than traditional GUI applications.
+sudoContact is a **desktop application for managing contacts, optimized for use through a Command Line Interface (CLI)** while retaining the benefits of a Graphical User Interface (GUI). If you type quickly, sudoContact can help you manage contacts faster than traditional GUI applications.
 
 * Table of Contents
 {:toc}
@@ -103,11 +103,11 @@ Format: `sort -b FIELD` or `sort --by FIELD`
 * Department and tag comparisons are alphabetical and case-insensitive.
 * Tag sorting uses each contact's alphabetically smallest tag, not the order tags were entered.
 * Contacts without the selected field appear last. Equal sorting keys retain their current relative order.
-* **Department storage is not implemented on this branch.** Department values are placeholders: every contact
-  has an absent department, so department sorting preserves the current displayed order. Output shows `Not assigned`.
+* Department sorting uses the stored department assigned with `depart CONTACT_ID --set DEPARTMENT`.
+  Contacts without departments appear last and are displayed as `Not assigned`.
 * Empty tag collections are displayed as `None`; multiple tags are displayed alphabetically, separated by commas.
 * Only the display order changes. Contacts and their saved order remain unchanged, and sorting does not save the file.
-* Displayed index numbers are updated, so `edit 1` and `delete 1` target the first contact after sorting.
+* Displayed indices are updated; `edit 1`, `delete 1`, `view 1`, and `depart 1 --set Engineering` target the first row.
 * The sort lasts until another sort, `list`, `find`, or a contact mutation. `list`, `find`, and mutations restore
   the normal stored order. Sort order is not retained after restarting.
 * Options and field aliases are lowercase. Use ordinary hyphens, not Unicode dashes. Exactly one option and one
@@ -126,7 +126,7 @@ Example tag-sort feedback:
 Contacts sorted by tags:
 1. Beatrice Lim | Department: Not assigned | Tags: client
 2. Chen Wei | Department: Not assigned | Tags: intern
-3. Alex Tan | Department: Not assigned | Tags: mentor
+3. Alex Tan | Department: Engineering | Tags: mentor
 ```
 
 For an empty displayed list, the feedback is `No contacts found to sort.`
@@ -147,6 +147,30 @@ the application's existing rules still prevent duplicate contacts from being add
 
 Startup loading failures remain recorded for the session. Fix the contact file and restart to retry loading.
 Sorting uses the loaded contacts; it does not reread the file. A missing file follows the existing sample-data behavior.
+### Viewing a contact's details: `view`
+
+Shows the selected contact's name, phone, email, department, address and tags in a separate contact details window.
+The main result box shows a brief confirmation, such as `Showing details of contact 1: Amy Bee`.
+Long values in the details window wrap onto multiple lines; scroll to read them. Text can be selected and copied.
+Contacts without tags show `Tags: None`.
+Contacts without a department show `Department: Not provided`.
+
+Format: `view CONTACT_ID`
+
+* `CONTACT_ID` is the positive integer shown beside a contact in the **currently displayed list**.
+* After filtering, use the `CONTACT_ID` in the filtered results, rather than its position in the full address book.
+* Surrounding spaces are ignored. Missing contact IDs, zero, negative numbers, decimals and extra arguments are rejected.
+* A contact ID outside the displayed list produces an error showing the valid range.
+* An empty displayed list produces `There is no contact to view in the currently displayed list.`
+* Viewing leaves contact data and the current filter unchanged and uses the same automatic saving flow as other commands.
+* The window shows a snapshot. Run `view CONTACT_ID` again after editing, deleting or filtering to refresh it.
+  Viewing another contact updates the same window. Closing the window does not exit sudoContact.
+
+Examples:
+
+* `list` followed by `view 2` shows the second contact in the full list.
+* `depart 1 --set Engineering` followed by `view 1` shows `Department: Engineering` for the first displayed contact.
+* `find Betsy` followed by `view 1` shows the first contact in the search results.
 
 ### Editing a person: `edit`
 
@@ -190,10 +214,30 @@ Format: `delete INDEX`
 * Deletes the person at the specified `INDEX`.
 * The index refers to the index number shown in the displayed person list.
 * The index **must be a positive integer** 1, 2, 3, …​
+* You can restore a deleted person with `undo`.
 
 Examples:
 * `list` followed by `delete 2` deletes the 2nd person in the address book.
 * `find Betsy` followed by `delete 1` deletes the 1st person in the results of the `find` command.
+
+### Undoing a deletion: `undo`
+
+Restores the person most recently removed with `delete`.
+
+Format: `undo`
+
+* Only reverts `delete`. It does not undo any other command, such as `add` or `edit`.
+* Run `undo` again to restore earlier deletions, most recent first.
+* Deletions are remembered only until you close the app.
+* The restored person is added to the end of the list, and the full list is shown.
+* If a person with the same name (case-sensitive) already exists, e.g. because you added them again, `undo` fails
+  and shows that person.
+  To restore the deleted person, first `edit` the existing person's name, then run `undo` again.
+* `undo` does not take any parameters. For example, `undo 2` shows an error.
+
+Examples:
+* `delete 2` followed by `undo` restores the person who was 2nd in the list.
+* `delete 1`, `delete 1`, then `undo` twice restores both persons, the second one deleted first.
 
 ### Clearing all entries: `clear`
 
@@ -209,7 +253,7 @@ Format: `exit`
 
 ### Saving the data
 
-AddressBook automatically saves data after every command. You do not need to save manually.
+AddressBook automatically saves data after every successful command. You do not need to save manually.
 
 ### Editing the data file
 
@@ -249,6 +293,8 @@ Action | Format, Examples
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit** | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
+**View** | `view CONTACT_ID`<br> e.g., `view 2`
 **List** | `list`
 **Sort** | `sort -b/--by <department|dept|tag|tags>`<br> e.g., `sort --by tags`
+**Undo** | `undo`
 **Help** | `help`
