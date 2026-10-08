@@ -160,10 +160,30 @@ Format: `delete INDEX`
 * Deletes the person at the specified `INDEX`.
 * The index refers to the index number shown in the displayed person list.
 * The index **must be a positive integer** 1, 2, 3, …​
+* You can restore a deleted person with `undo`.
 
 Examples:
 * `list` followed by `delete 2` deletes the 2nd person in the address book.
 * `find Betsy` followed by `delete 1` deletes the 1st person in the results of the `find` command.
+
+### Undoing a deletion: `undo`
+
+Restores the person most recently removed with `delete`.
+
+Format: `undo`
+
+* Only reverts `delete`. It does not undo any other command, such as `add` or `edit`.
+* Run `undo` again to restore earlier deletions, most recent first.
+* Deletions are remembered only until you close the app.
+* The restored person is added to the end of the list, and the full list is shown.
+* If a person with the same name (case-sensitive) already exists, e.g. because you added them again, `undo` fails
+  and shows that person.
+  To restore the deleted person, first `edit` the existing person's name, then run `undo` again.
+* `undo` does not take any parameters. For example, `undo 2` shows an error.
+
+Examples:
+* `delete 2` followed by `undo` restores the person who was 2nd in the list.
+* `delete 1`, `delete 1`, then `undo` twice restores both persons, the second one deleted first.
 
 ### Clearing all entries: `clear`
 
@@ -221,4 +241,5 @@ Action | Format, Examples
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
 **View** | `view CONTACT_ID`<br> e.g., `view 2`
 **List** | `list`
+**Undo** | `undo`
 **Help** | `help`
