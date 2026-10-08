@@ -93,6 +93,31 @@ Shows a list of all persons in the address book.
 
 Format: `list`
 
+### Viewing a contact's details: `view`
+
+Shows the selected contact's name, phone, email, department, address and tags in a separate contact details window.
+The main result box shows a brief confirmation, such as `Showing details of contact 1: Amy Bee`.
+Long values in the details window wrap onto multiple lines; scroll to read them. Text can be selected and copied.
+Contacts without tags show `Tags: None`.
+Contacts without a department show `Department: Not provided`.
+
+Format: `view CONTACT_ID`
+
+* `CONTACT_ID` is the positive integer shown beside a contact in the **currently displayed list**.
+* After filtering, use the `CONTACT_ID` in the filtered results, rather than its position in the full address book.
+* Surrounding spaces are ignored. Missing contact IDs, zero, negative numbers, decimals and extra arguments are rejected.
+* A contact ID outside the displayed list produces an error showing the valid range.
+* An empty displayed list produces `There is no contact to view in the currently displayed list.`
+* Viewing leaves contact data and the current filter unchanged and uses the same automatic saving flow as other commands.
+* The window shows a snapshot. Run `view CONTACT_ID` again after editing, deleting or filtering to refresh it.
+  Viewing another contact updates the same window. Closing the window does not exit sudoContact.
+
+Examples:
+
+* `list` followed by `view 2` shows the second contact in the full list.
+* `depart 1 --set Engineering` followed by `view 1` shows `Department: Engineering` for the first displayed contact.
+* `find Betsy` followed by `view 1` shows the first contact in the search results.
+
 ### Editing a person: `edit`
 
 Edits an existing person in the address book.
@@ -173,7 +198,7 @@ Format: `exit`
 
 ### Saving the data
 
-AddressBook automatically saves data after every command. You do not need to save manually.
+AddressBook automatically saves data after every successful command. You do not need to save manually.
 
 ### Editing the data file
 
@@ -213,6 +238,7 @@ Action | Format, Examples
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit** | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
+**View** | `view CONTACT_ID`<br> e.g., `view 2`
 **List** | `list`
 **Undo** | `undo`
 **Help** | `help`
