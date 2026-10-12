@@ -28,6 +28,8 @@ sudoContact is a **desktop application for managing contacts, optimized for use 
 
    * `list` : Lists all contacts.
 
+   * `sort --by tags` : Sorts displayed contacts by their alphabetically smallest tag.
+
    * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01` : Adds a contact named `John Doe` to the Address Book.
 
    * `delete 3` : Deletes the 3rd contact shown in the current list.
@@ -55,8 +57,8 @@ sudoContact is a **desktop application for managing contacts, optimized for use 
 * Items followed by `…`​ can appear zero or more times.<br>
   For example, `[t/TAG]…​` may be omitted, or written as `t/friend` or `t/friend t/family`.
 
-* Parameters can be in any order.<br>
-  For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
+* Named fields for `add` and `edit` can be in any order. Other commands follow their documented order.<br>
+  For example, `p/PHONE_NUMBER n/NAME` is also acceptable for `add`. For `sort`, the option must precede the field.
 
 * Extraneous parameters for commands that take no parameters, such as `help`, `list`, `exit`, and `clear`, are ignored.<br>
   For example, `help 123` is interpreted as `help`.
@@ -89,9 +91,99 @@ Examples:
 
 ### Listing all persons: `list`
 
-Shows a list of all persons in the address book.
+Shows all persons in their stored order, clearing the current filter and display sorting.
 
 Format: `list`
+
+### Assigning a department: `depart`
+
+Assigns or replaces the department of a contact in the currently displayed list.
+
+Format: `depart CONTACT_ID --set DEPARTMENT`
+
+* `CONTACT_ID` is the positive index currently shown next to the contact, including after filtering or sorting.
+* `DEPARTMENT` must contain 2-50 characters using letters, numbers, spaces, `-`, or `&`.
+* Departments are optional. Newly added contacts have no department until you assign one.
+* A successful assignment is saved and replaces any existing department. Editing other fields preserves it.
+* Assigning a department resets display sorting but retains an active filter. Check the displayed indices again
+  before assigning another department, or run `list` first.
+
+Examples:
+
+* `depart 1 --set Engineering`
+* `depart 2 --set R&D Engineering`
+* `sort --by tags` followed by `depart 1 --set Marketing` assigns Marketing to the first sorted contact.
+
+Use `sort --by department` after assignments to group contacts by their stored department.
+
+### Sorting contacts by department or tags: `sort`
+
+Sorts the currently displayed contacts in ascending order while preserving any active `find` filter.
+
+Format: `sort -b FIELD` or `sort --by FIELD`
+
+* `FIELD` must be `department`, `dept`, `tag`, or `tags`. The aliases select the same two sorting fields.
+* Department and tag comparisons are alphabetical and case-insensitive.
+* Tag sorting uses each contact's alphabetically smallest tag, not the order tags were entered.
+  It does not group contacts by every tag they share; a contact appears once, using its smallest tag as the key.
+* Contacts without the selected field appear last. Equal sorting keys retain their current relative order,
+  including case-only differences and when switching sorting fields; names are not a tie-breaker.
+* Department sorting uses the stored department assigned with `depart CONTACT_ID --set DEPARTMENT`.
+  Contacts without departments appear last and are displayed as `Not assigned`.
+* Empty tag collections are displayed as `None`; multiple tags are displayed alphabetically, separated by commas.
+* Only the display order changes. Contacts and their saved order remain unchanged, and sorting does not save the file.
+* Displayed indices are updated; `edit 1`, `delete 1`, `view 1`, and `depart 1 --set Engineering` target the first row.
+* Another sort uses the current displayed order as its starting point. `list`, `find`, and successful contact
+  mutations (`add`, `edit`, `delete`, `depart`, `clear`, or `undo`) reset sorting to stored order.
+  `view` and `help` preserve the display order. Sort order is not retained after restarting.
+* Options and field aliases are lowercase. Use ordinary hyphens, not Unicode dashes. Exactly one option and one
+  field are required; quoted fields, `--by=tags`, combined options, extra arguments, and descending order are rejected.
+
+Examples:
+
+* `sort -b department`
+* `sort -b dept`
+* `sort --by tag`
+* `sort --by tags`
+
+Example tag-sort feedback:
+
+```text
+Contacts sorted by tags:
+1. Beatrice Lim | Department: Marketing | Tags: client
+2. Chen Wei | Department: Engineering | Tags: intern
+3. Alex Tan | Department: Engineering | Tags: mentor
+```
+
+Starting with Alex, Beatrice, and Chen in that order, with the departments and tags above, `sort -b dept` returns:
+
+```text
+Contacts sorted by department:
+1. Alex Tan | Department: Engineering | Tags: mentor
+2. Chen Wei | Department: Engineering | Tags: intern
+3. Beatrice Lim | Department: Marketing | Tags: client
+```
+
+Alex and Chen retain their relative order because their department keys are equal.
+
+For an empty displayed list, the feedback is `No contacts found to sort.`
+
+Problem | Feedback
+--------|---------
+Missing option or field | `Missing sorting option. Usage: sort -b/--by <department\|dept\|tag\|tags>`
+Unknown field | `Invalid sorting field. Use department, dept, tag, or tags.`
+Unsupported or repeated argument | `Unsupported argument. Usage: sort -b/--by <department\|dept\|tag\|tags>`
+`--descending` supplied | `Descending order is not supported. Contacts are sorted in ascending order.`
+Contacts failed to load at startup | `Unable to load contacts for sorting. Please restart the application or check the data file.`
+Invalid stored contact data | `Unable to sort contacts because some stored contact data is invalid.`
+
+When several input problems occur, an explicit `--descending` token takes precedence, followed by unsupported
+argument structure, missing option/value, and an invalid field. Failed input or invalid sorting data leaves the
+current display order unchanged. Sorting preserves separate contact occurrences rather than deduplicating them;
+the application's existing rules still prevent duplicate contacts from being added or loaded.
+
+Startup loading failures remain recorded for the session. Fix the contact file and restart to retry loading.
+Sorting uses the loaded contacts; it does not reread the file. A missing file follows the existing sample-data behavior.
 
 ### Viewing a contact's details: `view`
 
@@ -104,7 +196,7 @@ Contacts without a department show `Department: Not provided`.
 Format: `view CONTACT_ID`
 
 * `CONTACT_ID` is the positive integer shown beside a contact in the **currently displayed list**.
-* After filtering, use the `CONTACT_ID` in the filtered results, rather than its position in the full address book.
+* After filtering or sorting, use the current displayed `CONTACT_ID`, rather than its position in the saved address book.
 * Surrounding spaces are ignored. Missing contact IDs, zero, negative numbers, decimals and extra arguments are rejected.
 * A contact ID outside the displayed list produces an error showing the valid range.
 * An empty displayed list produces `There is no contact to view in the currently displayed list.`
@@ -199,14 +291,16 @@ Format: `exit`
 
 ### Saving the data
 
-AddressBook automatically saves data after every successful command. You do not need to save manually.
+AddressBook automatically saves data after successful commands except `sort`. You do not need to save manually.
+`sort` changes only the displayed order; it does not write the contact file or persist the sort order.
+Departments and tags are contact data and are saved normally when changed.
 
 ### Editing the data file
 
 AddressBook data is saved automatically as a JSON file `[JAR file location]/data/addressbook.json`. Advanced users are welcome to update data directly by editing that data file.
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
-If your changes make the data file invalid, AddressBook starts with an empty address book at the next run. The invalid file remains on disk until you run a command (AddressBook saves after every command). Still, we recommend backing up the file before editing it.<br>
+If your changes make the data file invalid, AddressBook starts with an empty address book at the next run. The invalid file remains on disk until a successful command that saves data overwrites it. `sort` reports the startup loading error without writing the file; failed commands also do not save. Still, we recommend backing up the file before editing it.<br>
 Furthermore, certain edits can cause the AddressBook to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </div>
 
@@ -241,5 +335,7 @@ Action | Format, Examples
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
 **View** | `view CONTACT_ID`<br> e.g., `view 2`
 **List** | `list`
+**Depart** | `depart CONTACT_ID --set DEPARTMENT`<br> e.g., `depart 1 --set Engineering`
+**Sort** | `sort -b FIELD` or `sort --by FIELD`, where `FIELD` is `department`, `dept`, `tag`, or `tags`
 **Undo** | `undo`
 **Help** | `help`

@@ -108,6 +108,7 @@ How the `Logic` component works:
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
 1. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
    Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
+1. `LogicManager` saves the canonical address book if `Command.requiresStorageSave()` returns true. `SortCommand` returns false because ordering is display-only; existing commands retain normal saving.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
@@ -127,7 +128,8 @@ How the parsing works:
 The `Model` component,
 
 * stores the address book data i.e., all `Person` objects (which are contained in a `UniquePersonList` object).
-* stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list. It exposes this list as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
+* maintains an observable display-order projection separate from the canonical person list. A `FilteredList` over this projection applies the current filter and preserves display-only sorting. It exposes an unmodifiable `ObservableList<Person>` shared by the UI and index-based commands.
+* records startup contact-loading status and session-local deletion history alongside the contact data.
 * stores a `UserPrefs` object that represents the user’s preferences (currently, just the GUI settings). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
 
@@ -159,11 +161,44 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
+### Contact display sorting
+
+`AddressBookParser` delegates `sort` to `SortCommandParser`, which accepts complete option tokens and normalizes
+aliases to `SortField`. `SortCommand` requests ordering from the model and produces numbered feedback.
+Its `requiresStorageSave()` override skips the save normally performed by `LogicManager`; existing commands retain
+their previous save behavior. Parse-error precedence is descending option, unsupported argument structure,
+missing option/value, then invalid field; the user guide lists the exact messages.
+
+`ModelManager` maintains an observable display projection separate from `AddressBook`. `FilteredList` is backed by
+this projection, so the UI and index-based commands share the same displayed order. Sorting only rearranges visible
+positions and preserves the filter. Successful canonical contact changes refresh the projection and reset sorting;
+`list` and `find` also reset sorting through `updateFilteredPersonList`. `view` and `help` preserve the order.
+Undo appends the restored contact in canonical order and shows the full list, preserving its department and tags.
+The address book listener keeps direct changes through the existing read-only list's observable backing synchronized.
+
+`ContactSorter` precomputes keys, then stably sorts a copy using case-insensitive comparison and missing values last.
+It keeps duplicate occurrences and never mutates input. Stability uses the current display order, including when
+switching fields. No contact-name tie-breaker is applied. Sorting a canonical-source `SortedList` without preserving current tie order would violate this rule.
+
+`SortField.DEPARTMENT` reads the optional stored value from `Person.getDepartment()`. Department and tag
+constructors validate their immutable values; sorting rejects null tag elements before changing the display. Missing departments sort last and display as `Not assigned`.
+Tag keys use the case-insensitive minimum of the unordered tag set; empty tag sets are absent keys.
+Tag sorting does not group a contact by all of its tags, and does not change the stored tag set.
+`ContactSorterTest` verifies real department values, case-insensitive ordering, missing values, and stable ties.
+`view`, `depart`, `edit`, and `delete` resolve indices against the same sorted display; undo preserves department data.
+
+`MainApp` records `ContactLoadStatus`: successful or missing-file/sample loading is `READY`; ordinary I/O failures
+are `UNREADABLE`; malformed JSON and invalid model values are `INVALID`. Sorting checks this status before reporting
+an empty list and rejects null tag elements before publishing a new order. Failure status lasts until restart.
+
+Regression coverage includes parser boundaries, aliases and errors; stable department and tag ordering; observable
+display/filter behavior; editing and deleting sorted indices; unchanged storage; and startup error messages.
+Run `./gradlew check coverage` (Windows: `.\gradlew.bat check coverage`) with Java 25.
 ### Viewing contact details
 
 `AddressBookParser` routes `view CONTACT_ID` to `ViewCommandParser`, which validates the contact ID using
 `ParserUtil.parseIndex`. `ViewCommand` resolves that contact ID against `Model.getFilteredPersonList()` so that
-filtering (and future sorting) determines the selected row. `CONTACT_ID` is the same one-based displayed-list
+filtering and sorting determine the selected row. `CONTACT_ID` is the same one-based displayed-list
 position used by `depart`, represented internally by `Index`. It reports an empty list or the valid contact ID range
 before accessing the contact.
 
@@ -348,11 +383,27 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **MSS**
 
-1. User <u>lists all contacts (UC1)</u>
-2. User sorts the contact by either the department or tag field.
-3. AddressBook shows a sorted list of contacts according to field selected.
+1. User displays contacts, either by <u>listing all contacts (UC1)</u> or filtering the list.
+2. User requests ascending sorting using `sort -b FIELD` or `sort --by FIELD`.
+3. AddressBook validates the option and field, then sorts only the currently displayed contacts.
+4. AddressBook shows the sorted list and numbered feedback. The active filter, contact data, and saved order are unchanged.
 
-   use case ends
+   Use case ends.
+
+**Extensions**
+
+* 2a. The option or field is missing, invalid, repeated, or accompanied by unsupported arguments.
+  * 2a1. AddressBook reports the corresponding parsing error; the current display order is unchanged.
+  * Use case ends.
+* 2b. The request contains an explicit `--descending` token.
+  * 2b1. AddressBook reports that only ascending sorting is supported.
+  * Use case ends.
+* 3a. The displayed list is empty and startup contact loading succeeded.
+  * 3a1. AddressBook displays `No contacts found to sort.`
+  * Use case ends.
+* 3b. Contact loading failed at startup, or a displayed contact contains invalid department or tag data.
+  * 3b1. AddressBook reports the loading or invalid-data error without changing display order or writing the file.
+  * Use case ends.
 
 **Use case: UC3 - Delete a contact**
 
@@ -648,20 +699,20 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
   Use case ends.
 
 **Use Case: UC11 - View available commands and their usage**
- 
+
   **Actor:** User
- 
+
   **MSS**
- 
+
   1. User enters `help`.
   2. sudoContact displays the available commands and their usage.
   3. User enters `help COMMAND` to learn more about a specific command.
   4. sudoContact displays the usage of that command.
- 
+
      Use case ends.
- 
+
   **Extensions**
- 
+
 * 1a. User enters `help COMMAND` directly.
     * 1a1. Use case resumes at step 4.
 
@@ -669,10 +720,10 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
     * 3a1. Inform user it is an unrecognized command
 
       Use case ends
- 
+
 * 4a. The specified command does not exist.
     * 4a1. sudoContact displays `Command not found`.
- 
+
       Use case ends
 
 *{More to be added}*
@@ -693,7 +744,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 ### Glossary
 
 * **Contact**: A stored record for a person or organisation, containing a name and any available contact details, department, and tags.
-* **Contact ID**: A positive integer that identifies the contact to be updated by the `depart` command.
+* **Contact ID**: A positive one-based position in the currently displayed list, used by `view` and `depart`. Filtering or sorting can change which contact occupies a position; `edit` and `delete` use the same displayed indices.
 * **Department**: An optional organisational unit associated with a contact. Setting a new department replaces that contact's existing department.
 * **Mainstream OS**: Windows, Linux, Unix, or macOS
 * **Matching contact**: For a tag search, a contact that has every tag specified in the command. A matching contact is displayed once even when it has more than one specified tag.
@@ -791,3 +842,20 @@ testers are expected to do more *exploratory* testing.
    1. _{Explain how to simulate missing or corrupted data files and state the expected behavior.}_
 
 1. _{ more test cases …​ }_
+
+### Sorting contacts
+
+1. Add contacts with multiple tags, including mixed-case tags and contacts without tags.
+2. Run `sort --by tags`; confirm ordering by the smallest tag, missing tags last, and updated displayed indices.
+3. Assign departments using `depart`, then run `sort -b dept`; confirm alphabetical order and absent departments last.
+4. Run `find NAME`, then sort; confirm hidden contacts remain hidden. Run `list` to restore the normal order.
+5. Sort again and edit or delete index 1; confirm the first displayed contact is affected and the remaining display resets.
+6. Try a repeated option, an invalid field, and `--descending`; confirm exact errors without changing display order.
+7. Compare the contact data file before and after sorting; its contents should be unchanged.
+8. Give two contacts departments that differ only by case. Sort by tags, then by department; confirm their
+   relative order from the tag sort is retained. Repeat with missing fields to confirm those contacts appear last.
+9. After sorting, run `view 1`, then `depart 1 --set Support`; confirm both target the displayed first contact.
+   Check the new indices after assignment resets sorting. Delete a sorted contact and run `undo`; confirm its
+   department and tags are restored and the full list returns to canonical order.
+10. Using a disposable copy of the application, start with malformed contact JSON; confirm sorting reports invalid data.
+   Fix the file and restart before testing successful sorting again.
