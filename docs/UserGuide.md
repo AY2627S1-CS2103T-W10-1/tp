@@ -224,6 +224,19 @@ Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.
 *  `edit 2 n/Betsy Crower t/` Edits the name of the 2nd person to be `Betsy Crower` and clears all existing tags.
 
+### Locating contacts by tags: `find --tag`
+
+Format: `find --tag TAG [--tag TAG ...]`
+
+* Matches contacts with **any** of the specified tags, ignoring case and matching whole tags.
+* Each matching contact is displayed once, even if several tags match or a tag is repeated.
+* Tags must contain 1–30 letters, numbers, hyphens (`-`), or underscores (`_`), without spaces.
+* A missing value displays `Tag cannot be empty: Please provide a valid tag after '--tag'.`
+* An invalid value displays `Invalid Tag: '[INPUT]' must be 1-30 characters using only letters, numbers, hyphens (-), and underscores (_), with no spaces.`
+* No matches displays `No contacts found with the specified tag(s).`
+
+Example: `find --tag client --tag important`
+
 ### Locating persons by name: `find`
 
 Finds persons whose names contain any of the given keywords.

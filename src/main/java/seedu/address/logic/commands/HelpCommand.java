@@ -19,7 +19,7 @@ public class HelpCommand extends Command {
             EditCommand.COMMAND_WORD + " — Changes a contact's details.",
             DeleteCommand.COMMAND_WORD + " — Deletes a contact.",
             UndoCommand.COMMAND_WORD + " — Restores the most recently deleted contact.",
-            FindCommand.COMMAND_WORD + " — Finds contacts by name.",
+            FindCommand.COMMAND_WORD + " — Finds contacts by name or tags (find --tag TAG [--tag TAG ...]).",
             ListCommand.COMMAND_WORD + " — Shows all contacts.",
             ViewCommand.COMMAND_WORD + " — Shows a contact's full details.",
             DepartCommand.COMMAND_WORD + " — Sets a contact's department.",
