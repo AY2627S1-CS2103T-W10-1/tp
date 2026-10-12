@@ -332,7 +332,7 @@
     -fx-effect: innershadow(gaussian, black, 10, 0, 0, 0);
 }
 
-#resultDisplay .content {
+#resultDisplay .content, #contactDetails .content {
     -fx-background-color: transparent, #383838, transparent, #383838;
     -fx-background-radius: 0;
 }
