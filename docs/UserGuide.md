@@ -127,8 +127,8 @@ Format: `sort -b FIELD` or `sort --by FIELD`
 * Contacts without the selected field appear last. Equal sorting keys retain their current relative order,
   including case-only differences and when switching sorting fields; names are not a tie-breaker.
 * Department sorting uses the stored department assigned with `depart CONTACT_ID --set DEPARTMENT`.
-  Contacts without departments appear last and are displayed as `Not assigned`.
-* Empty tag collections are displayed as `None`; multiple tags are displayed alphabetically, separated by commas.
+  Contacts without departments appear last.
+* Successful sorting reports the number of displayed contacts and the selected field in one line.
 * Only the display order changes. Contacts and their saved order remain unchanged, and sorting does not save the file.
 * Displayed indices are updated; `edit 1`, `delete 1`, `view 1`, and `depart 1 --set Engineering` target the first row.
 * Another sort uses the current displayed order as its starting point. `list`, `find`, and successful contact
@@ -144,25 +144,28 @@ Examples:
 * `sort --by tag`
 * `sort --by tags`
 
-Example tag-sort feedback:
+For example, start with Alex Tan, Beatrice Lim, and Chen Wei in that stored order:
+
+Contact | Department | Tag
+--------|------------|----
+Alex Tan | Engineering | mentor
+Beatrice Lim | Marketing | client
+Chen Wei | Engineering | intern
+
+`sort --by tags` displays Beatrice, Chen, then Alex and returns:
 
 ```text
-Contacts sorted by tags:
-1. Beatrice Lim | Department: Marketing | Tags: client
-2. Chen Wei | Department: Engineering | Tags: intern
-3. Alex Tan | Department: Engineering | Tags: mentor
+Sorted 3 contacts by tags.
 ```
 
-Starting with Alex, Beatrice, and Chen in that order, with the departments and tags above, `sort -b dept` returns:
+Starting again from stored order, `sort -b dept` displays Alex, Chen, then Beatrice and returns:
 
 ```text
-Contacts sorted by department:
-1. Alex Tan | Department: Engineering | Tags: mentor
-2. Chen Wei | Department: Engineering | Tags: intern
-3. Beatrice Lim | Department: Marketing | Tags: client
+Sorted 3 contacts by department.
 ```
 
 Alex and Chen retain their relative order because their department keys are equal.
+The reported count includes only contacts in the currently displayed list.
 
 For an empty displayed list, the feedback is `No contacts found to sort.`
 

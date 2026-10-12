@@ -164,7 +164,8 @@ This section describes some noteworthy details on how certain features are imple
 ### Contact display sorting
 
 `AddressBookParser` delegates `sort` to `SortCommandParser`, which accepts complete option tokens and normalizes
-aliases to `SortField`. `SortCommand` requests ordering from the model and produces numbered feedback.
+aliases to `SortField`. `SortCommand` requests ordering from the model and produces one-line feedback with the
+displayed contact count and selected field.
 Its `requiresStorageSave()` override skips the save normally performed by `LogicManager`; existing commands retain
 their previous save behavior. Parse-error precedence is descending option, unsupported argument structure,
 missing option/value, then invalid field; the user guide lists the exact messages.
@@ -181,7 +182,8 @@ It keeps duplicate occurrences and never mutates input. Stability uses the curre
 switching fields. No contact-name tie-breaker is applied. Sorting a canonical-source `SortedList` without preserving current tie order would violate this rule.
 
 `SortField.DEPARTMENT` reads the optional stored value from `Person.getDepartment()`. Department and tag
-constructors validate their immutable values; sorting rejects null tag elements before changing the display. Missing departments sort last and display as `Not assigned`.
+constructors validate their immutable values; sorting rejects null tag elements before changing the display.
+Missing departments sort last.
 Tag keys use the case-insensitive minimum of the unordered tag set; empty tag sets are absent keys.
 Tag sorting does not group a contact by all of its tags, and does not change the stored tag set.
 `ContactSorterTest` verifies real department values, case-insensitive ordering, missing values, and stable ties.
@@ -386,7 +388,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 1. User displays contacts, either by <u>listing all contacts (UC1)</u> or filtering the list.
 2. User requests ascending sorting using `sort -b FIELD` or `sort --by FIELD`.
 3. AddressBook validates the option and field, then sorts only the currently displayed contacts.
-4. AddressBook shows the sorted list and numbered feedback. The active filter, contact data, and saved order are unchanged.
+4. AddressBook shows the sorted list and one-line feedback with the displayed contact count and selected field.
+   The active filter, contact data, and saved order are unchanged.
 
    Use case ends.
 

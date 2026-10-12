@@ -86,7 +86,7 @@ public class SortContactLoadTest {
     public void loadMissingFile_usesSamplesAndAllowsSort() throws Exception {
         Model model = loadContacts(new JsonAddressBookStorage(temporaryFolder.resolve("missing.json")));
         assertEquals(ContactLoadStatus.READY, model.getContactLoadStatus());
-        assertTrue(new SortCommand(SortField.DEPARTMENT).execute(model).getFeedbackToUser()
-                .startsWith("Contacts sorted by department:"));
+        assertEquals("Sorted " + model.getFilteredPersonList().size() + " contacts by department.",
+                new SortCommand(SortField.DEPARTMENT).execute(model).getFeedbackToUser());
     }
 }
