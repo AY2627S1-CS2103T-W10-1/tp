@@ -20,7 +20,7 @@ public class HelpCommand extends Command {
             DeleteCommand.COMMAND_WORD + " — Deletes a contact.",
             UndoCommand.COMMAND_WORD + " — Restores the most recently deleted contact.",
             FindCommand.COMMAND_WORD + " — Finds contacts by name.",
-            ListCommand.COMMAND_WORD + " — Shows all contacts.",
+            ListCommand.COMMAND_WORD + " | " + ListCommand.COMMAND_ALIAS + " — Shows all contacts (no parameters).",
             ViewCommand.COMMAND_WORD + " — Shows a contact's full details.",
             DepartCommand.COMMAND_WORD + " — Sets a contact's department.",
             ClearCommand.COMMAND_WORD + " — Deletes all contacts.",
