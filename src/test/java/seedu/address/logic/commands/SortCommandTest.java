@@ -35,6 +35,15 @@ public class SortCommandTest {
     }
 
     @Test
+    public void toStringMethod() {
+        for (SortField field : SortField.values()) {
+            SortCommand command = new SortCommand(field);
+            String expected = SortCommand.class.getCanonicalName() + "{field=" + field + "}";
+            assertEquals(expected, command.toString());
+        }
+    }
+
+    @Test
     public void execute_tags_formatsNumberedContactsWithMissingDepartments() throws Exception {
         model.addPerson(alex);
         model.addPerson(beatrice);

@@ -5,6 +5,7 @@ import static java.util.Objects.requireNonNull;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.ContactLoadStatus;
 import seedu.address.model.Model;
@@ -80,5 +81,12 @@ public class SortCommand extends Command {
     @Override
     public boolean equals(Object other) {
         return other == this || (other instanceof SortCommand otherCommand && field == otherCommand.field);
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .add("field", field)
+                .toString();
     }
 }
