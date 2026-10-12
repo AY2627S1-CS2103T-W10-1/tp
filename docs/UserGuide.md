@@ -176,16 +176,17 @@ Missing field | `Missing sorting field. Usage: sort -b/--by <department\|dept\|t
 Unknown field | `Invalid sorting field. Use department, dept, tag, or tags.`
 Unsupported or repeated argument | `Unsupported argument. Usage: sort -b/--by <department\|dept\|tag\|tags>`
 `--descending` supplied | `Descending order is not supported. Contacts are sorted in ascending order.`
-Contacts failed to load at startup | `Unable to load contacts for sorting. Please restart the application or check the data file.`
-Invalid stored contact data | `Unable to sort contacts because some stored contact data is invalid.`
+Invalid displayed contact data | `Unable to sort contacts because some stored contact data is invalid.`
 
 When several input problems occur, an explicit `--descending` token takes precedence, followed by unsupported
 argument structure, missing option/value, and an invalid field. Failed input or invalid sorting data leaves the
 current display order unchanged. Sorting preserves separate contact occurrences rather than deduplicating them;
 the application's existing rules still prevent duplicate contacts from being added or loaded.
 
-Startup loading failures remain recorded for the session. Fix the contact file and restart to retry loading.
-Sorting uses the loaded contacts; it does not reread the file. A missing file follows the existing sample-data behavior.
+Sorting uses the current in-memory contacts; it does not reread the file. If contacts fail to load at startup,
+the application starts with an empty list, so sorting reports `No contacts found to sort.` You can add valid contacts
+and sort them in the same session. To load contacts from a repaired file, restart the application.
+A missing file follows the existing sample-data behavior.
 
 ### Viewing a contact's details: `view`
 
@@ -302,7 +303,7 @@ Departments and tags are contact data and are saved normally when changed.
 AddressBook data is saved automatically as a JSON file `[JAR file location]/data/addressbook.json`. Advanced users are welcome to update data directly by editing that data file.
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
-If your changes make the data file invalid, AddressBook starts with an empty address book at the next run. The invalid file remains on disk until a successful command that saves data overwrites it. `sort` reports the startup loading error without writing the file; failed commands also do not save. Still, we recommend backing up the file before editing it.<br>
+If your changes make the data file invalid, AddressBook starts with an empty address book at the next run. The invalid file remains on disk until a successful command that saves data overwrites it. `sort` uses the current in-memory contacts without writing the file; failed commands also do not save. Still, we recommend backing up the file before editing it.<br>
 Furthermore, certain edits can cause the AddressBook to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </div>
 

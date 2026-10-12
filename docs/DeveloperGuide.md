@@ -129,7 +129,7 @@ The `Model` component,
 
 * stores the address book data i.e., all `Person` objects (which are contained in a `UniquePersonList` object).
 * maintains an observable display-order projection separate from the canonical person list. A `FilteredList` over this projection applies the current filter and preserves display-only sorting. It exposes an unmodifiable `ObservableList<Person>` shared by the UI and index-based commands.
-* records startup contact-loading status and session-local deletion history alongside the contact data.
+* records session-local deletion history alongside the contact data.
 * stores a `UserPrefs` object that represents the user’s preferences (currently, just the GUI settings). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
 
@@ -189,12 +189,14 @@ Tag sorting does not group a contact by all of its tags, and does not change the
 `ContactSorterTest` verifies real department values, case-insensitive ordering, missing values, and stable ties.
 `view`, `depart`, `edit`, and `delete` resolve indices against the same sorted display; undo preserves department data.
 
-`MainApp` records `ContactLoadStatus`: successful or missing-file/sample loading is `READY`; ordinary I/O failures
-are `UNREADABLE`; malformed JSON and invalid model values are `INVALID`. Sorting checks this status before reporting
-an empty list and rejects null tag elements before publishing a new order. Failure status lasts until restart.
+`MainApp` logs startup loading failures and initializes an empty address book when loading fails.
+Sorting uses the current in-memory contacts, so valid contacts added afterward can be sorted without restarting.
+An empty displayed list produces `No contacts found to sort.` Sorting still rejects null tag elements before
+publishing a new order. A missing data file retains the existing sample-data behavior.
 
 Regression coverage includes parser boundaries, aliases and errors; stable department and tag ordering; observable
-display/filter behavior; editing and deleting sorted indices; unchanged storage; and startup error messages.
+display/filter behavior; editing and deleting sorted indices; unchanged storage; and recovery after startup loading
+failures, including sorting contacts after successful additions and saves in the same session.
 Run `./gradlew check coverage` (Windows: `.\gradlew.bat check coverage`) with Java 25.
 ### Viewing contact details
 
@@ -401,11 +403,11 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * 2b. The request contains an explicit `--descending` token.
   * 2b1. AddressBook reports that only ascending sorting is supported.
   * Use case ends.
-* 3a. The displayed list is empty and startup contact loading succeeded.
+* 3a. The displayed list is empty, including after a startup contact-loading failure.
   * 3a1. AddressBook displays `No contacts found to sort.`
   * Use case ends.
-* 3b. Contact loading failed at startup, or a displayed contact contains invalid department or tag data.
-  * 3b1. AddressBook reports the loading or invalid-data error without changing display order or writing the file.
+* 3b. A displayed contact contains invalid tag data.
+  * 3b1. AddressBook reports the invalid-data error without changing display order or writing the file.
   * Use case ends.
 
 **Use case: UC3 - Delete a contact**
@@ -860,5 +862,7 @@ testers are expected to do more *exploratory* testing.
 9. After sorting, run `view 1`, then `depart 1 --set Support`; confirm both target the displayed first contact.
    Check the new indices after assignment resets sorting. Delete a sorted contact and run `undo`; confirm its
    department and tags are restored and the full list returns to canonical order.
-10. Using a disposable copy of the application, start with malformed contact JSON; confirm sorting reports invalid data.
-   Fix the file and restart before testing successful sorting again.
+10. Using a disposable copy of the application, start with malformed contact JSON; confirm the list is empty and
+    sorting reports `No contacts found to sort.` without overwriting the file. Add two valid contacts with different
+    tags and confirm they are saved. Sort by tags in the same session; confirm sorting succeeds and the saved file
+    remains unchanged. Repeat after a startup file-read failure once the file is writable again.
