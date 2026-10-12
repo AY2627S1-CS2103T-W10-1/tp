@@ -75,6 +75,39 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_listCommandsAfterFiltering_restoreAllContacts() throws Exception {
+        model.addPerson(AMY);
+        model.addPerson(new PersonBuilder().withName("Bob").build());
+        List<Person> storedBefore = List.copyOf(model.getAddressBook().getPersonList());
+
+        for (String command : List.of("list", "ls")) {
+            logic.execute("find Amy");
+            assertEquals(List.of(AMY), model.getFilteredPersonList());
+
+            CommandResult result = logic.execute(command);
+
+            assertEquals(ListCommand.MESSAGE_SUCCESS, result.getFeedbackToUser());
+            assertEquals(storedBefore, model.getFilteredPersonList());
+            assertEquals(storedBefore, model.getAddressBook().getPersonList());
+        }
+    }
+
+    @Test
+    public void execute_listCommandsWithParameters_preserveFilterAndContacts() throws Exception {
+        model.addPerson(AMY);
+        model.addPerson(new PersonBuilder().withName("Bob").build());
+        logic.execute("find Amy");
+        List<Person> storedBefore = List.copyOf(model.getAddressBook().getPersonList());
+
+        for (String command : List.of("list 3", "ls --sort")) {
+            assertThrows(ParseException.class, "The list command does not accept any parameters. Usage: list | ls",
+                    () -> logic.execute(command));
+            assertEquals(List.of(AMY), model.getFilteredPersonList());
+            assertEquals(storedBefore, model.getAddressBook().getPersonList());
+        }
+    }
+
+    @Test
     public void execute_storageThrowsIoException_throwsCommandException() {
         assertCommandFailureForExceptionFromStorage(DUMMY_IO_EXCEPTION, String.format(
                 LogicManager.FILE_OPS_ERROR_FORMAT, DUMMY_IO_EXCEPTION.getMessage()));
