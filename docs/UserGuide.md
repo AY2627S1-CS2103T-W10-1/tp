@@ -26,7 +26,7 @@ sudoContact is a **desktop application for managing contacts, optimized for use 
 1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the scrollable command list. Press `q` while the Help window is active to close it.<br>
    Some example commands you can try:
 
-   * `list` : Lists all contacts.
+   * `list` or `ls` : Lists all contacts.
 
    * `sort --by tags` : Sorts displayed contacts by their alphabetically smallest tag.
 
@@ -60,8 +60,8 @@ sudoContact is a **desktop application for managing contacts, optimized for use 
 * Named fields for `add` and `edit` can be in any order. Other commands follow their documented order.<br>
   For example, `p/PHONE_NUMBER n/NAME` is also acceptable for `add`. For `sort`, the option must precede the field.
 
-* Extraneous parameters for commands that take no parameters, such as `help`, `list`, `exit`, and `clear`, are ignored.<br>
-  For example, `help 123` is interpreted as `help`.
+* Extraneous parameters for `help`, `exit`, and `clear` are ignored.<br>
+  For example, `help 123` is interpreted as `help`. The `list` and `ls` commands reject extra parameters.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </div>
@@ -87,11 +87,22 @@ Examples:
 * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`
 * `add n/Betsy Crowe t/friend e/betsycrowe@example.com a/Newgate Prison p/1234567 t/criminal`
 
-### Listing all persons: `list`
+### Listing all contacts: `list` or `ls`
 
-Shows all persons in their stored order, clearing the current filter and display sorting.
+Shows all contacts in their stored order, clearing the current filter and display sorting.
 
-Format: `list`
+Format: `list` or `ls`
+
+* Both commands take no parameters.
+* Leading and trailing spaces are ignored.
+* Command words are case-sensitive: `LIST`, `List`, and `LS` are unknown commands.
+* Extra parameters produce: `The list command does not accept any parameters. Usage: list | ls`
+
+Examples:
+
+* `list`
+* `ls`
+* `find Betsy` followed by `ls` restores the full contact list.
 
 ### Assigning a department: `depart`
 
@@ -332,7 +343,7 @@ Action | Format, Examples
 **Edit** | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
 **View** | `view CONTACT_ID`<br> e.g., `view 2`
-**List** | `list`
+**List** | `list` or `ls`
 **Depart** | `depart CONTACT_ID --set DEPARTMENT`<br> e.g., `depart 1 --set Engineering`
 **Sort** | `sort -b FIELD` or `sort --by FIELD`, where `FIELD` is `department`, `dept`, `tag`, or `tags`
 **Undo** | `undo`

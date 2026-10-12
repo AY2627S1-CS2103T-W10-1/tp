@@ -172,6 +172,10 @@ Any extra input produces exactly:
 `The list command does not accept any parameters. Usage: list | ls`
 Rejecting extra input prevents users from assuming unsupported filtering or sorting options were applied.
 
+`AddressBookParser` routes both spellings to `ListCommandParser`, which rejects nonblank arguments
+before creating the shared `ListCommand`. Its execution uses `PREDICATE_SHOW_ALL_PERSONS` through
+`Model.updateFilteredPersonList` to restore the full contact list and stored order.
+
 ### Contact display sorting
 
 `AddressBookParser` delegates `sort` to `SortCommandParser`, which accepts complete option tokens and normalizes
