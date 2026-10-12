@@ -23,12 +23,16 @@ public class ExportCommandParserTest {
         assertParseSuccess(parser, "--csv \"my contacts.csv\"", new ExportCommand("my contacts.csv"));
         assertParseSuccess(parser, "--csv 'my contacts.csv'", new ExportCommand("my contacts.csv"));
         assertParseSuccess(parser, "--csv 联系人.csv", new ExportCommand("联系人.csv"));
+        assertParseSuccess(parser, "-c", new ExportCommand("contacts.csv"));
+        assertParseSuccess(parser, "-c team.csv", new ExportCommand("team.csv"));
+        assertParseSuccess(parser, "-c \"my contacts.csv\"", new ExportCommand("my contacts.csv"));
     }
 
     @Test
     public void parse_invalidSyntax_failure() {
         String expected = String.format(MESSAGE_INVALID_COMMAND_FORMAT, ExportCommand.MESSAGE_USAGE);
-        for (String args : new String[]{"", "team.csv", "--json", "--csvx", "--csv --csv", "--csv --json",
+        for (String args : new String[]{"", "team.csv", "--json", "--csvx", "-csv", "-cx", "-c --csv",
+            "--csv --csv", "--csv --json",
             "--csv a.csv b.csv", "--csv \"a.csv", "--csv '", "--csv \"a.csv\" extra"}) {
             assertParseFailure(parser, args, expected);
         }

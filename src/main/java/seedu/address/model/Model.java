@@ -42,10 +42,27 @@ public interface Model {
     boolean hasPerson(Person person);
 
     /**
-     * Deletes the given person.
+     * Deletes the given person and records the deletion so that it can be undone.
      * The person must exist in the address book.
      */
     void deletePerson(Person target);
+
+    /**
+     * Returns true if a person deleted in this session has not been restored yet.
+     */
+    boolean hasDeletedPerson();
+
+    /**
+     * Returns the most recently deleted person that has not been restored yet, without restoring it.
+     * There must be at least one such person.
+     */
+    Person getLastDeletedPerson();
+
+    /**
+     * Adds the most recently deleted person back to the address book and removes it from the deletion history.
+     * There must be at least one such person, and it must not already exist in the address book.
+     */
+    void restoreLastDeletedPerson();
 
     /**
      * Adds the given person.
@@ -68,4 +85,17 @@ public interface Model {
      * @throws NullPointerException if {@code predicate} is null.
      */
     void updateFilteredPersonList(Predicate<Person> predicate);
+
+    /**
+     * Sorts the displayed contacts without changing the filter or stored contact order.
+     * Preserves the current relative order of contacts with equal sorting keys.
+     *
+     * @throws IllegalArgumentException If a contact contains invalid sorting data.
+     */
+    void sortFilteredPersonList(SortField field);
+
+    /**
+     * Returns the contact loading status recorded at application startup.
+     */
+    ContactLoadStatus getContactLoadStatus();
 }

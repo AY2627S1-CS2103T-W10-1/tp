@@ -20,7 +20,7 @@ import seedu.address.storage.CsvContactExporter;
 public class ExportCommand extends Command {
     public static final String COMMAND_WORD = "export";
     public static final String DEFAULT_FILE_NAME = "contacts.csv";
-    public static final String MESSAGE_USAGE = "export --csv [FILENAME]\n"
+    public static final String MESSAGE_USAGE = "export -c|--csv [FILENAME]\n"
             + "Exports all stored contacts as UTF-8 CSV. Default filename: contacts.csv.\n"
             + "Example: export --csv email-list.csv";
     public static final String MESSAGE_INVALID_FILE_NAME = "Invalid file name: please provide a valid .csv file name.";
@@ -62,6 +62,11 @@ public class ExportCommand extends Command {
             throw new CommandException(String.format(MESSAGE_WRITE_ERROR, fileName), e);
         }
         return new CommandResult(String.format(MESSAGE_SUCCESS, contacts.size(), fileName));
+    }
+
+    @Override
+    public boolean requiresStorageSave() {
+        return false;
     }
 
     @Override

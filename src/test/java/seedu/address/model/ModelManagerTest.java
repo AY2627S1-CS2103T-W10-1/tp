@@ -9,11 +9,13 @@ import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BENSON;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
+import seedu.address.model.person.exceptions.DuplicatePersonException;
 import seedu.address.testutil.AddressBookBuilder;
 
 public class ModelManagerTest {
@@ -69,6 +71,42 @@ public class ModelManagerTest {
     }
 
     @Test
+    public void hasDeletedPerson_noDeletion_returnsFalse() {
+        assertFalse(modelManager.hasDeletedPerson());
+    }
+
+    @Test
+    public void deletePerson_personInAddressBook_recordsDeletion() {
+        modelManager.addPerson(ALICE);
+        modelManager.deletePerson(ALICE);
+        assertTrue(modelManager.hasDeletedPerson());
+        assertEquals(ALICE, modelManager.getLastDeletedPerson());
+    }
+
+    @Test
+    public void getLastDeletedPerson_noDeletion_throwsNoSuchElementException() {
+        assertThrows(NoSuchElementException.class, () -> modelManager.getLastDeletedPerson());
+    }
+
+    @Test
+    public void restoreLastDeletedPerson_afterDelete_addsPersonBack() {
+        modelManager.addPerson(ALICE);
+        modelManager.deletePerson(ALICE);
+        modelManager.restoreLastDeletedPerson();
+        assertTrue(modelManager.hasPerson(ALICE));
+        assertFalse(modelManager.hasDeletedPerson());
+    }
+
+    @Test
+    public void restoreLastDeletedPerson_duplicatePerson_keepsDeletion() {
+        modelManager.addPerson(ALICE);
+        modelManager.deletePerson(ALICE);
+        modelManager.addPerson(ALICE);
+        assertThrows(DuplicatePersonException.class, () -> modelManager.restoreLastDeletedPerson());
+        assertEquals(ALICE, modelManager.getLastDeletedPerson());
+    }
+
+    @Test
     public void getFilteredPersonList_modifyList_throwsUnsupportedOperationException() {
         assertThrows(UnsupportedOperationException.class, () -> modelManager.getFilteredPersonList().remove(0));
     }
@@ -108,5 +146,11 @@ public class ModelManagerTest {
         UserPrefs differentUserPrefs = new UserPrefs();
         differentUserPrefs.setGuiSettings(new GuiSettings(1, 2, 3, 4));
         assertFalse(modelManager.equals(new ModelManager(addressBook, differentUserPrefs)));
+
+        // different deletion history -> returns false
+        ModelManager modelManagerWithDeletion = new ModelManager(addressBook, userPrefs);
+        modelManagerWithDeletion.deletePerson(BENSON);
+        AddressBook addressBookWithoutBenson = new AddressBookBuilder().withPerson(ALICE).build();
+        assertFalse(modelManagerWithDeletion.equals(new ModelManager(addressBookWithoutBenson, userPrefs)));
     }
 }

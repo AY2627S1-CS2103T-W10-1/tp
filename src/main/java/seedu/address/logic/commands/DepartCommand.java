@@ -11,7 +11,9 @@ import seedu.address.model.Model;
 import seedu.address.model.person.Department;
 import seedu.address.model.person.Person;
 
-/** Assigns a department to a contact. */
+/**
+ * Assigns a department to a contact.
+ */
 public class DepartCommand extends Command {
     public static final String COMMAND_WORD = "depart";
     public static final String MESSAGE_USAGE = "depart CONTACT_ID --set DEPARTMENT";

@@ -3,7 +3,7 @@ package seedu.address.logic.commands;
 import seedu.address.model.Model;
 
 /**
- * Formats full help instructions for every command for display.
+ * Opens the help window containing the available commands.
  */
 public class HelpCommand extends Command {
 
@@ -13,6 +13,19 @@ public class HelpCommand extends Command {
             + "Example: " + COMMAND_WORD;
 
     public static final String SHOWING_HELP_MESSAGE = "Opened help window.";
+
+    public static final String HELP_TEXT = String.join("\n",
+            AddCommand.COMMAND_WORD + " — Adds a contact to the address book.",
+            EditCommand.COMMAND_WORD + " — Changes a contact's details.",
+            DeleteCommand.COMMAND_WORD + " — Deletes a contact.",
+            UndoCommand.COMMAND_WORD + " — Restores the most recently deleted contact.",
+            FindCommand.COMMAND_WORD + " — Finds contacts by name.",
+            ListCommand.COMMAND_WORD + " — Shows all contacts.",
+            ViewCommand.COMMAND_WORD + " — Shows a contact's full details.",
+            DepartCommand.COMMAND_WORD + " — Sets a contact's department.",
+            ClearCommand.COMMAND_WORD + " — Deletes all contacts.",
+            COMMAND_WORD + " — Shows this command list.",
+            ExitCommand.COMMAND_WORD + " — Closes the application.");
 
     @Override
     public CommandResult execute(Model model) {

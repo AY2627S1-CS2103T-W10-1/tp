@@ -23,6 +23,7 @@ import seedu.address.logic.commands.ExportCommand;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.commands.UndoCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Person;
@@ -77,6 +78,7 @@ public class AddressBookParserTest {
     @Test
     public void parseCommand_export() throws Exception {
         assertEquals(new ExportCommand("contacts.csv"), parser.parseCommand("export --csv"));
+        assertEquals(new ExportCommand("contacts.csv"), parser.parseCommand("export -c"));
         assertEquals(new ExportCommand("team.csv"), parser.parseCommand("export --csv team.csv"));
     }
 
@@ -98,6 +100,11 @@ public class AddressBookParserTest {
     public void parseCommand_list() throws Exception {
         assertTrue(parser.parseCommand(ListCommand.COMMAND_WORD) instanceof ListCommand);
         assertTrue(parser.parseCommand(ListCommand.COMMAND_WORD + " 3") instanceof ListCommand);
+    }
+
+    @Test
+    public void parseCommand_undo() throws Exception {
+        assertEquals(new UndoCommand(), parser.parseCommand(UndoCommand.COMMAND_WORD));
     }
 
     @Test

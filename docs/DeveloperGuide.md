@@ -11,6 +11,9 @@ title: Developer Guide
 This project is based on the AddressBook-Level3 project created by the [SE-EDU initiative](https://se-education.org).
 
 * [SE-EDU initiative](https://se-education.org)
+* He Qianyi used OpenAI Codex to assist with the feature 3 `view CONTACT_ID` implementation, including the
+  command/parser, details window, command-result integration, tests, and related
+  User Guide/Developer Guide documentation.
 
 OpenAI Codex assisted He Qianyi with the Feature 11 CSV export implementation, tests and documentation.
 He Qianyi is responsible for reviewing and understanding these changes.
@@ -108,6 +111,7 @@ How the `Logic` component works:
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
 1. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
    Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
+1. `LogicManager` saves the canonical address book if `Command.requiresStorageSave()` returns true. `SortCommand` returns false because ordering is display-only; existing commands retain normal saving.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
@@ -127,7 +131,8 @@ How the parsing works:
 The `Model` component,
 
 * stores the address book data i.e., all `Person` objects (which are contained in a `UniquePersonList` object).
-* stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list. It exposes this list as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
+* maintains an observable display-order projection separate from the canonical person list. A `FilteredList` over this projection applies the current filter and preserves display-only sorting. It exposes an unmodifiable `ObservableList<Person>` shared by the UI and index-based commands.
+* records startup contact-loading status and session-local deletion history alongside the contact data.
 * stores a `UserPrefs` object that represents the user’s preferences (currently, just the GUI settings). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
 
@@ -161,7 +166,7 @@ This section describes some noteworthy details on how certain features are imple
 
 ### CSV export (Feature 11 / UC10)
 
-`AddressBookParser` dispatches `export` to `ExportCommandParser`. The parser requires `--csv`, accepts
+`AddressBookParser` dispatches `export` to `ExportCommandParser`. The parser requires `-c` or `--csv`, accepts
 one optional basename (with matching quotes for spaces), and defaults to `contacts.csv`.
 `CsvContactExporter.isValidFileName` rejects paths, invalid characters and reserved Windows device names
 so the command has the same filename policy on all supported platforms. The filename policy follows
@@ -170,7 +175,8 @@ so the command has the same filename policy on all supported platforms. The file
 `ExportCommand` snapshots `model.getAddressBook().getPersonList()` rather than the filtered list.
 It rejects an empty snapshot, then delegates file writing to the storage helper `CsvContactExporter`.
 The command leaves the model and filter unchanged. A successful command returns the row count and filename
-through the existing feedback display; the shared `LogicManager` persistence flow remains unchanged.
+through the existing feedback display. Its `requiresStorageSave()` override skips the unrelated JSON save:
+once the CSV exists, a JSON save failure must not turn a successful export into an error.
 
 The exporter writes UTF-8 with a fixed six-column header and CRLF record separators. Values containing
 commas, double quotes, CR or LF are quoted, and inner double quotes are doubled, following
@@ -189,6 +195,63 @@ Export uses validated in-memory contacts. Invalid JSON/contact data is handled b
 loader; export does not re-read a JSON file edited externally during the session. It adds no recovery path
 for corrupted persistent data. Parser, model integration, real file, cleanup and JavaFX command-box tests
 cover the export flow, including a filtered list and an existing destination.
+
+### Contact display sorting
+
+`AddressBookParser` delegates `sort` to `SortCommandParser`, which accepts complete option tokens and normalizes
+aliases to `SortField`. `SortCommand` requests ordering from the model and produces numbered feedback.
+Its `requiresStorageSave()` override skips the save normally performed by `LogicManager`; existing commands retain
+their previous save behavior. Parse-error precedence is descending option, unsupported argument structure,
+missing option/value, then invalid field; the user guide lists the exact messages.
+
+`ModelManager` maintains an observable display projection separate from `AddressBook`. `FilteredList` is backed by
+this projection, so the UI and index-based commands share the same displayed order. Sorting only rearranges visible
+positions and preserves the filter. Successful canonical contact changes refresh the projection and reset sorting;
+`list` and `find` also reset sorting through `updateFilteredPersonList`. `view` and `help` preserve the order.
+Undo appends the restored contact in canonical order and shows the full list, preserving its department and tags.
+The address book listener keeps direct changes through the existing read-only list's observable backing synchronized.
+
+`ContactSorter` precomputes keys, then stably sorts a copy using case-insensitive comparison and missing values last.
+It keeps duplicate occurrences and never mutates input. Stability uses the current display order, including when
+switching fields. No contact-name tie-breaker is applied. Sorting a canonical-source `SortedList` without preserving current tie order would violate this rule.
+
+`SortField.DEPARTMENT` reads the optional stored value from `Person.getDepartment()`. Department and tag
+constructors validate their immutable values; sorting rejects null tag elements before changing the display. Missing departments sort last and display as `Not assigned`.
+Tag keys use the case-insensitive minimum of the unordered tag set; empty tag sets are absent keys.
+Tag sorting does not group a contact by all of its tags, and does not change the stored tag set.
+`ContactSorterTest` verifies real department values, case-insensitive ordering, missing values, and stable ties.
+`view`, `depart`, `edit`, and `delete` resolve indices against the same sorted display; undo preserves department data.
+
+`MainApp` records `ContactLoadStatus`: successful or missing-file/sample loading is `READY`; ordinary I/O failures
+are `UNREADABLE`; malformed JSON and invalid model values are `INVALID`. Sorting checks this status before reporting
+an empty list and rejects null tag elements before publishing a new order. Failure status lasts until restart.
+
+Regression coverage includes parser boundaries, aliases and errors; stable department and tag ordering; observable
+display/filter behavior; editing and deleting sorted indices; unchanged storage; and startup error messages.
+Run `./gradlew check coverage` (Windows: `.\gradlew.bat check coverage`) with Java 25.
+
+### Viewing contact details
+
+`AddressBookParser` routes `view CONTACT_ID` to `ViewCommandParser`, which validates the contact ID using
+`ParserUtil.parseIndex`. `ViewCommand` resolves that contact ID against `Model.getFilteredPersonList()` so that
+filtering and sorting determine the selected row. `CONTACT_ID` is the same one-based displayed-list
+position used by `depart`, represented internally by `Index`. It reports an empty list or the valid contact ID range
+before accessing the contact.
+
+The command formats all currently supported fields as labelled, untruncated lines, sorts tags for stable output,
+and returns a `CommandResult` with separate short feedback and an optional `contactDetails` payload.
+`MainWindow` displays only the short feedback in the main result box and forwards the payload to a reusable,
+owner-linked `ContactDetailsWindow` containing a read-only, wrapping, scrollable text area. Each successful
+`view` updates the window with a snapshot; later model changes do not silently change the displayed snapshot.
+
+`view` follows the existing `LogicManager` save flow, like `list`, `find` and `help`, while preserving contact data
+and the current filter. Standard save errors are reported before a new details result reaches the UI. Contacts
+are validated and loaded into the model at startup, so `view` does not re-read contact data from disk.
+
+Department display reads `Person.getDepartment()` from the Department implementation tracked by issue #65.
+The optional value is shown in full, or as `Department: Not provided` when absent. The `view` command uses
+the same displayed-list position as `depart`, so setting a department and then viewing that contact remains
+consistent after filtering.
 
 ### \[Proposed\] Undo/redo feature
 
@@ -356,11 +419,27 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **MSS**
 
-1. User <u>lists all contacts (UC1)</u>
-2. User sorts the contact by either the department or tag field.
-3. AddressBook shows a sorted list of contacts according to field selected.
+1. User displays contacts, either by <u>listing all contacts (UC1)</u> or filtering the list.
+2. User requests ascending sorting using `sort -b FIELD` or `sort --by FIELD`.
+3. AddressBook validates the option and field, then sorts only the currently displayed contacts.
+4. AddressBook shows the sorted list and numbered feedback. The active filter, contact data, and saved order are unchanged.
 
-   use case ends
+   Use case ends.
+
+**Extensions**
+
+* 2a. The option or field is missing, invalid, repeated, or accompanied by unsupported arguments.
+  * 2a1. AddressBook reports the corresponding parsing error; the current display order is unchanged.
+  * Use case ends.
+* 2b. The request contains an explicit `--descending` token.
+  * 2b1. AddressBook reports that only ascending sorting is supported.
+  * Use case ends.
+* 3a. The displayed list is empty and startup contact loading succeeded.
+  * 3a1. AddressBook displays `No contacts found to sort.`
+  * Use case ends.
+* 3b. Contact loading failed at startup, or a displayed contact contains invalid department or tag data.
+  * 3b1. AddressBook reports the loading or invalid-data error without changing display order or writing the file.
+  * Use case ends.
 
 **Use case: UC3 - Delete a contact**
 
@@ -421,8 +500,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case ends.
 
-* 2a. An existing contact has both the same phone number and
-  email address as the contact being restored.
+* 2a. A duplicate contact already exists.
 
   * 2a1. AddressBook rejects the restoration and identifies the
     existing contact that prevents it.
@@ -532,8 +610,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 **MSS**
 
 1. User displays a list of contacts (UC1), which may be filtered or sorted.
-2. User enters `view INDEX`, using an index in the currently displayed list.
-3. sudoContact identifies the contact at that index.
+2. User enters `view CONTACT_ID`, using the contact ID (one-based row number) in the currently displayed list.
+3. sudoContact identifies the contact using that contact ID.
 4. sudoContact displays all available details of that contact, including
    fields not shown in the list.
 
@@ -547,11 +625,11 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case ends.
 
-* 2a. The command format or index is invalid, or the index is outside
+* 2a. The command format or contact ID is invalid, or the contact ID is outside
   the currently displayed list.
 
   * 2a1. sudoContact displays an error and indicates the required format
-    or valid index range.
+    or valid contact ID range.
 
   Use case resumes at step 2.
 
@@ -596,8 +674,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case resumes at step 1.
 
-* 2c. A contact with the same name, phone number, and email address
-  already exists.
+* 2c. A duplicate contact already exists.
 
   * 2c1. sudoContact informs the user that the contact is a duplicate
     and does not add it.
@@ -619,7 +696,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **MSS**
 
-1. User enters `export --csv [FILENAME]`.
+1. User enters `export -c|--csv [FILENAME]`.
 2. sudoContact validates the supplied filename, or selects `contacts.csv`
    if no filename was supplied.
 3. sudoContact retrieves all stored contacts.
@@ -658,20 +735,20 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
   Use case ends.
 
 **Use Case: UC11 - View available commands and their usage**
- 
+
   **Actor:** User
- 
+
   **MSS**
- 
+
   1. User enters `help`.
   2. sudoContact displays the available commands and their usage.
   3. User enters `help COMMAND` to learn more about a specific command.
   4. sudoContact displays the usage of that command.
- 
+
      Use case ends.
- 
+
   **Extensions**
- 
+
 * 1a. User enters `help COMMAND` directly.
     * 1a1. Use case resumes at step 4.
 
@@ -679,10 +756,10 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
     * 3a1. Inform user it is an unrecognized command
 
       Use case ends
- 
+
 * 4a. The specified command does not exist.
     * 4a1. sudoContact displays `Command not found`.
- 
+
       Use case ends
 
 *{More to be added}*
@@ -703,14 +780,14 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 ### Glossary
 
 * **Contact**: A stored record for a person or organisation, containing a name and any available contact details, department, and tags.
-* **Contact ID**: A positive integer that identifies the contact to be updated by the `depart` command.
+* **Contact ID**: A positive one-based position in the currently displayed list, used by `view` and `depart`. Filtering or sorting can change which contact occupies a position; `edit` and `delete` use the same displayed indices.
 * **Department**: An optional organisational unit associated with a contact. Setting a new department replaces that contact's existing department.
 * **Mainstream OS**: Windows, Linux, Unix, or macOS
 * **Matching contact**: For a tag search, a contact that has every tag specified in the command. A matching contact is displayed once even when it has more than one specified tag.
 * **Private contact detail**: A contact detail that is not meant to be shared with others
-* **Currently displayed list**: The contacts shown after any filtering or sorting. The index used to view a contact refers to its position in this list.
+* **Currently displayed list**: The contacts shown after any filtering or sorting. The `CONTACT_ID` used to view a contact refers to its one-based position in this list.
 * **Partial contact**: A contact with a name but without some optional details, such as a phone number, email address, department, or tags.
-* **Duplicate contact**: An existing contact with the same name, phone number, and email address as a contact being added.
+* **Duplicate contact**: An existing contact with the same name as a contact being added, edited, or restored. Only names are compared, and the comparison is case-sensitive.
 * **CSV export**: A UTF-8 comma-separated values file containing a header row and one row for each stored contact.
 * **Tag**: An optional label attached to a contact to support categorisation and searching. Tag matching is case-insensitive.
 
@@ -764,6 +841,40 @@ testers are expected to do more *exploratory* testing.
 
 1. _{ more test cases …​ }_
 
+### Viewing a contact's details
+
+1. Displayed-list contact IDs
+
+   1. Run `list`, then `view 2`. Expected: the second contact's supported fields appear in the details window.
+   1. Run `find Betsy`, then `view 1`. Expected: Betsy's details appear, and the filtered list remains unchanged.
+   1. Run `view 2` when only one search result is displayed. Expected: an error gives the range `1-1`.
+   1. Run `find NoSuchContact`, then `view 1`. Expected: an error says there is no contact to view.
+   1. Try `view`, `view 0`, `view -1`, `view 1.5`, `view 1 2`, and `view 2147483648`.
+      Expected: each reports that the contact ID must be a positive integer and shows the usage.
+
+1. Details window
+
+   1. View a contact with a long name/address and multiple tags. Resize the details window and scroll.
+      Expected: all values remain readable without truncation; tags are separated by commas.
+      The main result box shows only `Showing details of contact CONTACT_ID: NAME`.
+   1. View a contact without tags. Expected: `Tags: None`.
+   1. View a contact without a department. Expected: `Department: Not provided`.
+   1. Run `find Benson`, then `depart 1 --set R&D Engineering` and `view 1`.
+      Expected: the selected contact's details include `Department: R&D Engineering`, with the filter unchanged.
+   1. Change the selected contact's department with `depart 1 --set Sales`.
+      Expected: the details snapshot stays unchanged until `view 1` displays `Department: Sales`.
+   1. View another contact. Expected: the existing window updates rather than creating another window.
+   1. Close the details window, then run `view 1`. Expected: the window reopens with the current details.
+   1. Edit the viewed contact. Expected: the snapshot stays unchanged until another `view` command is run.
+   1. Exit the application while details are visible. Expected: the details window closes with the main window.
+
+1. Data and persistence
+
+   1. Filter contacts, then run a valid `view` command. Compare contact values before and after.
+      Expected: contact data and the filter remain unchanged; the normal saving flow persists all contacts.
+   1. Run `view` when the save location cannot be written.
+      Expected: the standard save error appears, with no new details window or snapshot update.
+
 ### Deleting a person
 
 1. Deleting a person while all persons are being shown
@@ -788,3 +899,20 @@ testers are expected to do more *exploratory* testing.
    1. _{Explain how to simulate missing or corrupted data files and state the expected behavior.}_
 
 1. _{ more test cases …​ }_
+
+### Sorting contacts
+
+1. Add contacts with multiple tags, including mixed-case tags and contacts without tags.
+2. Run `sort --by tags`; confirm ordering by the smallest tag, missing tags last, and updated displayed indices.
+3. Assign departments using `depart`, then run `sort -b dept`; confirm alphabetical order and absent departments last.
+4. Run `find NAME`, then sort; confirm hidden contacts remain hidden. Run `list` to restore the normal order.
+5. Sort again and edit or delete index 1; confirm the first displayed contact is affected and the remaining display resets.
+6. Try a repeated option, an invalid field, and `--descending`; confirm exact errors without changing display order.
+7. Compare the contact data file before and after sorting; its contents should be unchanged.
+8. Give two contacts departments that differ only by case. Sort by tags, then by department; confirm their
+   relative order from the tag sort is retained. Repeat with missing fields to confirm those contacts appear last.
+9. After sorting, run `view 1`, then `depart 1 --set Support`; confirm both target the displayed first contact.
+   Check the new indices after assignment resets sorting. Delete a sorted contact and run `undo`; confirm its
+   department and tags are restored and the full list returns to canonical order.
+10. Using a disposable copy of the application, start with malformed contact JSON; confirm sorting reports invalid data.
+   Fix the file and restart before testing successful sorting again.
