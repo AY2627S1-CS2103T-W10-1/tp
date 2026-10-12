@@ -168,7 +168,8 @@ For an empty displayed list, the feedback is `No contacts found to sort.`
 
 Problem | Feedback
 --------|---------
-Missing option or field | `Missing sorting option. Usage: sort -b/--by <department\|dept\|tag\|tags>`
+Missing option | `Missing sorting option. Usage: sort -b/--by <department\|dept\|tag\|tags>`
+Missing field | `Missing sorting field. Usage: sort -b/--by <department\|dept\|tag\|tags>`
 Unknown field | `Invalid sorting field. Use department, dept, tag, or tags.`
 Unsupported or repeated argument | `Unsupported argument. Usage: sort -b/--by <department\|dept\|tag\|tags>`
 `--descending` supplied | `Descending order is not supported. Contacts are sorted in ascending order.`
