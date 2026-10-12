@@ -98,10 +98,10 @@ public class LogicManagerTest {
         model.addPerson(new PersonBuilder().withName("Bob").build());
         logic.execute("find Amy");
         List<Person> storedBefore = List.copyOf(model.getAddressBook().getPersonList());
+        String expectedMessage = "The list command does not accept any parameters. Usage: list | ls";
 
         for (String command : List.of("list 3", "ls --sort")) {
-            assertThrows(ParseException.class, "The list command does not accept any parameters. Usage: list | ls",
-                    () -> logic.execute(command));
+            assertThrows(ParseException.class, expectedMessage, () -> logic.execute(command));
             assertEquals(List.of(AMY), model.getFilteredPersonList());
             assertEquals(storedBefore, model.getAddressBook().getPersonList());
         }
