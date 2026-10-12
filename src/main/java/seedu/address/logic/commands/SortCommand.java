@@ -27,6 +27,15 @@ public class SortCommand extends Command {
         this.field = requireNonNull(field);
     }
 
+    /**
+     * Sorts the displayed contacts by the selected field in ascending order.
+     * Preserves the active filter and stored contact order.
+     *
+     * @param model Model containing the contacts to sort.
+     * @return Feedback containing the displayed contact count and selected field, or an empty-list message.
+     * @throws CommandException If a displayed contact contains invalid sorting data.
+     * @throws NullPointerException If {@code model} is null.
+     */
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
@@ -43,6 +52,9 @@ public class SortCommand extends Command {
                 model.getFilteredPersonList().size(), field.getDisplayName()));
     }
 
+    /**
+     * Returns false because sorting changes only the display order and does not require a storage save.
+     */
     @Override
     public boolean requiresStorageSave() {
         return false;
