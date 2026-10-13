@@ -62,7 +62,7 @@ Use a single hyphen for short options and a double hyphen for long options. For 
 - A contact name is required; phone, email, department, and tags may be supplied later.
 - Phone numbers contain 7–15 digits, and email addresses must use a valid email format.
 - Department names are 2–50 characters and may contain letters, numbers, spaces, hyphens, and ampersands.
-- Tags are 1–30 characters and may contain letters, numbers, hyphens, and underscores. Tag matching is case-insensitive.
+- Tags are 1–30 characters and may contain letters, numbers, hyphens, and underscores. Tag matching is case-sensitive.
 - Contacts sharing a name are permitted. An exact duplicate with the same name, phone number, and email address is rejected.
 - Sorting is ascending and case-insensitive; contacts without the selected sorting field appear last.
 - CSV exports use UTF-8, include a header row, and preserve each stored contact as a separate row.

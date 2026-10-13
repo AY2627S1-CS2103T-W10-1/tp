@@ -540,20 +540,27 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **Use case:** UC6 - Search contacts by tags
 
+**Command format:** `find --tag TAG [--tag TAG ...]`
+
+The command word `find` is case-insensitive. The option `--tag` and tag values are
+case-sensitive. Each tag value requires its own `--tag` option; name keywords cannot
+be combined with tag search in the same command.
+
 **MSS:**
 
 1.  User requests to search for contacts with one or more tags.
-2.  User enters a `find` command with one or more `--tag` values.
+2.  User enters a `find` command with one or more `--tag TAG` pairs.
 3.  sudoContact validates all specified tags.
-4.  sudoContact searches the contacts for those matching the specified tags.
+4.  sudoContact searches all contacts for those having any of the specified tags (OR matching),
+    using case-sensitive, whole-tag matching.
 5.  sudoContact displays each matching contact once.
-6.  sudoContact displays the matching contacts to the user.
+6.  sudoContact displays the number of matching contacts.
 
     Use case ends.
 
 **Extensions:**
 
-* 3a. A specified tag contains invalid characters or spaces.
+* 3a. A specified tag contains invalid characters, internal spaces, or more than 30 characters.
 
     * 3a1. sudoContact displays `Invalid Tag: '[INPUT]' must be 1-30 characters using only letters, numbers, hyphens (-), and underscores (_), with no spaces.`
 
@@ -565,20 +572,35 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case ends.
 
+* 3c. No valid `--tag` option is present and an option-like argument is supplied
+  (e.g. `find --tags friends`, `find --TAG friends`, or `find -tag friends`).
+
+    * 3c1. sudoContact displays `Invalid find option: '[INPUT]'. Use find --tag TAG [--tag TAG ...] or find KEYWORD [MORE_KEYWORDS].`
+
+      Use case ends.
+
+* 3d. Arguments precede the first valid `--tag` option (e.g. `find Alice --tag friends`),
+  or the `find` command has no arguments.
+
+    * 3d1. sudoContact displays an invalid command format error and the `find` usage instructions.
+
+      Use case ends.
+
 * 4a. No contacts match the specified tag(s).
 
     * 4a1. sudoContact displays `No contacts found with the specified tag(s).`
 
       Use case ends.
 
-* 4b. Multiple tags are specified and a contact matches more than one of them.
+* 4b. Multiple tags are specified and a contact matches more than one of them,
+  or the same tag is specified more than once.
 
     * 4b1. sudoContact displays the matching contact only once.
 
       Use case resumes at step 5.
 
 
-**Use case: UC8 - View one contact's full details**
+**Use case: UC7 - View one contact's full details**
 
 **MSS**
 
@@ -612,7 +634,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case ends.
 
-**Use case: UC9 - Add a contact with partial information**
+**Use case: UC8 - Add a contact with partial information**
 
 **MSS**
 
@@ -657,7 +679,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case ends.
 
-**Use case: UC10 - Export contacts to a CSV file**
+**Use case: UC9 - Export contacts to a CSV file**
 
 **MSS**
 
@@ -699,7 +721,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case ends.
 
-**Use Case: UC11 - View available commands and their usage**
+**Use Case: UC10 - View available commands and their usage**
 
   **MSS**
 
@@ -752,7 +774,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * **Partial contact**: A contact with a name but without some optional details, such as a phone number, email address, department, or tags.
 * **Duplicate contact**: An existing contact with the same name as a contact being added, edited, or restored. Only names are compared, and the comparison is case-sensitive.
 * **CSV export**: A UTF-8 comma-separated values file containing a header row and one row for each stored contact.
-* **Tag**: An optional label attached to a contact to support categorisation and searching. Tag matching is case-insensitive.
+* **Tag**: An optional label attached to a contact to support categorisation and searching. Tag matching is case-sensitive.
 
 --------------------------------------------------------------------------------------------------------------------
 
