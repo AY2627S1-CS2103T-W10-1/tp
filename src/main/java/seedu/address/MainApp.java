@@ -6,18 +6,14 @@ import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.logging.Logger;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-
 import javafx.application.Application;
 import javafx.stage.Stage;
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.exceptions.DataLoadingException;
-import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.commons.util.StringUtil;
 import seedu.address.logic.Logic;
 import seedu.address.logic.LogicManager;
 import seedu.address.model.AddressBook;
-import seedu.address.model.ContactLoadStatus;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyAddressBook;
@@ -74,7 +70,6 @@ public class MainApp extends Application {
 
         Optional<ReadOnlyAddressBook> addressBookOptional;
         ReadOnlyAddressBook initialData;
-        ContactLoadStatus loadStatus = ContactLoadStatus.READY;
         try {
             addressBookOptional = storage.readAddressBook();
             if (addressBookOptional.isEmpty()) {
@@ -86,12 +81,9 @@ public class MainApp extends Application {
             logger.warning("Data file at " + storage.getAddressBookFilePath() + " could not be loaded."
                     + " Will be starting with an empty AddressBook.");
             initialData = new AddressBook();
-            loadStatus = e.getCause() instanceof IllegalValueException
-                    || e.getCause() instanceof JsonProcessingException
-                    ? ContactLoadStatus.INVALID : ContactLoadStatus.UNREADABLE;
         }
 
-        return new ModelManager(initialData, userPrefs, loadStatus);
+        return new ModelManager(initialData, userPrefs);
     }
 
     /**

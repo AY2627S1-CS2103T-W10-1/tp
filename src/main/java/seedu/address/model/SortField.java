@@ -24,9 +24,13 @@ public enum SortField {
     }
 
     /**
-     * Returns the contact's sorting key, or an empty optional when the field is absent.
+     * Returns the contact's sorting key for this field, or an empty optional when the field is absent.
+     * Uses the department value for department sorting, or the alphabetically smallest tag using
+     * case-insensitive comparison for tag sorting. Validates tags for both sorting fields.
      *
+     * @param person Contact whose sorting key is returned.
      * @throws IllegalArgumentException If the contact contains a null tag.
+     * @throws NullPointerException If {@code person} is null.
      */
     public Optional<String> getKey(Person person) {
         requireNonNull(person);

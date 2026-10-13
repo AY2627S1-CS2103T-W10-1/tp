@@ -13,6 +13,7 @@ import seedu.address.model.SortField;
  */
 public class SortCommandParser implements Parser<SortCommand> {
     public static final String MESSAGE_MISSING_OPTION = "Missing sorting option. Usage: " + SortCommand.MESSAGE_USAGE;
+    public static final String MESSAGE_MISSING_FIELD = "Missing sorting field. Usage: " + SortCommand.MESSAGE_USAGE;
     public static final String MESSAGE_INVALID_FIELD = "Invalid sorting field. Use department, dept, tag, or tags.";
     public static final String MESSAGE_UNSUPPORTED_ARGUMENT =
             "Unsupported argument. Usage: " + SortCommand.MESSAGE_USAGE;
@@ -40,7 +41,7 @@ public class SortCommandParser implements Parser<SortCommand> {
             throw new ParseException(MESSAGE_UNSUPPORTED_ARGUMENT);
         }
         if (tokens.length == 1) {
-            throw new ParseException(MESSAGE_MISSING_OPTION);
+            throw new ParseException(MESSAGE_MISSING_FIELD);
         }
 
         SortField field = switch (tokens[1]) {

@@ -58,9 +58,7 @@ public class SortLogicIntegrationTest {
         CommandResult result = logic.execute("sort --by tag");
         assertEquals(List.of(beatrice, alex), logic.getFilteredPersonList());
         assertEquals("Storage is not consulted during sorting.", Files.readString(path));
-        assertEquals("Contacts sorted by tags:\n"
-                + "1. Beatrice | Department: Not assigned | Tags: alpha\n"
-                + "2. Alex | Department: Not assigned | Tags: zulu", result.getFeedbackToUser());
+        assertEquals("Sorted 2 contacts by tags.", result.getFeedbackToUser());
     }
 
     @Test
@@ -118,11 +116,7 @@ public class SortLogicIntegrationTest {
         CommandResult result = logic.execute("sort -b department");
         assertEquals(List.of(sameDepartment, engineering, marketing, missing), logic.getFilteredPersonList());
         assertEquals(List.of(marketing, missing, sameDepartment, engineering), model.getAddressBook().getPersonList());
-        assertEquals("Contacts sorted by department:\n"
-                + "1. Chen | Department: engineering | Tags: None\n"
-                + "2. Alex | Department: Engineering | Tags: zulu\n"
-                + "3. Beatrice | Department: Marketing | Tags: alpha\n"
-                + "4. Dana | Department: Not assigned | Tags: None", result.getFeedbackToUser());
+        assertEquals("Sorted 4 contacts by department.", result.getFeedbackToUser());
     }
 
     @Test
