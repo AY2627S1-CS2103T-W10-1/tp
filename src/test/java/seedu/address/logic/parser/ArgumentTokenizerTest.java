@@ -4,14 +4,20 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static seedu.address.testutil.Assert.assertThrows;
+
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
+
+import seedu.address.logic.parser.exceptions.ParseException;
 
 public class ArgumentTokenizerTest {
 
     private final Prefix unknownPrefix = new Prefix("--u");
     private final Prefix pSlash = new Prefix("p/");
     private final Prefix dashT = new Prefix("-t");
+    private final Prefix dashN = new Prefix("-n", "--name");
     private final Prefix hatQ = new Prefix("^Q");
 
     @Test
@@ -82,7 +88,7 @@ public class ArgumentTokenizerTest {
     @Test
     public void tokenize_multipleArguments() {
         // Only two arguments are present
-        String argsString = "SomePreambleString -t dashT-Value p/pSlash value";
+        String argsString = "SomePreambleString -t dashT-Value p/ pSlash value";
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(argsString, pSlash, dashT, hatQ);
         assertPreamblePresent(argMultimap, "SomePreambleString");
         assertArgumentPresent(argMultimap, pSlash, "pSlash value");
@@ -90,7 +96,7 @@ public class ArgumentTokenizerTest {
         assertArgumentAbsent(argMultimap, hatQ);
 
         // All three arguments are present
-        argsString = "Different Preamble String ^Q111 -t dashT-Value p/pSlash value";
+        argsString = "Different Preamble String ^Q 111 -t dashT-Value p/ pSlash value";
         argMultimap = ArgumentTokenizer.tokenize(argsString, pSlash, dashT, hatQ);
         assertPreamblePresent(argMultimap, "Different Preamble String");
         assertArgumentPresent(argMultimap, pSlash, "pSlash value");
@@ -137,6 +143,65 @@ public class ArgumentTokenizerTest {
     }
 
     @Test
+    public void tokenize_prefixNotFollowedByWhitespace_notRecognised() {
+        // Value glued to the prefix
+        String argsString = "SomePreambleString -tglued -n name";
+        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(argsString, dashT, dashN);
+        assertPreamblePresent(argMultimap, "SomePreambleString -tglued");
+        assertArgumentAbsent(argMultimap, dashT);
+        assertArgumentPresent(argMultimap, dashN, "name");
+
+        // Prefix-like text inside a value
+        argsString = " -n Blk 5 -apt 3 --names";
+        argMultimap = ArgumentTokenizer.tokenize(argsString, dashT, dashN);
+        assertPreambleEmpty(argMultimap);
+        assertArgumentPresent(argMultimap, dashN, "Blk 5 -apt 3 --names");
+    }
+
+    @Test
+    public void tokenize_prefixFollowedByOtherWhitespace_recognised() {
+        String argsString = " -n\tname -t\nvalue";
+        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(argsString, dashT, dashN);
+        assertArgumentPresent(argMultimap, dashN, "name");
+        assertArgumentPresent(argMultimap, dashT, "value");
+    }
+
+    @Test
+    public void tokenize_longAlias_mapsToSamePrefix() {
+        // Long form only
+        String argsString = "SomePreambleString --name long value -t dashT-Value";
+        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(argsString, dashT, dashN);
+        assertPreamblePresent(argMultimap, "SomePreambleString");
+        assertArgumentPresent(argMultimap, dashN, "long value");
+        assertArgumentPresent(argMultimap, dashT, "dashT-Value");
+
+        // Long form with an empty value at the end of the string
+        argsString = " -t value --name";
+        argMultimap = ArgumentTokenizer.tokenize(argsString, dashT, dashN);
+        assertArgumentPresent(argMultimap, dashN, "");
+    }
+
+    @Test
+    public void tokenize_shortAndLongFormsMixed_valuesAccumulatedInOrder() {
+        String argsString = " -n first --name second -n third";
+        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(argsString, dashN);
+        assertPreambleEmpty(argMultimap);
+        assertArgumentPresent(argMultimap, dashN, "first", "second", "third");
+    }
+
+    @Test
+    public void tokenize_shortAndLongFormsMixed_detectedAsDuplicate() {
+        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(" -n first --name second", dashN);
+        assertThrows(ParseException.class, () -> argMultimap.verifyNoDuplicatePrefixesFor(dashN));
+    }
+
+    @Test
+    public void getAllForms() {
+        assertEquals(List.of("-n", "--name"), dashN.getAllForms());
+        assertEquals(List.of("-t"), dashT.getAllForms());
+    }
+
+    @Test
     public void equalsMethod() {
         Prefix aaa = new Prefix("aaa");
 
@@ -145,6 +210,10 @@ public class ArgumentTokenizerTest {
 
         assertNotEquals(aaa, "aaa");
         assertNotEquals(aaa, new Prefix("aab"));
+
+        // equality depends only on the primary form
+        assertEquals(dashN, new Prefix("-n"));
+        assertNotEquals(dashN, new Prefix("--name"));
     }
 
 }

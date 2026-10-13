@@ -69,7 +69,7 @@ public class SortLogicIntegrationTest {
         model.addPerson(beatrice);
         Logic logic = createLogic(false);
         logic.execute("sort -b tags");
-        logic.execute("edit 1 n/Updated");
+        logic.execute("edit 1 -n Updated");
         Person edited = new PersonBuilder(beatrice).withName("Updated").build();
         assertEquals(List.of(alex, edited), logic.getFilteredPersonList());
         assertEquals(List.of(alex, edited), new JsonAddressBookStorage(temporaryFolder.resolve("contacts.json"))
