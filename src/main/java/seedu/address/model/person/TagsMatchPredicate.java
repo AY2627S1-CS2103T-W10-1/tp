@@ -5,7 +5,7 @@ import java.util.function.Predicate;
 
 import seedu.address.commons.util.ToStringBuilder;
 
-/** Tests whether a person has any of the specified tags, ignoring case. */
+/** Tests whether a person has any of the specified tags, respecting case. */
 public class TagsMatchPredicate implements Predicate<Person> {
     private final List<String> tags;
 
@@ -16,7 +16,7 @@ public class TagsMatchPredicate implements Predicate<Person> {
     @Override
     public boolean test(Person person) {
         return person.getTags().stream()
-                .anyMatch(tag -> tags.stream().anyMatch(tag.tagName::equalsIgnoreCase));
+                .anyMatch(tag -> tags.stream().anyMatch(tag.tagName::equals));
     }
 
     @Override

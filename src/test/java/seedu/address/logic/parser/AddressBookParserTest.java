@@ -26,6 +26,7 @@ import seedu.address.logic.commands.UndoCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.TagsMatchPredicate;
 import seedu.address.testutil.EditPersonDescriptorBuilder;
 import seedu.address.testutil.PersonBuilder;
 import seedu.address.testutil.PersonUtil;
@@ -33,6 +34,19 @@ import seedu.address.testutil.PersonUtil;
 public class AddressBookParserTest {
 
     private final AddressBookParser parser = new AddressBookParser();
+
+    @Test
+    public void parseCommand_commandWordIgnoresCase_argumentsPreserveCase() throws Exception {
+        for (String commandWord : List.of("find", "FIND", "FiNd")) {
+            assertEquals(new FindCommand(new TagsMatchPredicate(List.of("Friends"))),
+                    parser.parseCommand(commandWord + " --tag Friends"));
+            assertThrows(ParseException.class,
+                    String.format(FindCommandParser.MESSAGE_UNKNOWN_OPTION, "--TAG"), () ->
+                            parser.parseCommand(commandWord + " --TAG Friends"));
+        }
+        assertTrue(parser.parseCommand("LiSt") instanceof ListCommand);
+        assertEquals(new DeleteCommand(INDEX_FIRST_PERSON), parser.parseCommand("DELETE 1"));
+    }
 
     @Test
     public void parseCommand_add() throws Exception {

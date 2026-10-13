@@ -35,23 +35,23 @@ public class FindCommandTest {
     public void execute_multipleTags_displaysUnionWithoutDuplicates() throws Exception {
         // Searching must include contacts hidden by an earlier filter.
         model.updateFilteredPersonList(person -> false);
-        Command command = new AddressBookParser().parseCommand("find --tag FRIENDS --tag owesMoney --tag FRIENDS");
-        expectedModel.updateFilteredPersonList(new TagsMatchPredicate(List.of("FRIENDS", "owesMoney")));
+        Command command = new AddressBookParser().parseCommand("find --tag friends --tag owesMoney --tag friends");
+        expectedModel.updateFilteredPersonList(new TagsMatchPredicate(List.of("friends", "owesMoney")));
         assertCommandSuccess(command, model, String.format(MESSAGE_PERSONS_LISTED_OVERVIEW, 3), expectedModel);
         assertEquals(List.of(ALICE, BENSON, DANIEL), model.getFilteredPersonList());
     }
 
     @Test
     public void execute_singleTag_matchesWholeTag() throws Exception {
-        Command command = new AddressBookParser().parseCommand("find --tag OWESMONEY");
-        expectedModel.updateFilteredPersonList(new TagsMatchPredicate(List.of("OWESMONEY")));
+        Command command = new AddressBookParser().parseCommand("FiNd --tag owesMoney");
+        expectedModel.updateFilteredPersonList(new TagsMatchPredicate(List.of("owesMoney")));
         assertCommandSuccess(command, model, String.format(MESSAGE_PERSONS_LISTED_OVERVIEW, 1), expectedModel);
         assertEquals(List.of(BENSON), model.getFilteredPersonList());
     }
 
     @Test
     public void execute_unmatchedTag_displaysNoMatchesMessage() throws Exception {
-        for (String tag : List.of("missing", "friend", "Alice")) {
+        for (String tag : List.of("missing", "friend", "Alice", "FRIENDS", "OWESMONEY")) {
             Command command = new AddressBookParser().parseCommand("find --tag " + tag);
             expectedModel.updateFilteredPersonList(new TagsMatchPredicate(List.of(tag)));
             assertCommandSuccess(command, model, FindCommand.MESSAGE_NO_TAG_MATCHES, expectedModel);

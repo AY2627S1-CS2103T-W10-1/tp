@@ -228,7 +228,10 @@ Examples:
 
 Format: `find --tag TAG [--tag TAG ...]`
 
-* Matches contacts with **any** of the specified tags, ignoring case and matching whole tags.
+* Command words are case-insensitive: `find`, `FIND`, and `FiNd` are equivalent.
+* The option must be lowercase `--tag`; `--TAG` is invalid. Tag values are case-sensitive:
+  `friends` does not match `Friends`.
+* Matches contacts with **any** of the specified tags, respecting case and matching whole tags.
 * Each matching contact is displayed once, even if several tags match or a tag is repeated.
 * Tags must contain 1–30 letters, numbers, hyphens (`-`), or underscores (`_`), without spaces.
 * A missing value displays `Tag cannot be empty: Please provide a valid tag after '--tag'.`

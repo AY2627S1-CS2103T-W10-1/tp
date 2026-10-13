@@ -529,8 +529,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **Command format:** `find --tag TAG [--tag TAG ...]`
 
-The command word `find` and option `--tag` are case-sensitive. Tag values are matched
-case-insensitively. Each tag value requires its own `--tag` option; name keywords cannot
+The command word `find` is case-insensitive. The option `--tag` and tag values are
+case-sensitive. Each tag value requires its own `--tag` option; name keywords cannot
 be combined with tag search in the same command.
 
 **MSS:**
@@ -539,7 +539,7 @@ be combined with tag search in the same command.
 2.  User enters a `find` command with one or more `--tag TAG` pairs.
 3.  sudoContact validates all specified tags.
 4.  sudoContact searches all contacts for those having any of the specified tags (OR matching),
-    using case-insensitive, whole-tag matching.
+    using case-sensitive, whole-tag matching.
 5.  sudoContact displays each matching contact once.
 6.  sudoContact displays the number of matching contacts.
 
@@ -775,7 +775,7 @@ be combined with tag search in the same command.
 * **Partial contact**: A contact with a name but without some optional details, such as a phone number, email address, department, or tags.
 * **Duplicate contact**: An existing contact with the same name as a contact being added, edited, or restored. Only names are compared, and the comparison is case-sensitive.
 * **CSV export**: A UTF-8 comma-separated values file containing a header row and one row for each stored contact.
-* **Tag**: An optional label attached to a contact to support categorisation and searching. Tag matching is case-insensitive.
+* **Tag**: An optional label attached to a contact to support categorisation and searching. Tag matching is case-sensitive.
 
 --------------------------------------------------------------------------------------------------------------------
 

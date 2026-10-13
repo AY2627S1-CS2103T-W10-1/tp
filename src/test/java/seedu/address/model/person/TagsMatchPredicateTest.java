@@ -13,8 +13,8 @@ import seedu.address.testutil.PersonBuilder;
 
 public class TagsMatchPredicateTest {
     @Test
-    public void test_anyWholeTagMatchesIgnoringCase_returnsTrue() {
-        TagsMatchPredicate predicate = new TagsMatchPredicate(List.of("missing", "CLIENT-1_vip"));
+    public void test_anyWholeTagMatchesExactly_returnsTrue() {
+        TagsMatchPredicate predicate = new TagsMatchPredicate(List.of("missing", "client-1_VIP"));
         assertTrue(predicate.test(new PersonBuilder().withTags("client-1_VIP", "friends").build()));
     }
 
@@ -22,6 +22,7 @@ public class TagsMatchPredicateTest {
     public void test_noWholeTagMatches_returnsFalse() {
         TagsMatchPredicate predicate = new TagsMatchPredicate(List.of("friend"));
         assertFalse(predicate.test(new PersonBuilder().withTags("friends").build()));
+        assertFalse(predicate.test(new PersonBuilder().withTags("FRIEND").build()));
         assertFalse(predicate.test(new PersonBuilder().withName("friend").withTags().build()));
         assertFalse(new TagsMatchPredicate(List.of()).test(new PersonBuilder().withTags("friend").build()));
     }
