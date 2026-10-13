@@ -2,14 +2,10 @@ package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
+import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.commands.exceptions.CommandException;
-import seedu.address.model.ContactLoadStatus;
 import seedu.address.model.Model;
 import seedu.address.model.SortField;
-import seedu.address.model.person.Person;
 
 /**
  * Sorts the currently displayed contacts in ascending order without changing stored data.
@@ -17,9 +13,8 @@ import seedu.address.model.person.Person;
 public class SortCommand extends Command {
     public static final String COMMAND_WORD = "sort";
     public static final String MESSAGE_USAGE = "sort -b/--by <department|dept|tag|tags>";
+    public static final String MESSAGE_SUCCESS = "Sorted %1$d contacts by %2$s.";
     public static final String MESSAGE_EMPTY = "No contacts found to sort.";
-    public static final String MESSAGE_LOAD_FAILURE =
-            "Unable to load contacts for sorting. Please restart the application or check the data file.";
     public static final String MESSAGE_INVALID_DATA =
             "Unable to sort contacts because some stored contact data is invalid.";
 
@@ -32,15 +27,18 @@ public class SortCommand extends Command {
         this.field = requireNonNull(field);
     }
 
+    /**
+     * Sorts the displayed contacts by the selected field in ascending order.
+     * Preserves the active filter and stored contact order.
+     *
+     * @param model Model containing the contacts to sort.
+     * @return Feedback containing the displayed contact count and selected field, or an empty-list message.
+     * @throws CommandException If a displayed contact contains invalid sorting data.
+     * @throws NullPointerException If {@code model} is null.
+     */
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
-        if (model.getContactLoadStatus() == ContactLoadStatus.UNREADABLE) {
-            throw new CommandException(MESSAGE_LOAD_FAILURE);
-        }
-        if (model.getContactLoadStatus() == ContactLoadStatus.INVALID) {
-            throw new CommandException(MESSAGE_INVALID_DATA);
-        }
         if (model.getFilteredPersonList().isEmpty()) {
             return new CommandResult(MESSAGE_EMPTY);
         }
@@ -50,28 +48,13 @@ public class SortCommand extends Command {
         } catch (IllegalArgumentException e) {
             throw new CommandException(MESSAGE_INVALID_DATA, e);
         }
-        return new CommandResult(formatContacts(model.getFilteredPersonList()));
+        return new CommandResult(String.format(MESSAGE_SUCCESS,
+                model.getFilteredPersonList().size(), field.getDisplayName()));
     }
 
-    private String formatContacts(List<Person> persons) {
-        StringBuilder output = new StringBuilder("Contacts sorted by " + field.getDisplayName() + ":");
-        for (int i = 0; i < persons.size(); i++) {
-            Person person = persons.get(i);
-            output.append("\n").append(i + 1).append(". ").append(person.getName())
-                    .append(" | Department: ")
-                    .append(person.getDepartment().map(department -> department.value).orElse("Not assigned"))
-                    .append(" | Tags: ").append(formatTags(person));
-        }
-        return output.toString();
-    }
-
-    private String formatTags(Person person) {
-        String tags = person.getTags().stream().map(tag -> tag.tagName)
-                .sorted(String.CASE_INSENSITIVE_ORDER.thenComparing(String::compareTo))
-                .collect(Collectors.joining(", "));
-        return tags.isEmpty() ? "None" : tags;
-    }
-
+    /**
+     * Returns false because sorting changes only the display order and does not require a storage save.
+     */
     @Override
     public boolean requiresStorageSave() {
         return false;
@@ -80,5 +63,12 @@ public class SortCommand extends Command {
     @Override
     public boolean equals(Object other) {
         return other == this || (other instanceof SortCommand otherCommand && field == otherCommand.field);
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .add("field", field)
+                .toString();
     }
 }

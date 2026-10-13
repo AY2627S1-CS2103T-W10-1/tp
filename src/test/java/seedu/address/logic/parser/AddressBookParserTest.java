@@ -104,8 +104,24 @@ public class AddressBookParserTest {
 
     @Test
     public void parseCommand_list() throws Exception {
-        assertTrue(parser.parseCommand(ListCommand.COMMAND_WORD) instanceof ListCommand);
-        assertTrue(parser.parseCommand(ListCommand.COMMAND_WORD + " 3") instanceof ListCommand);
+        for (String input : List.of("list", "ls", "  list  ", "  ls  ", "\tlist\t", "\tls\t")) {
+            assertTrue(parser.parseCommand(input) instanceof ListCommand);
+        }
+    }
+
+    @Test
+    public void parseCommand_listWithParameters_throwsParseException() {
+        String expectedMessage = "The list command does not accept any parameters. Usage: list | ls";
+        for (String input : List.of("list 3", "ls 3", "list name", "ls --sort", " list 3 ", "ls\tname")) {
+            assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand(input));
+        }
+    }
+
+    @Test
+    public void parseCommand_listWithDifferentCase_throwsParseException() {
+        for (String input : List.of("LIST", "List", "LS", "Ls", "lS", "LIST name")) {
+            assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand(input));
+        }
     }
 
     @Test

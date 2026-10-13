@@ -35,22 +35,30 @@ public class SortCommandTest {
     }
 
     @Test
-    public void execute_tags_formatsNumberedContactsWithMissingDepartments() throws Exception {
+    public void toStringMethod() {
+        for (SortField field : SortField.values()) {
+            SortCommand command = new SortCommand(field);
+            String expected = SortCommand.class.getCanonicalName() + "{field=" + field + "}";
+            assertEquals(expected, command.toString());
+        }
+    }
+
+    @Test
+    public void execute_tags_returnsSummaryAndPreservesStoredOrder() throws Exception {
         model.addPerson(alex);
         model.addPerson(beatrice);
         CommandResult result = new SortCommand(SortField.TAGS).execute(model);
-        assertEquals("Contacts sorted by tags:\n"
-                + "1. Beatrice | Department: Not assigned | Tags: client\n"
-                + "2. Alex | Department: Not assigned | Tags: mentor, Zulu", result.getFeedbackToUser());
+        assertEquals("Sorted 2 contacts by tags.", result.getFeedbackToUser());
+        assertEquals(List.of(beatrice, alex), model.getFilteredPersonList());
         assertEquals(List.of(alex, beatrice), model.getAddressBook().getPersonList());
         assertFalse(new SortCommand(SortField.TAGS).requiresStorageSave());
     }
 
     @Test
-    public void execute_department_keepsCurrentOrderAndFormatsMissingTags() throws Exception {
+    public void execute_department_returnsSummaryForContactWithoutTags() throws Exception {
         Person empty = new PersonBuilder().withName("No Tags").build();
         model.addPerson(empty);
-        assertEquals("Contacts sorted by department:\n1. No Tags | Department: Not assigned | Tags: None",
+        assertEquals("Sorted 1 contacts by department.",
                 new SortCommand(SortField.DEPARTMENT).execute(model).getFeedbackToUser());
     }
 
