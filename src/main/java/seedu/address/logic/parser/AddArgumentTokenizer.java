@@ -25,7 +25,7 @@ final class AddArgumentTokenizer {
     private AddArgumentTokenizer() {
     }
 
-    /** Rejects unknown options, duplicate single-value options and malformed quotation. */
+    /** Rejects mixed syntax, unknown options, duplicate single-value options and malformed quotation. */
     static ArgumentMultimap tokenize(String args) throws ParseException {
         List<Word> words = splitWords(args);
         ArgumentMultimap result = new ArgumentMultimap();
@@ -41,7 +41,11 @@ final class AddArgumentTokenizer {
             }
             List<String> values = new ArrayList<>();
             while (position < words.size() && !words.get(position).isOption()) {
-                values.add(words.get(position++).value());
+                Word value = words.get(position++);
+                if (value.isSlashOption()) {
+                    throw invalidFormat();
+                }
+                values.add(value.value());
             }
             if (prefix.equals(PREFIX_TAG) && !values.isEmpty()) {
                 values.forEach(value -> result.put(prefix, value));
@@ -94,6 +98,10 @@ final class AddArgumentTokenizer {
     private record Word(String value, boolean quoted) {
         boolean isOption() {
             return !quoted && value.startsWith("--");
+        }
+
+        boolean isSlashOption() {
+            return !quoted && OPTIONS.values().stream().anyMatch(prefix -> value.startsWith(prefix.getPrefix()));
         }
     }
 }

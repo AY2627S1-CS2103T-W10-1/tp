@@ -100,6 +100,36 @@ public class PartialAddCommandParserTest {
     }
 
     @Test
+    public void parse_slashPrefixesInLongOptionValues_failure() {
+        String error = String.format(Messages.MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE);
+        for (String prefix : List.of("n/", "p/", "e/", "a/", "d/", "t/")) {
+            assertParseFailure(parser, " --name Alice --address Main Road " + prefix + "91234567", error);
+            assertParseFailure(parser, " --name Alice --address Main Road " + prefix, error);
+            assertParseFailure(parser, " --name Alice --tag intern " + prefix + "client", error);
+        }
+        assertParseFailure(parser, " --name Alice --department Engineering p/91234567", error);
+        assertParseFailure(parser, " --name Alice p/91234567 --address Main Road", error);
+        assertParseFailure(parser, " --name Alice --address Main Road\tp/91234567", error);
+        assertParseFailure(parser, " --name Alice --address Main Road\np/91234567", error);
+    }
+
+    @Test
+    public void parse_quotedSlashPrefixesAndNormalizedTags_success() {
+        for (String quote : List.of("\"", "'")) {
+            Person expected = new Person(new Name("Alice"), Phone.notProvided(), Email.notProvided(),
+                    new Address("Main Road n/Alice p/91234567 e/alice@example.com a/Block d/Engineering t/client"),
+                    Set.of(new Tag("client"), new Tag("intern")));
+            assertParseSuccess(parser, " --name Alice --address " + quote + expected.getAddress().value + quote
+                    + " --tag /client #intern", new AddCommand(expected));
+
+            Person quotedWord = new Person(new Name("Alice"), Phone.notProvided(), Email.notProvided(),
+                    new Address("Main Road p/91234567"), Set.of());
+            assertParseSuccess(parser, " --name Alice --address Main Road " + quote + "p/91234567" + quote,
+                    new AddCommand(quotedWord));
+        }
+    }
+
+    @Test
     public void parse_unknownOptionsOrMalformedQuotes_failure() {
         String error = String.format(Messages.MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE);
         for (String args : List.of(" --name Alice --unknown x", " --name=Alice", " --name \"Alice",
