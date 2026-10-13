@@ -138,8 +138,8 @@ Format: `sort -b FIELD` or `sort --by FIELD`
 * Contacts without the selected field appear last. Equal sorting keys retain their current relative order,
   including case-only differences and when switching sorting fields; names are not a tie-breaker.
 * Department sorting uses the stored department assigned with `depart CONTACT_ID --set DEPARTMENT`.
-  Contacts without departments appear last and are displayed as `Not assigned`.
-* Empty tag collections are displayed as `None`; multiple tags are displayed alphabetically, separated by commas.
+  Contacts without departments appear last.
+* Successful sorting reports the number of displayed contacts and the selected field in one line.
 * Only the display order changes. Contacts and their saved order remain unchanged, and sorting does not save the file.
 * Displayed indices are updated; `edit 1`, `delete 1`, `view 1`, and `depart 1 --set Engineering` target the first row.
 * Another sort uses the current displayed order as its starting point. `list`, `find`, and successful contact
@@ -155,44 +155,49 @@ Examples:
 * `sort --by tag`
 * `sort --by tags`
 
-Example tag-sort feedback:
+For example, start with Alex Tan, Beatrice Lim, and Chen Wei in that stored order:
+
+Contact | Department | Tag
+--------|------------|----
+Alex Tan | Engineering | mentor
+Beatrice Lim | Marketing | client
+Chen Wei | Engineering | intern
+
+`sort --by tags` displays Beatrice, Chen, then Alex and returns:
 
 ```text
-Contacts sorted by tags:
-1. Beatrice Lim | Department: Marketing | Tags: client
-2. Chen Wei | Department: Engineering | Tags: intern
-3. Alex Tan | Department: Engineering | Tags: mentor
+Sorted 3 contacts by tags.
 ```
 
-Starting with Alex, Beatrice, and Chen in that order, with the departments and tags above, `sort -b dept` returns:
+Starting again from stored order, `sort -b dept` displays Alex, Chen, then Beatrice and returns:
 
 ```text
-Contacts sorted by department:
-1. Alex Tan | Department: Engineering | Tags: mentor
-2. Chen Wei | Department: Engineering | Tags: intern
-3. Beatrice Lim | Department: Marketing | Tags: client
+Sorted 3 contacts by department.
 ```
 
 Alex and Chen retain their relative order because their department keys are equal.
+The reported count includes only contacts in the currently displayed list.
 
 For an empty displayed list, the feedback is `No contacts found to sort.`
 
 Problem | Feedback
 --------|---------
-Missing option or field | `Missing sorting option. Usage: sort -b/--by <department\|dept\|tag\|tags>`
+Missing option | `Missing sorting option. Usage: sort -b/--by <department\|dept\|tag\|tags>`
+Missing field | `Missing sorting field. Usage: sort -b/--by <department\|dept\|tag\|tags>`
 Unknown field | `Invalid sorting field. Use department, dept, tag, or tags.`
 Unsupported or repeated argument | `Unsupported argument. Usage: sort -b/--by <department\|dept\|tag\|tags>`
 `--descending` supplied | `Descending order is not supported. Contacts are sorted in ascending order.`
-Contacts failed to load at startup | `Unable to load contacts for sorting. Please restart the application or check the data file.`
-Invalid stored contact data | `Unable to sort contacts because some stored contact data is invalid.`
+Invalid displayed contact data | `Unable to sort contacts because some stored contact data is invalid.`
 
 When several input problems occur, an explicit `--descending` token takes precedence, followed by unsupported
 argument structure, missing option/value, and an invalid field. Failed input or invalid sorting data leaves the
 current display order unchanged. Sorting preserves separate contact occurrences rather than deduplicating them;
 the application's existing rules still prevent duplicate contacts from being added or loaded.
 
-Startup loading failures remain recorded for the session. Fix the contact file and restart to retry loading.
-Sorting uses the loaded contacts; it does not reread the file. A missing file follows the existing sample-data behavior.
+Sorting uses the current in-memory contacts; it does not reread the file. If contacts fail to load at startup,
+the application starts with an empty list, so sorting reports `No contacts found to sort.` You can add valid contacts
+and sort them in the same session. To load contacts from a repaired file, restart the application.
+A missing file follows the existing sample-data behavior.
 
 ### Viewing a contact's details: `view`
 
@@ -309,7 +314,7 @@ Departments and tags are contact data and are saved normally when changed.
 AddressBook data is saved automatically as a JSON file `[JAR file location]/data/addressbook.json`. Advanced users are welcome to update data directly by editing that data file.
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
-If your changes make the data file invalid, AddressBook starts with an empty address book at the next run. The invalid file remains on disk until a successful command that saves data overwrites it. `sort` reports the startup loading error without writing the file; failed commands also do not save. Still, we recommend backing up the file before editing it.<br>
+If your changes make the data file invalid, AddressBook starts with an empty address book at the next run. The invalid file remains on disk until a successful command that saves data overwrites it. `sort` uses the current in-memory contacts without writing the file; failed commands also do not save. Still, we recommend backing up the file before editing it.<br>
 Furthermore, certain edits can cause the AddressBook to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </div>
 
