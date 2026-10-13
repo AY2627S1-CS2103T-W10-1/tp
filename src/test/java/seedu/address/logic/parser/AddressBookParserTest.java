@@ -112,15 +112,16 @@ public class AddressBookParserTest {
     @Test
     public void parseCommand_listWithParameters_throwsParseException() {
         String expectedMessage = "The list command does not accept any parameters. Usage: list | ls";
-        for (String input : List.of("list 3", "ls 3", "list name", "ls --sort", " list 3 ", "ls\tname")) {
+        for (String input : List.of("list 3", "ls 3", "list name", "ls --sort", " list 3 ", "ls\tname",
+                "LIST name", "LS 3", "LiSt --sort", "lS\tname")) {
             assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand(input));
         }
     }
 
     @Test
-    public void parseCommand_listWithDifferentCase_throwsParseException() {
-        for (String input : List.of("LIST", "List", "LS", "Ls", "lS", "LIST name")) {
-            assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand(input));
+    public void parseCommand_listWithDifferentCase_success() throws Exception {
+        for (String input : List.of("LIST", "List", "LiSt", "LS", "Ls", "lS")) {
+            assertTrue(parser.parseCommand(input) instanceof ListCommand);
         }
     }
 
