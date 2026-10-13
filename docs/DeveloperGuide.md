@@ -587,7 +587,7 @@ be combined with tag search in the same command.
       Use case resumes at step 5.
 
 
-**Use case: UC8 - View one contact's full details**
+**Use case: UC7 - View one contact's full details**
 
 **System:** sudoContact
 
@@ -625,7 +625,7 @@ be combined with tag search in the same command.
 
   Use case ends.
 
-**Use case: UC9 - Add a contact with partial information**
+**Use case: UC8 - Add a contact with partial information**
 
 **System:** sudoContact
 
@@ -674,7 +674,7 @@ be combined with tag search in the same command.
 
   Use case ends.
 
-**Use case: UC10 - Export contacts to a CSV file**
+**Use case: UC9 - Export contacts to a CSV file**
 
 **System:** sudoContact
 
@@ -720,7 +720,7 @@ be combined with tag search in the same command.
 
   Use case ends.
 
-**Use Case: UC11 - View available commands and their usage**
+**Use Case: UC10 - View available commands and their usage**
 
   **Actor:** User
 
