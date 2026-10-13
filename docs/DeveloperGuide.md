@@ -161,6 +161,21 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
+### Listing all contacts: design specification
+
+The list feature lets users review every stored contact after applying a search or filter.
+It accepts `list` or `ls`, with no parameters. Both command words are case-sensitive;
+`LIST`, `List`, and `LS` are unknown commands. Leading and trailing spaces are ignored.
+Both spellings clear the current filter and display sorting, showing contacts in stored order.
+
+Any extra input produces exactly:
+`The list command does not accept any parameters. Usage: list | ls`
+Rejecting extra input prevents users from assuming unsupported filtering or sorting options were applied.
+
+`AddressBookParser` routes both spellings to `ListCommandParser`, which rejects nonblank arguments
+before creating the shared `ListCommand`. Its execution uses `PREDICATE_SHOW_ALL_PERSONS` through
+`Model.updateFilteredPersonList` to restore the full contact list and stored order.
+
 ### Contact display sorting
 
 `AddressBookParser` delegates `sort` to `SortCommandParser`, which accepts complete option tokens and normalizes
