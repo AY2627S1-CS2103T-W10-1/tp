@@ -323,8 +323,10 @@ or free space and retry. Export is a copy for external use; it does not replace 
 
 ### Saving the data
 
-AddressBook automatically saves data after successful commands except `sort`. You do not need to save manually.
+AddressBook automatically saves data after successful commands except `sort` and `export`.
+You do not need to save manually.
 `sort` changes only the displayed order; it does not write the contact file or persist the sort order.
+`export` writes a separate CSV copy; it does not modify or save the JSON contact file.
 Departments and tags are contact data and are saved normally when changed.
 
 ### Editing the data file

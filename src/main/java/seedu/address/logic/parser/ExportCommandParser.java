@@ -28,7 +28,7 @@ public class ExportCommandParser implements Parser<ExportCommand> {
         }
         char first = fileName.charAt(0);
         if (first == '"' || first == '\'') {
-            if (fileName.length() < 2 || fileName.charAt(fileName.length() - 1) != first) {
+            if (fileName.indexOf(first, 1) != fileName.length() - 1) {
                 throw invalidFormat();
             }
             fileName = fileName.substring(1, fileName.length() - 1);
