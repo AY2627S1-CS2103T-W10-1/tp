@@ -10,7 +10,6 @@ import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
@@ -24,26 +23,27 @@ import seedu.address.model.tag.Tag;
 
 /** Parses an add command with required name and optional contact information. */
 public class AddCommandParser implements Parser<AddCommand> {
-    private static final Pattern LONG_OPTION = Pattern.compile("(?<!\\S)--\\S+");
 
     @Override
     public AddCommand parse(String args) throws ParseException {
-        boolean longOptions = args.stripLeading().startsWith("--");
-        if (!longOptions && LONG_OPTION.matcher(args).find()) {
+        ArgumentMultimap arguments;
+        try {
+            arguments = ArgumentTokenizer.tokenize(args, PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL,
+                    PREFIX_ADDRESS, PREFIX_DEPARTMENT, PREFIX_TAG);
+        } catch (ParseException pe) {
+            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE), pe);
+        }
+
+        if (!arguments.getPreamble().isEmpty()) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE));
         }
-        ArgumentMultimap arguments = longOptions ? AddArgumentTokenizer.tokenize(args)
-                : ArgumentTokenizer.tokenize(" " + args, PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL,
-                        PREFIX_ADDRESS, PREFIX_DEPARTMENT, PREFIX_TAG);
-
-        if (!arguments.getPreamble().isEmpty() || arguments.getValue(PREFIX_NAME).isEmpty()) {
-            throw new ParseException(longOptions ? AddCommand.MESSAGE_NAME_REQUIRED
-                    : String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE));
+        if (arguments.getValue(PREFIX_NAME).isEmpty()) {
+            throw new ParseException(AddCommand.MESSAGE_NAME_REQUIRED);
         }
         arguments.verifyNoDuplicatePrefixesFor(PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL,
                 PREFIX_ADDRESS, PREFIX_DEPARTMENT);
         String nameValue = arguments.getValue(PREFIX_NAME).orElseThrow();
-        if (longOptions && nameValue.isBlank()) {
+        if (nameValue.isBlank()) {
             throw new ParseException(AddCommand.MESSAGE_NAME_REQUIRED);
         }
         Name name = ParserUtil.parseName(nameValue);

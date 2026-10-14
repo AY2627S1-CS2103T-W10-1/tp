@@ -20,7 +20,7 @@ public class AddCommand extends Command {
             + "Parameters: --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMENT] "
             + "[--address ADDRESS] [--tag TAG ...]\n"
             + "Example: add --name \"Alice Tan\" --email alice@example.com\n"
-            + "Existing syntax: add n/NAME [p/PHONE] [e/EMAIL] [d/DEPARTMENT] [a/ADDRESS] [t/TAG]...";
+            + "Short flags: add -n NAME [-p PHONE] [-e EMAIL] [-d DEPARTMENT] [-a ADDRESS] [-t TAG]...";
 
     public static final String MESSAGE_NAME_REQUIRED = "Name cannot be empty.";
     public static final String MESSAGE_INVALID_PHONE = "Invalid phone number: Must contain 7-15 digits.";

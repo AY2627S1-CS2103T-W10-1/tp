@@ -65,6 +65,51 @@ public class AddCommandParserTest {
     }
 
     @Test
+    public void parse_longFormFlags_success() {
+        Person expectedPerson = new PersonBuilder(BOB).withTags(VALID_TAG_FRIEND).build();
+
+        assertParseSuccess(parser, " --name " + VALID_NAME_BOB + " --phone " + VALID_PHONE_BOB
+                + " --email " + VALID_EMAIL_BOB + " --address " + VALID_ADDRESS_BOB + " --tag " + VALID_TAG_FRIEND,
+                new AddCommand(expectedPerson));
+    }
+
+    @Test
+    public void parse_shortAndLongFormsMixed_success() {
+        Person expectedPerson = new PersonBuilder(BOB).withTags(VALID_TAG_FRIEND).build();
+
+        assertParseSuccess(parser, NAME_DESC_BOB + " --phone " + VALID_PHONE_BOB + EMAIL_DESC_BOB
+                + " --address " + VALID_ADDRESS_BOB + TAG_DESC_FRIEND, new AddCommand(expectedPerson));
+    }
+
+    @Test
+    public void parse_repeatedFlagInShortAndLongForm_failure() {
+        String otherFields = " -n John -p 98765432 -a Block 123";
+
+        // same short form repeated
+        assertParseFailure(parser, otherFields + " -e Doe -e test@test.com",
+                Messages.getErrorMessageForDuplicatePrefixes(PREFIX_EMAIL));
+
+        // short and long forms of the same flag
+        assertParseFailure(parser, otherFields + " -e Doe --email test@test.com",
+                Messages.getErrorMessageForDuplicatePrefixes(PREFIX_EMAIL));
+    }
+
+    @Test
+    public void parse_duplicateFieldMessage_namesBothForms() {
+        assertParseFailure(parser, " -n Alice --name Bob",
+                Messages.MESSAGE_DUPLICATE_FIELDS + "-n/--name");
+    }
+
+    @Test
+    public void parse_valueGluedToFlag_failure() {
+        String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE);
+
+        // "-nBob" is not recognised as the name flag, so the name is missing
+        assertParseFailure(parser, " -n" + VALID_NAME_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + ADDRESS_DESC_BOB,
+                expectedMessage);
+    }
+
+    @Test
     public void parse_repeatedNonTagValue_failure() {
         String validExpectedPersonString = NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB
                 + ADDRESS_DESC_BOB + TAG_DESC_FRIEND;

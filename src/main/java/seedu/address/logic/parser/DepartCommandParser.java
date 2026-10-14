@@ -1,5 +1,6 @@
 package seedu.address.logic.parser;
 
+import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_SET;
 
 import seedu.address.commons.core.index.Index;
@@ -15,7 +16,12 @@ public class DepartCommandParser implements Parser<DepartCommand> {
 
     @Override
     public DepartCommand parse(String args) throws ParseException {
-        ArgumentMultimap arguments = ArgumentTokenizer.tokenize(args, PREFIX_SET);
+        ArgumentMultimap arguments;
+        try {
+            arguments = ArgumentTokenizer.tokenize(args, PREFIX_SET);
+        } catch (ParseException pe) {
+            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, DepartCommand.MESSAGE_USAGE), pe);
+        }
         String contactId = arguments.getPreamble().trim();
         if (!StringUtil.isNonZeroUnsignedInteger(contactId)) {
             throw new ParseException(MESSAGE_INVALID_CONTACT_ID);

@@ -118,6 +118,39 @@ public class EditCommandParserTest {
     }
 
     @Test
+    public void parse_longFormFlags_success() {
+        Index targetIndex = INDEX_SECOND_PERSON;
+        String userInput = targetIndex.getOneBased() + " --phone " + VALID_PHONE_BOB + " --tag " + VALID_TAG_HUSBAND
+                + " --email " + VALID_EMAIL_AMY + " --address " + VALID_ADDRESS_AMY + " --name " + VALID_NAME_AMY;
+
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withName(VALID_NAME_AMY)
+                .withPhone(VALID_PHONE_BOB).withEmail(VALID_EMAIL_AMY).withAddress(VALID_ADDRESS_AMY)
+                .withTags(VALID_TAG_HUSBAND).build();
+        EditCommand expectedCommand = new EditCommand(targetIndex, descriptor);
+
+        assertParseSuccess(parser, userInput, expectedCommand);
+    }
+
+    @Test
+    public void parse_quotedValueAndSeveralTagsAfterOneFlag_success() {
+        Index targetIndex = INDEX_FIRST_PERSON;
+        String userInput = targetIndex.getOneBased() + " -a \"Blk 5 -t 3\" --tag " + VALID_TAG_HUSBAND + " "
+                + VALID_TAG_FRIEND;
+
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withAddress("Blk 5 -t 3")
+                .withTags(VALID_TAG_HUSBAND, VALID_TAG_FRIEND).build();
+        EditCommand expectedCommand = new EditCommand(targetIndex, descriptor);
+
+        assertParseSuccess(parser, userInput, expectedCommand);
+    }
+
+    @Test
+    public void parse_unknownOptionOrUnmatchedQuote_failure() {
+        assertParseFailure(parser, "1 --department Sales", MESSAGE_INVALID_FORMAT);
+        assertParseFailure(parser, "1 -a \"Main Road", MESSAGE_INVALID_FORMAT);
+    }
+
+    @Test
     public void parse_someFieldsSpecified_success() {
         Index targetIndex = INDEX_FIRST_PERSON;
         String userInput = targetIndex.getOneBased() + PHONE_DESC_BOB + EMAIL_DESC_AMY;
@@ -204,5 +237,8 @@ public class EditCommandParserTest {
         EditCommand expectedCommand = new EditCommand(targetIndex, descriptor);
 
         assertParseSuccess(parser, userInput, expectedCommand);
+
+        // long form
+        assertParseSuccess(parser, targetIndex.getOneBased() + " --tag", expectedCommand);
     }
 }

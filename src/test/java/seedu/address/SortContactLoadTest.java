@@ -103,8 +103,8 @@ public class SortContactLoadTest {
         Model model = loadContacts(contacts);
         LogicManager logic = new LogicManager(model, new StorageManager(contacts,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))));
-        logic.execute("add n/Alex p/91234567 e/alex@example.com a/First Street t/zulu");
-        logic.execute("add n/Beatrice p/92345678 e/beatrice@example.com a/Second Street t/alpha");
+        logic.execute("add -n Alex -p 91234567 -e alex@example.com -a First Street -t zulu");
+        logic.execute("add -n Beatrice -p 92345678 -e beatrice@example.com -a Second Street -t alpha");
         List<Person> storedOrder = List.copyOf(model.getAddressBook().getPersonList());
         Path path = contacts.getAddressBookFilePath();
         assertEquals(storedOrder, new JsonAddressBookStorage(path).readAddressBook().orElseThrow().getPersonList());

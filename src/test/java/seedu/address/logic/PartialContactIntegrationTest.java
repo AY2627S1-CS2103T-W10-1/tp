@@ -76,7 +76,7 @@ public class PartialContactIntegrationTest {
         logic.execute("add --name Chen Wei --department Engineering --tag intern new-client");
         ModelManager reloaded = new ModelManager(addressBookStorage.readAddressBook().orElseThrow(), new UserPrefs());
         LogicManager resumed = logicFor(reloaded, addressBookStorage);
-        resumed.execute("edit 1 p/91234567 e/chen@example.com a/Main Road");
+        resumed.execute("edit 1 -p 91234567 -e chen@example.com -a Main Road");
         Person completed = reloaded.getFilteredPersonList().getFirst();
         assertEquals("Engineering", completed.getDepartment().orElseThrow().value);
         assertEquals("91234567", completed.getPhone().value);
@@ -95,7 +95,7 @@ public class PartialContactIntegrationTest {
         logic.execute("add --name Alice --phone 87654321");
         String storedBefore = Files.readString(addressBookStorage.getAddressBookFilePath());
         assertThrows(CommandException.class, EditCommand.MESSAGE_DUPLICATE_PERSON, ()
-                -> logic.execute("edit 2 p/91234567"));
+                -> logic.execute("edit 2 -p 91234567"));
         assertEquals("87654321", model.getFilteredPersonList().get(1).getPhone().value);
         assertEquals(storedBefore, Files.readString(addressBookStorage.getAddressBookFilePath()));
     }

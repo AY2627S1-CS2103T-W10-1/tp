@@ -1,9 +1,15 @@
 package seedu.address.logic.parser;
 
+import static seedu.address.logic.parser.CliSyntax.PREFIX_ADDRESS;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_DEPARTMENT;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_EMAIL;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -36,11 +42,11 @@ public class PartialAddCommandParserTest {
             String longArgs = " --name \"Alice Tan\"" + (phone ? " --phone 91234567" : "")
                     + (email ? " --email alice@example.com" : "") + (address ? " --address \"Main Road\"" : "")
                     + (department ? " --department R&D" : "") + (tags ? " --tag intern" : "");
-            String oldArgs = " n/Alice Tan" + (phone ? " p/91234567" : "")
-                    + (email ? " e/alice@example.com" : "") + (address ? " a/Main Road" : "")
-                    + (department ? " d/R&D" : "") + (tags ? " t/intern" : "");
+            String shortArgs = " -n Alice Tan" + (phone ? " -p 91234567" : "")
+                    + (email ? " -e alice@example.com" : "") + (address ? " -a Main Road" : "")
+                    + (department ? " -d R&D" : "") + (tags ? " -t intern" : "");
             assertParseSuccess(parser, longArgs, new AddCommand(expected));
-            assertParseSuccess(parser, oldArgs, new AddCommand(expected));
+            assertParseSuccess(parser, shortArgs, new AddCommand(expected));
         }
     }
 
@@ -100,31 +106,37 @@ public class PartialAddCommandParserTest {
     }
 
     @Test
-    public void parse_slashPrefixesInLongOptionValues_failure() {
-        String error = String.format(Messages.MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE);
-        for (String prefix : List.of("n/", "p/", "e/", "a/", "d/", "t/")) {
-            assertParseFailure(parser, " --name Alice --address Main Road " + prefix + "91234567", error);
-            assertParseFailure(parser, " --name Alice --address Main Road " + prefix, error);
-            assertParseFailure(parser, " --name Alice --tag intern " + prefix + "client", error);
+    public void parse_shortFlagsAfterLongOptions_startNewField() {
+        Person expected = new Person(new Name("Alice"), new Phone("91234567"), Email.notProvided(),
+                new Address("Main Road"), Set.of(), new Department("Engineering"));
+        for (String separator : List.of(" ", "\t", "\n")) {
+            assertParseSuccess(parser, " --name Alice --address Main Road" + separator + "-p 91234567"
+                    + " -d Engineering", new AddCommand(expected));
         }
-        assertParseFailure(parser, " --name Alice --department Engineering p/91234567", error);
-        assertParseFailure(parser, " --name Alice p/91234567 --address Main Road", error);
-        assertParseFailure(parser, " --name Alice --address Main Road\tp/91234567", error);
-        assertParseFailure(parser, " --name Alice --address Main Road\np/91234567", error);
+        assertParseSuccess(parser, " --name Alice -p 91234567 --address Main Road --department Engineering",
+                new AddCommand(expected));
     }
 
     @Test
-    public void parse_quotedSlashPrefixesAndNormalizedTags_success() {
+    public void parse_flagLikeWordsInLongOptionValues_success() {
+        // only a flag on its own counts as a short flag, as in the short-flag syntax
+        Person expected = new Person(new Name("Alice"), Phone.notProvided(), Email.notProvided(),
+                new Address("Blk 5 -apt 3 -p91234567"), Set.of());
+        assertParseSuccess(parser, " --name Alice --address Blk 5 -apt 3 -p91234567", new AddCommand(expected));
+    }
+
+    @Test
+    public void parse_quotedShortFlagsAndNormalizedTags_success() {
         for (String quote : List.of("\"", "'")) {
             Person expected = new Person(new Name("Alice"), Phone.notProvided(), Email.notProvided(),
-                    new Address("Main Road n/Alice p/91234567 e/alice@example.com a/Block d/Engineering t/client"),
+                    new Address("Main Road -n Alice -p 91234567 -e alice@example.com -a Block -d Sales -t client"),
                     Set.of(new Tag("client"), new Tag("intern")));
             assertParseSuccess(parser, " --name Alice --address " + quote + expected.getAddress().value + quote
                     + " --tag /client #intern", new AddCommand(expected));
 
             Person quotedWord = new Person(new Name("Alice"), Phone.notProvided(), Email.notProvided(),
-                    new Address("Main Road p/91234567"), Set.of());
-            assertParseSuccess(parser, " --name Alice --address Main Road " + quote + "p/91234567" + quote,
+                    new Address("Main Road -p"), Set.of());
+            assertParseSuccess(parser, " --name Alice --address Main Road " + quote + "-p" + quote,
                     new AddCommand(quotedWord));
         }
     }
@@ -133,19 +145,24 @@ public class PartialAddCommandParserTest {
     public void parse_unknownOptionsOrMalformedQuotes_failure() {
         String error = String.format(Messages.MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE);
         for (String args : List.of(" --name Alice --unknown x", " --name=Alice", " --name \"Alice",
-                " --name 'Alice'junk", " --name Ali\"ce", " --name Alice --tags client", " --name Alice --",
-                " n/Alice a/Main Road --unknown x", " n/Alice --phone 91234567")) {
+                " --name 'Alice'junk", " --name Alice --tags client", " --name Alice --",
+                " -n Alice -a Main Road --unknown x")) {
             assertParseFailure(parser, args, error);
         }
+
+        // a quote inside a word is an ordinary character, so the name itself is invalid
+        assertParseFailure(parser, " --name Ali\"ce", Name.MESSAGE_CONSTRAINTS);
     }
 
     @Test
     public void parse_duplicateSingleValueOptions_failure() {
-        for (String option : new String[]{"--name", "--phone", "--email", "--department", "--address"}) {
+        Map<String, Prefix> options = Map.of("--name", PREFIX_NAME, "--phone", PREFIX_PHONE,
+                "--email", PREFIX_EMAIL, "--department", PREFIX_DEPARTMENT, "--address", PREFIX_ADDRESS);
+        options.forEach((option, prefix) -> {
             String args = option.equals("--name") ? " --name Alice --name Bob"
                     : " --name Alice " + option + " value " + option + " other";
-            assertParseFailure(parser, args, Messages.getErrorMessageForDuplicatePrefixes(new Prefix(option)));
-        }
+            assertParseFailure(parser, args, Messages.getErrorMessageForDuplicatePrefixes(prefix));
+        });
     }
 
     private Person partial(String name, Phone phone, Email email) {

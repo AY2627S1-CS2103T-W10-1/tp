@@ -66,7 +66,7 @@ public class PartialAddUiTest {
             assertTrue(input.getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS));
             assertEquals(2, model.getFilteredPersonList().size());
 
-            enter(input, "edit 1 p/91234567 e/firstalice@example.com a/Main Road");
+            enter(input, "edit 1 -p 91234567 -e firstalice@example.com -a Main Road");
             assertFalse(input.getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS));
             enter(input, "depart 1 --set Engineering");
             Person completed = model.getFilteredPersonList().getFirst();

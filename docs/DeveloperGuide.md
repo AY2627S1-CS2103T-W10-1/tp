@@ -200,9 +200,11 @@ cover the export flow, including a filtered list and an existing destination.
 
 ### Adding contacts with partial information
 
-`AddCommandParser` supports both the existing slash prefixes and add-specific long options. The latter
-use `AddArgumentTokenizer` to preserve quoted multiword values and distinguish literal text from option names.
-Only name is required. Omitted phone, email and address use immutable `notProvided()` value objects whose
+`AddCommandParser` and `EditCommandParser` share `ArgumentTokenizer`. Each `Prefix` in `CliSyntax` has a
+short and a long form (e.g. `-n`/`--name`), and both forms map to the same `ArgumentMultimap` key, so they can
+be mixed and repeats in either form are detected as duplicates. The tokenizer splits input into words, treats a
+quoted word as literal text (never a flag), rejects unknown `--` options, and stores each word after `-t`/`--tag`
+as a separate tag. Only name is required. Omitted phone, email and address use immutable `notProvided()` value objects whose
 stored values are empty strings and whose display strings are `Not provided`. Their public constructors and
 parser validators still reject empty supplied values. Department uses the existing optional model from #71;
 its command and validation remain in the teammate's implementation.
@@ -322,7 +324,7 @@ Step 2. The user executes `delete 5` command to delete the 5th person in the add
 
 ![UndoRedoState1](images/UndoRedoState1.png)
 
-Step 3. The user executes `add n/David …​` to add a new person. The `add` command also calls `Model#commitAddressBook()`, causing another modified address book state to be saved into the `addressBookStateList`.
+Step 3. The user executes `add -n David …​` to add a new person. The `add` command also calls `Model#commitAddressBook()`, causing another modified address book state to be saved into the `addressBookStateList`.
 
 ![UndoRedoState2](images/UndoRedoState2.png)
 
@@ -361,7 +363,7 @@ Step 5. The user then decides to execute the command `list`. Commands that do no
 
 ![UndoRedoState4](images/UndoRedoState4.png)
 
-Step 6. The user executes `clear`, which calls `Model#commitAddressBook()`. Since the `currentStatePointer` is not pointing at the end of the `addressBookStateList`, all address book states after the `currentStatePointer` will be purged. Reason: It no longer makes sense to redo the `add n/David …​` command. This is the behavior that most modern desktop applications follow.
+Step 6. The user executes `clear`, which calls `Model#commitAddressBook()`. Since the `currentStatePointer` is not pointing at the end of the `addressBookStateList`, all address book states after the `currentStatePointer` will be purged. Reason: It no longer makes sense to redo the `add -n David …​` command. This is the behavior that most modern desktop applications follow.
 
 ![UndoRedoState5](images/UndoRedoState5.png)
 
@@ -895,7 +897,7 @@ testers are expected to do more *exploratory* testing.
 1. Add `add --name "Dana Lim"` to an address book that has no Dana Lim contact.
    Expected: successful addition, phone/email/address/department show `Not provided`, tags show `None`.
 1. Restart the app. Expected: Dana Lim is still present with the same omitted fields.
-1. Run `find Dana`, `edit 1 p/91234567 e/dana@example.com a/Main Road`, then `depart 1 --set Engineering`.
+1. Run `find Dana`, `edit 1 -p 91234567 -e dana@example.com -a Main Road`, then `depart 1 --set Engineering`.
    Expected: the contact has the supplied details; restart preserves all fields.
 1. Add another `Dana Lim` with a different phone or email. Expected: the same name is accepted.
    Repeat the exact name/phone/email with different tags or department. Expected: duplicate error, no new entry.
@@ -906,7 +908,7 @@ testers are expected to do more *exploratory* testing.
    Expected: format or duplicate-option error. Multiple `--tag` flags are accepted.
 1. Run `add --name Chen --tag #intern new-client team_intern --tag intern`.
    Expected: three distinct tags, displayed without the leading `#` and preserved after restart.
-1. Run the equivalent slash-prefix form, for example `add n/Bob Lee p/91234567 d/Engineering`.
+1. Run the equivalent short-flag form, for example `add -n Bob Lee -p 91234567 -d Engineering`.
    Expected: equivalent partial-contact support; omitted fields remain unprovided.
 
 ### Viewing a contact's details
