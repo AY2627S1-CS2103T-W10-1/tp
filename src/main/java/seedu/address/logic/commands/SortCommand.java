@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.commands.exceptions.CommandException;
+import seedu.address.logic.help.HelpPage;
 import seedu.address.model.Model;
 import seedu.address.model.SortField;
 
@@ -12,6 +13,23 @@ import seedu.address.model.SortField;
  */
 public class SortCommand extends Command {
     public static final String COMMAND_WORD = "sort";
+
+    /** Detailed usage, supported options and examples for this command. */
+    public static final HelpPage HELP_PAGE = new HelpPage(COMMAND_WORD, String.join("\n",
+            "Sorts currently displayed contacts in ascending, case-insensitive order.",
+            "Usage: sort --by FIELD",
+            "",
+            "Options:",
+            "  -b, --by  Required field: department, dept, tag or tags.",
+            "",
+            "Preserves the active filter and stored contact order.",
+            "Contacts with no sorting field appear last; equal keys retain their relative order.",
+            "Tag sorting uses each contact's alphabetically smallest tag, ignoring case.",
+            "",
+            "Examples:",
+            "  sort --by department",
+            "  sort -b tags"));
+
     public static final String MESSAGE_USAGE = "sort -b/--by <department|dept|tag|tags>";
     public static final String MESSAGE_SUCCESS = "Sorted %1$d contacts by %2$s.";
     public static final String MESSAGE_EMPTY = "No contacts found to sort.";

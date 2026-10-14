@@ -7,6 +7,7 @@ import java.util.List;
 import seedu.address.commons.core.index.Index;
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.exceptions.CommandException;
+import seedu.address.logic.help.HelpPage;
 import seedu.address.model.Model;
 import seedu.address.model.person.Department;
 import seedu.address.model.person.Person;
@@ -16,6 +17,21 @@ import seedu.address.model.person.Person;
  */
 public class DepartCommand extends Command {
     public static final String COMMAND_WORD = "depart";
+
+    /** Detailed usage, supported options and examples for this command. */
+    public static final HelpPage HELP_PAGE = new HelpPage(COMMAND_WORD, String.join("\n",
+            "Sets a contact's department.",
+            "Usage: depart CONTACT_ID --set DEPARTMENT",
+            "",
+            "Options:",
+            "  --set  Required department name; no short option is supported.",
+            "",
+            "CONTACT_ID is a positive, one-based position in the currently displayed list.",
+            "Departments contain 2-50 characters: letters, numbers, spaces, hyphens or ampersands.",
+            "",
+            "Examples:",
+            "  depart 3 --set \"Engineering\""));
+
     public static final String MESSAGE_USAGE = "depart CONTACT_ID --set DEPARTMENT";
     public static final String MESSAGE_CONTACT_NOT_FOUND = "Contact non-existent: No contact found with ID '%1$s'.";
     public static final String MESSAGE_SUCCESS = "Updated contact: %1$s";

@@ -8,6 +8,8 @@ import static seedu.address.testutil.Assert.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
+import seedu.address.logic.help.HelpPage;
+
 public class CommandResultTest {
     @Test
     public void equals() {
@@ -77,12 +79,38 @@ public class CommandResultTest {
     }
 
     @Test
+    public void helpResult_preservesPayloadFlagsAndEquality() {
+        HelpPage page = new HelpPage("depart", "manual");
+        CommandResult result = CommandResult.forHelp("feedback", page);
+        CommandResult equal = CommandResult.forHelp("feedback", new HelpPage("depart", "manual"));
+        assertEquals(page, result.getHelpPage().orElseThrow());
+        assertTrue(result.isShowHelp());
+        assertFalse(result.isExit());
+        assertFalse(result.isShowDetails());
+        assertEquals(result, equal);
+        assertEquals(result.hashCode(), equal.hashCode());
+        assertNotEquals(result, new CommandResult("feedback", true, false));
+        assertNotEquals(result, CommandResult.forHelp("feedback", new HelpPage("sort", "manual")));
+        assertNotEquals(result, CommandResult.forHelp("feedback", new HelpPage("depart", "different")));
+        assertTrue(result.toString().contains("helpPage=" + page));
+        assertTrue(new CommandResult("feedback", true, false).getHelpPage().isEmpty());
+        assertTrue(new CommandResult("feedback").getHelpPage().isEmpty());
+    }
+
+    @Test
+    public void helpResult_nullFeedbackOrPage_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> CommandResult.forHelp(null, DepartCommand.HELP_PAGE));
+        assertThrows(NullPointerException.class, () -> CommandResult.forHelp("feedback", null));
+    }
+
+    @Test
     public void toStringMethod() {
         CommandResult commandResult = new CommandResult("feedback");
         String expected = CommandResult.class.getCanonicalName() + "{feedbackToUser="
                 + commandResult.getFeedbackToUser() + ", showHelp=" + commandResult.isShowHelp()
                 + ", exit=" + commandResult.isExit() + ", showDetails=" + commandResult.isShowDetails()
-                + ", contactDetails=" + commandResult.getContactDetails().orElse(null) + "}";
+                + ", contactDetails=" + commandResult.getContactDetails().orElse(null)
+                + ", helpPage=" + commandResult.getHelpPage().orElse(null) + "}";
         assertEquals(expected, commandResult.toString());
     }
 }

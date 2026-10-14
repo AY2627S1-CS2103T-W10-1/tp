@@ -293,9 +293,10 @@ and returns a `CommandResult` with separate short feedback and an optional `cont
 owner-linked `ContactDetailsWindow` containing a read-only, wrapping, scrollable text area. Each successful
 `view` updates the window with a snapshot; later model changes do not silently change the displayed snapshot.
 
-`view` follows the existing `LogicManager` save flow, like `list`, `find` and `help`, while preserving contact data
+`view` follows the existing `LogicManager` save flow, like `list` and `find`, while preserving contact data
 and the current filter. Standard save errors are reported before a new details result reaches the UI. Contacts
 are validated and loaded into the model at startup, so `view` does not re-read contact data from disk.
+The `help` command skips storage saves and passes its selected `HelpPage` to the reusable Help window.
 
 Department display reads `Person.getDepartment()` from the Department implementation tracked by issue #65.
 The optional value is shown in full, or as `Department: Not provided` when absent. The `view` command uses

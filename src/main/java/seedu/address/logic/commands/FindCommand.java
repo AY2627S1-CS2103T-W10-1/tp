@@ -6,6 +6,7 @@ import java.util.function.Predicate;
 
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.Messages;
+import seedu.address.logic.help.HelpPage;
 import seedu.address.model.Model;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.TagsMatchPredicate;
@@ -16,6 +17,24 @@ import seedu.address.model.person.TagsMatchPredicate;
 public class FindCommand extends Command {
 
     public static final String COMMAND_WORD = "find";
+
+    /** Detailed usage, supported options and examples for this command. */
+    public static final HelpPage HELP_PAGE = new HelpPage(COMMAND_WORD, String.join("\n",
+            "Finds contacts by name keywords or tags.",
+            "Usage: find KEYWORD [MORE_KEYWORDS ...]",
+            "       find --tag TAG [--tag TAG ...]",
+            "",
+            "Options:",
+            "  --tag  Match any specified tag exactly; matching is case-sensitive.",
+            "         This command has no short tag option.",
+            "",
+            "Name searches match any keyword, ignoring case.",
+            "Tag and name searches cannot be combined. Results replace the displayed list.",
+            "",
+            "Examples:",
+            "  find alice bob",
+            "  find --tag client --tag important"));
+
     public static final String MESSAGE_NO_TAG_MATCHES = "No contacts found with the specified tag(s).";
 
     public static final String MESSAGE_USAGE = COMMAND_WORD + ": Finds all persons whose names contain any of "

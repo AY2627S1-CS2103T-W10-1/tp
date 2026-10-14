@@ -16,6 +16,7 @@ import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.Logic;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.exceptions.CommandException;
+import seedu.address.logic.help.HelpCatalog;
 import seedu.address.logic.parser.exceptions.ParseException;
 
 /**
@@ -142,15 +143,11 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     /**
-     * Opens the help window or focuses on it if it's already opened.
+     * Shows the command overview in the existing help window.
      */
     @FXML
     public void handleHelp() {
-        if (!helpWindow.isShowing()) {
-            helpWindow.show();
-        } else {
-            helpWindow.focus();
-        }
+        helpWindow.showPage(HelpCatalog.getOverview());
     }
 
     void show() {
@@ -186,7 +183,7 @@ public class MainWindow extends UiPart<Stage> {
             resultDisplay.setFeedbackToUser(commandResult.getFeedbackToUser());
 
             if (commandResult.isShowHelp()) {
-                handleHelp();
+                helpWindow.showPage(commandResult.getHelpPage().orElse(HelpCatalog.getOverview()));
             }
 
             commandResult.getContactDetails().ifPresent(contactDetailsWindow::showDetails);
