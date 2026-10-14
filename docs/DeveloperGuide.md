@@ -444,14 +444,14 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 ### Use cases
 
-(For all use cases below, the **System** is the `AddressBook` and the **Actor** is the `user`, unless specified otherwise)
+(For all use cases below, the **System** is `sudoContact` and the **Actor** is the `user`, unless specified otherwise)
 
 **Use Case: UC1 - List all contacts**
 
 **MSS**
 
 1. User requests to list all contacts
-2. AddressBook shows a list of contacts
+2. sudoContact shows a list of contacts
 
    use case ends
 
@@ -468,25 +468,24 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 1. User displays contacts, either by <u>listing all contacts (UC1)</u> or filtering the list.
 2. User requests ascending sorting using `sort -b FIELD` or `sort --by FIELD`.
-3. AddressBook validates the option and field, then sorts only the currently displayed contacts.
-4. AddressBook shows the sorted list and one-line feedback with the displayed contact count and selected field.
-   The active filter, contact data, and saved order are unchanged.
+3. sudoContact validates the option and field, then sorts only the currently displayed contacts.
+4. sudoContact shows the sorted list and numbered feedback. The active filter, contact data, and saved order are unchanged.
 
    Use case ends.
 
 **Extensions**
 
 * 2a. The option or field is missing, invalid, repeated, or accompanied by unsupported arguments.
-  * 2a1. AddressBook reports the corresponding parsing error; the current display order is unchanged.
+  * 2a1. sudoContact reports the corresponding parsing error; the current display order is unchanged.
   * Use case ends.
 * 2b. The request contains an explicit `--descending` token.
-  * 2b1. AddressBook reports that only ascending sorting is supported.
+  * 2b1. sudoContact reports that only ascending sorting is supported.
   * Use case ends.
-* 3a. The displayed list is empty, including after a startup contact-loading failure.
-  * 3a1. AddressBook displays `No contacts found to sort.`
+* 3a. The displayed list is empty and startup contact loading succeeded.
+  * 3a1. sudoContact displays `No contacts found to sort.`
   * Use case ends.
-* 3b. A displayed contact contains invalid tag data.
-  * 3b1. AddressBook reports the invalid-data error without changing display order or writing the file.
+* 3b. Contact loading failed at startup, or a displayed contact contains invalid department or tag data.
+  * 3b1. sudoContact reports the loading or invalid-data error without changing display order or writing the file.
   * Use case ends.
 
 **Use case: UC3 - Delete a contact**
@@ -496,8 +495,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 1. User <u>lists all contacts (UC1)</u>.
 2. User requests to delete a contact using its index in the currently
    displayed list.
-3. AddressBook deletes the selected contact.
-4. AddressBook displays the deleted contact's details and informs the
+3. sudoContact deletes the selected contact.
+4. sudoContact displays the deleted contact's details and informs the
    user that the deletion can be undone.
 
    Use case ends.
@@ -516,7 +515,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * 2a. The deletion request has an invalid format or the index is
   missing, invalid, or outside the displayed list's range.
 
-  * 2a1. AddressBook shows an error message and indicates the
+  * 2a1. sudoContact shows an error message and indicates the
     required format or valid index range.
 
   Use case resumes at step 2.
@@ -526,9 +525,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 **MSS**
 
 1. User requests to undo a deletion.
-2. AddressBook restores the most recently deleted contact that has
+2. sudoContact restores the most recently deleted contact that has
    not yet been restored in the current session, including its details.
-3. AddressBook displays the restored contact's details.
+3. sudoContact displays the restored contact's details.
 
    Use case ends.
 
@@ -536,32 +535,30 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 1a. The undo request includes additional arguments.
 
-  * 1a1. AddressBook shows an error message explaining that undo
+  * 1a1. sudoContact shows an error message explaining that undo
     does not accept arguments.
 
   Use case resumes at step 1.
 
 * 1b. There are no deletions available to undo in the current session.
 
-  * 1b1. AddressBook informs the user that there are no deletions
+  * 1b1. sudoContact informs the user that there are no deletions
     left to undo.
 
   Use case ends.
 
 * 2a. A duplicate contact already exists.
 
-  * 2a1. AddressBook rejects the restoration and identifies the
+  * 2a1. sudoContact rejects the restoration and identifies the
     existing contact that prevents it.
-  * 2a2. AddressBook retains the deleted contact for a later
+  * 2a2. sudoContact retains the deleted contact for a later
     undo attempt.
 
   Use case ends.
 
-**System:** sudoContact
 
 **Use case:** UC5 - Record which department a contact belongs to
 
-**Actor:** User
 
 **MSS:**
 
@@ -605,11 +602,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case resumes at step 5.
 
-**System:** sudoContact
-
 **Use case:** UC6 - Search contacts by tags
-
-**Actor:** User
 
 **Command format:** `find --tag TAG [--tag TAG ...]`
 
@@ -673,10 +666,6 @@ be combined with tag search in the same command.
 
 **Use case: UC7 - View one contact's full details**
 
-**System:** sudoContact
-
-**Actor:** User
-
 **MSS**
 
 1. User displays a list of contacts (UC1), which may be filtered or sorted.
@@ -710,10 +699,6 @@ be combined with tag search in the same command.
   Use case ends.
 
 **Use case: UC8 - Add a contact with partial information**
-
-**System:** sudoContact
-
-**Actor:** User
 
 **MSS**
 
@@ -760,10 +745,6 @@ be combined with tag search in the same command.
 
 **Use case: UC9 - Export contacts to a CSV file**
 
-**System:** sudoContact
-
-**Actor:** User
-
 **MSS**
 
 1. User enters `export -c|--csv [FILENAME]`.
@@ -805,8 +786,6 @@ be combined with tag search in the same command.
   Use case ends.
 
 **Use Case: UC10 - View available commands and their usage**
-
-  **Actor:** User
 
   **MSS**
 
