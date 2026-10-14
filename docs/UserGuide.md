@@ -26,7 +26,7 @@ sudoContact is a **desktop application for managing contacts, optimized for use 
 1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the scrollable command list. Press `q` while the Help window is active to close it.<br>
    Some example commands you can try:
 
-   * `list` : Lists all contacts.
+   * `list` or `ls` : Lists all contacts.
 
    * `sort --by tags` : Sorts displayed contacts by their alphabetically smallest tag.
 
@@ -60,8 +60,8 @@ sudoContact is a **desktop application for managing contacts, optimized for use 
 * Named fields for `add` and `edit` can be in any order. Other commands follow their documented order.<br>
   For example, `p/PHONE_NUMBER n/NAME` is also acceptable for `add`. For `sort`, the option must precede the field.
 
-* Extraneous parameters for commands that take no parameters, such as `help`, `list`, `exit`, and `clear`, are ignored.<br>
-  For example, `help 123` is interpreted as `help`.
+* Extraneous parameters for `help`, `exit`, and `clear` are ignored.<br>
+  For example, `help 123` is interpreted as `help`. The `list` and `ls` commands reject extra parameters.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </div>
@@ -87,11 +87,22 @@ Examples:
 * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`
 * `add n/Betsy Crowe t/friend e/betsycrowe@example.com a/Newgate Prison p/1234567 t/criminal`
 
-### Listing all persons: `list`
+### Listing all contacts: `list` or `ls`
 
-Shows all persons in their stored order, clearing the current filter and display sorting.
+Shows all contacts in their stored order, clearing the current filter and display sorting.
 
-Format: `list`
+Format: `list` or `ls`
+
+* Both commands take no parameters.
+* Leading and trailing spaces are ignored.
+* Command words are case-insensitive: `LIST`, `List`, and `LS` are also accepted.
+* Extra parameters produce: `The list command does not accept any parameters. Usage: list | ls`
+
+Examples:
+
+* `list`
+* `ls`
+* `find Betsy` followed by `ls` restores the full contact list.
 
 ### Assigning a department: `depart`
 
@@ -127,8 +138,8 @@ Format: `sort -b FIELD` or `sort --by FIELD`
 * Contacts without the selected field appear last. Equal sorting keys retain their current relative order,
   including case-only differences and when switching sorting fields; names are not a tie-breaker.
 * Department sorting uses the stored department assigned with `depart CONTACT_ID --set DEPARTMENT`.
-  Contacts without departments appear last and are displayed as `Not assigned`.
-* Empty tag collections are displayed as `None`; multiple tags are displayed alphabetically, separated by commas.
+  Contacts without departments appear last.
+* Successful sorting reports the number of displayed contacts and the selected field in one line.
 * Only the display order changes. Contacts and their saved order remain unchanged, and sorting does not save the file.
 * Displayed indices are updated; `edit 1`, `delete 1`, `view 1`, and `depart 1 --set Engineering` target the first row.
 * Another sort uses the current displayed order as its starting point. `list`, `find`, and successful contact
@@ -144,44 +155,49 @@ Examples:
 * `sort --by tag`
 * `sort --by tags`
 
-Example tag-sort feedback:
+For example, start with Alex Tan, Beatrice Lim, and Chen Wei in that stored order:
+
+Contact | Department | Tag
+--------|------------|----
+Alex Tan | Engineering | mentor
+Beatrice Lim | Marketing | client
+Chen Wei | Engineering | intern
+
+`sort --by tags` displays Beatrice, Chen, then Alex and returns:
 
 ```text
-Contacts sorted by tags:
-1. Beatrice Lim | Department: Marketing | Tags: client
-2. Chen Wei | Department: Engineering | Tags: intern
-3. Alex Tan | Department: Engineering | Tags: mentor
+Sorted 3 contacts by tags.
 ```
 
-Starting with Alex, Beatrice, and Chen in that order, with the departments and tags above, `sort -b dept` returns:
+Starting again from stored order, `sort -b dept` displays Alex, Chen, then Beatrice and returns:
 
 ```text
-Contacts sorted by department:
-1. Alex Tan | Department: Engineering | Tags: mentor
-2. Chen Wei | Department: Engineering | Tags: intern
-3. Beatrice Lim | Department: Marketing | Tags: client
+Sorted 3 contacts by department.
 ```
 
 Alex and Chen retain their relative order because their department keys are equal.
+The reported count includes only contacts in the currently displayed list.
 
 For an empty displayed list, the feedback is `No contacts found to sort.`
 
 Problem | Feedback
 --------|---------
-Missing option or field | `Missing sorting option. Usage: sort -b/--by <department\|dept\|tag\|tags>`
+Missing option | `Missing sorting option. Usage: sort -b/--by <department\|dept\|tag\|tags>`
+Missing field | `Missing sorting field. Usage: sort -b/--by <department\|dept\|tag\|tags>`
 Unknown field | `Invalid sorting field. Use department, dept, tag, or tags.`
 Unsupported or repeated argument | `Unsupported argument. Usage: sort -b/--by <department\|dept\|tag\|tags>`
 `--descending` supplied | `Descending order is not supported. Contacts are sorted in ascending order.`
-Contacts failed to load at startup | `Unable to load contacts for sorting. Please restart the application or check the data file.`
-Invalid stored contact data | `Unable to sort contacts because some stored contact data is invalid.`
+Invalid displayed contact data | `Unable to sort contacts because some stored contact data is invalid.`
 
 When several input problems occur, an explicit `--descending` token takes precedence, followed by unsupported
 argument structure, missing option/value, and an invalid field. Failed input or invalid sorting data leaves the
 current display order unchanged. Sorting preserves separate contact occurrences rather than deduplicating them;
 the application's existing rules still prevent duplicate contacts from being added or loaded.
 
-Startup loading failures remain recorded for the session. Fix the contact file and restart to retry loading.
-Sorting uses the loaded contacts; it does not reread the file. A missing file follows the existing sample-data behavior.
+Sorting uses the current in-memory contacts; it does not reread the file. If contacts fail to load at startup,
+the application starts with an empty list, so sorting reports `No contacts found to sort.` You can add valid contacts
+and sort them in the same session. To load contacts from a repaired file, restart the application.
+A missing file follows the existing sample-data behavior.
 
 ### Viewing a contact's details: `view`
 
@@ -223,6 +239,22 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`
 Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.
 *  `edit 2 n/Betsy Crower t/` Edits the name of the 2nd person to be `Betsy Crower` and clears all existing tags.
+
+### Locating contacts by tags: `find --tag`
+
+Format: `find --tag TAG [--tag TAG ...]`
+
+* Command words are case-insensitive: `find`, `FIND`, and `FiNd` are equivalent.
+* The option must be lowercase `--tag`; `--TAG` is invalid. Tag values are case-sensitive:
+  `friends` does not match `Friends`.
+* Matches contacts with **any** of the specified tags, respecting case and matching whole tags.
+* Each matching contact is displayed once, even if several tags match or a tag is repeated.
+* Tags must contain 1–30 letters, numbers, hyphens (`-`), or underscores (`_`), without spaces.
+* A missing value displays `Tag cannot be empty: Please provide a valid tag after '--tag'.`
+* An invalid value displays `Invalid Tag: '[INPUT]' must be 1-30 characters using only letters, numbers, hyphens (-), and underscores (_), with no spaces.`
+* No matches displays `No contacts found with the specified tag(s).`
+
+Example: `find --tag client --tag important`
 
 ### Locating persons by name: `find`
 
@@ -334,7 +366,7 @@ Departments and tags are contact data and are saved normally when changed.
 AddressBook data is saved automatically as a JSON file `[JAR file location]/data/addressbook.json`. Advanced users are welcome to update data directly by editing that data file.
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
-If your changes make the data file invalid, AddressBook starts with an empty address book at the next run. The invalid file remains on disk until a successful command that saves data overwrites it. `sort` reports the startup loading error without writing the file; failed commands also do not save. Still, we recommend backing up the file before editing it.<br>
+If your changes make the data file invalid, AddressBook starts with an empty address book at the next run. The invalid file remains on disk until a successful command that saves data overwrites it. `sort` uses the current in-memory contacts without writing the file; failed commands also do not save. Still, we recommend backing up the file before editing it.<br>
 Furthermore, certain edits can cause the AddressBook to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </div>
 
@@ -369,7 +401,7 @@ Action | Format, Examples
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
 **Export** | `export -c|--csv [FILENAME]`<br> e.g., `export -c team.csv`
 **View** | `view CONTACT_ID`<br> e.g., `view 2`
-**List** | `list`
+**List** | `list` or `ls`
 **Depart** | `depart CONTACT_ID --set DEPARTMENT`<br> e.g., `depart 1 --set Engineering`
 **Sort** | `sort -b FIELD` or `sort --by FIELD`, where `FIELD` is `department`, `dept`, `tag`, or `tags`
 **Undo** | `undo`

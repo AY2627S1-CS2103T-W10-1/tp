@@ -132,7 +132,7 @@ The `Model` component,
 
 * stores the address book data i.e., all `Person` objects (which are contained in a `UniquePersonList` object).
 * maintains an observable display-order projection separate from the canonical person list. A `FilteredList` over this projection applies the current filter and preserves display-only sorting. It exposes an unmodifiable `ObservableList<Person>` shared by the UI and index-based commands.
-* records startup contact-loading status and session-local deletion history alongside the contact data.
+* records session-local deletion history alongside the contact data.
 * stores a `UserPrefs` object that represents the user’s preferences (currently, just the GUI settings). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
 
@@ -196,10 +196,26 @@ loader; export does not re-read a JSON file edited externally during the session
 for corrupted persistent data. Parser, model integration, real file, cleanup and JavaFX command-box tests
 cover the export flow, including a filtered list and an existing destination.
 
+### Listing all contacts: design specification
+
+The list feature lets users review every stored contact after applying a search or filter.
+It accepts `list` or `ls`, with no parameters. Command words are case-insensitive;
+`LIST`, `List`, and `LS` are accepted. Leading and trailing spaces are ignored.
+Both spellings clear the current filter and display sorting, showing contacts in stored order.
+
+Any extra input produces exactly:
+`The list command does not accept any parameters. Usage: list | ls`
+Rejecting extra input prevents users from assuming unsupported filtering or sorting options were applied.
+
+`AddressBookParser` routes both spellings to `ListCommandParser`, which rejects nonblank arguments
+before creating the shared `ListCommand`. Its execution uses `PREDICATE_SHOW_ALL_PERSONS` through
+`Model.updateFilteredPersonList` to restore the full contact list and stored order.
+
 ### Contact display sorting
 
 `AddressBookParser` delegates `sort` to `SortCommandParser`, which accepts complete option tokens and normalizes
-aliases to `SortField`. `SortCommand` requests ordering from the model and produces numbered feedback.
+aliases to `SortField`. `SortCommand` requests ordering from the model and produces one-line feedback with the
+displayed contact count and selected field.
 Its `requiresStorageSave()` override skips the save normally performed by `LogicManager`; existing commands retain
 their previous save behavior. Parse-error precedence is descending option, unsupported argument structure,
 missing option/value, then invalid field; the user guide lists the exact messages.
@@ -216,18 +232,21 @@ It keeps duplicate occurrences and never mutates input. Stability uses the curre
 switching fields. No contact-name tie-breaker is applied. Sorting a canonical-source `SortedList` without preserving current tie order would violate this rule.
 
 `SortField.DEPARTMENT` reads the optional stored value from `Person.getDepartment()`. Department and tag
-constructors validate their immutable values; sorting rejects null tag elements before changing the display. Missing departments sort last and display as `Not assigned`.
+constructors validate their immutable values; sorting rejects null tag elements before changing the display.
+Missing departments sort last.
 Tag keys use the case-insensitive minimum of the unordered tag set; empty tag sets are absent keys.
 Tag sorting does not group a contact by all of its tags, and does not change the stored tag set.
 `ContactSorterTest` verifies real department values, case-insensitive ordering, missing values, and stable ties.
 `view`, `depart`, `edit`, and `delete` resolve indices against the same sorted display; undo preserves department data.
 
-`MainApp` records `ContactLoadStatus`: successful or missing-file/sample loading is `READY`; ordinary I/O failures
-are `UNREADABLE`; malformed JSON and invalid model values are `INVALID`. Sorting checks this status before reporting
-an empty list and rejects null tag elements before publishing a new order. Failure status lasts until restart.
+`MainApp` logs startup loading failures and initializes an empty address book when loading fails.
+Sorting uses the current in-memory contacts, so valid contacts added afterward can be sorted without restarting.
+An empty displayed list produces `No contacts found to sort.` Sorting still rejects null tag elements before
+publishing a new order. A missing data file retains the existing sample-data behavior.
 
 Regression coverage includes parser boundaries, aliases and errors; stable department and tag ordering; observable
-display/filter behavior; editing and deleting sorted indices; unchanged storage; and startup error messages.
+display/filter behavior; editing and deleting sorted indices; unchanged storage; and recovery after startup loading
+failures, including sorting contacts after successful additions and saves in the same session.
 Run `./gradlew check coverage` (Windows: `.\gradlew.bat check coverage`) with Java 25.
 
 ### Viewing contact details
@@ -422,7 +441,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 1. User displays contacts, either by <u>listing all contacts (UC1)</u> or filtering the list.
 2. User requests ascending sorting using `sort -b FIELD` or `sort --by FIELD`.
 3. AddressBook validates the option and field, then sorts only the currently displayed contacts.
-4. AddressBook shows the sorted list and numbered feedback. The active filter, contact data, and saved order are unchanged.
+4. AddressBook shows the sorted list and one-line feedback with the displayed contact count and selected field.
+   The active filter, contact data, and saved order are unchanged.
 
    Use case ends.
 
@@ -434,11 +454,11 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * 2b. The request contains an explicit `--descending` token.
   * 2b1. AddressBook reports that only ascending sorting is supported.
   * Use case ends.
-* 3a. The displayed list is empty and startup contact loading succeeded.
+* 3a. The displayed list is empty, including after a startup contact-loading failure.
   * 3a1. AddressBook displays `No contacts found to sort.`
   * Use case ends.
-* 3b. Contact loading failed at startup, or a displayed contact contains invalid department or tag data.
-  * 3b1. AddressBook reports the loading or invalid-data error without changing display order or writing the file.
+* 3b. A displayed contact contains invalid tag data.
+  * 3b1. AddressBook reports the invalid-data error without changing display order or writing the file.
   * Use case ends.
 
 **Use case: UC3 - Delete a contact**
@@ -563,20 +583,27 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **Actor:** User
 
+**Command format:** `find --tag TAG [--tag TAG ...]`
+
+The command word `find` is case-insensitive. The option `--tag` and tag values are
+case-sensitive. Each tag value requires its own `--tag` option; name keywords cannot
+be combined with tag search in the same command.
+
 **MSS:**
 
 1.  User requests to search for contacts with one or more tags.
-2.  User enters a `find` command with one or more `--tag` values.
+2.  User enters a `find` command with one or more `--tag TAG` pairs.
 3.  sudoContact validates all specified tags.
-4.  sudoContact searches the contacts for those matching the specified tags.
+4.  sudoContact searches all contacts for those having any of the specified tags (OR matching),
+    using case-sensitive, whole-tag matching.
 5.  sudoContact displays each matching contact once.
-6.  sudoContact displays the matching contacts to the user.
+6.  sudoContact displays the number of matching contacts.
 
     Use case ends.
 
 **Extensions:**
 
-* 3a. A specified tag contains invalid characters or spaces.
+* 3a. A specified tag contains invalid characters, internal spaces, or more than 30 characters.
 
     * 3a1. sudoContact displays `Invalid Tag: '[INPUT]' must be 1-30 characters using only letters, numbers, hyphens (-), and underscores (_), with no spaces.`
 
@@ -588,20 +615,35 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case ends.
 
+* 3c. No valid `--tag` option is present and an option-like argument is supplied
+  (e.g. `find --tags friends`, `find --TAG friends`, or `find -tag friends`).
+
+    * 3c1. sudoContact displays `Invalid find option: '[INPUT]'. Use find --tag TAG [--tag TAG ...] or find KEYWORD [MORE_KEYWORDS].`
+
+      Use case ends.
+
+* 3d. Arguments precede the first valid `--tag` option (e.g. `find Alice --tag friends`),
+  or the `find` command has no arguments.
+
+    * 3d1. sudoContact displays an invalid command format error and the `find` usage instructions.
+
+      Use case ends.
+
 * 4a. No contacts match the specified tag(s).
 
     * 4a1. sudoContact displays `No contacts found with the specified tag(s).`
 
       Use case ends.
 
-* 4b. Multiple tags are specified and a contact matches more than one of them.
+* 4b. Multiple tags are specified and a contact matches more than one of them,
+  or the same tag is specified more than once.
 
     * 4b1. sudoContact displays the matching contact only once.
 
       Use case resumes at step 5.
 
 
-**Use case: UC8 - View one contact's full details**
+**Use case: UC7 - View one contact's full details**
 
 **System:** sudoContact
 
@@ -639,7 +681,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case ends.
 
-**Use case: UC9 - Add a contact with partial information**
+**Use case: UC8 - Add a contact with partial information**
 
 **System:** sudoContact
 
@@ -688,7 +730,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case ends.
 
-**Use case: UC10 - Export contacts to a CSV file**
+**Use case: UC9 - Export contacts to a CSV file**
 
 **System:** sudoContact
 
@@ -734,7 +776,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case ends.
 
-**Use Case: UC11 - View available commands and their usage**
+**Use Case: UC10 - View available commands and their usage**
 
   **Actor:** User
 
@@ -789,7 +831,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * **Partial contact**: A contact with a name but without some optional details, such as a phone number, email address, department, or tags.
 * **Duplicate contact**: An existing contact with the same name as a contact being added, edited, or restored. Only names are compared, and the comparison is case-sensitive.
 * **CSV export**: A UTF-8 comma-separated values file containing a header row and one row for each stored contact.
-* **Tag**: An optional label attached to a contact to support categorisation and searching. Tag matching is case-insensitive.
+* **Tag**: An optional label attached to a contact to support categorisation and searching. Tag matching is case-sensitive.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -914,5 +956,7 @@ testers are expected to do more *exploratory* testing.
 9. After sorting, run `view 1`, then `depart 1 --set Support`; confirm both target the displayed first contact.
    Check the new indices after assignment resets sorting. Delete a sorted contact and run `undo`; confirm its
    department and tags are restored and the full list returns to canonical order.
-10. Using a disposable copy of the application, start with malformed contact JSON; confirm sorting reports invalid data.
-   Fix the file and restart before testing successful sorting again.
+10. Using a disposable copy of the application, start with malformed contact JSON; confirm the list is empty and
+    sorting reports `No contacts found to sort.` without overwriting the file. Add two valid contacts with different
+    tags and confirm they are saved. Sort by tags in the same session; confirm sorting succeeds and the saved file
+    remains unchanged. Repeat after a startup file-read failure once the file is writable again.

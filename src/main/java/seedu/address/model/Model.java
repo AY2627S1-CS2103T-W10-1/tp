@@ -81,8 +81,11 @@ public interface Model {
     ObservableList<Person> getFilteredPersonList();
 
     /**
-     * Updates the filter of the filtered person list to filter by the given {@code predicate}.
-     * @throws NullPointerException if {@code predicate} is null.
+     * Updates the displayed person list to use the given predicate.
+     * Resets display sorting to stored contact order before applying the filter.
+     *
+     * @param predicate Predicate that determines which contacts are displayed.
+     * @throws NullPointerException If {@code predicate} is null.
      */
     void updateFilteredPersonList(Predicate<Person> predicate);
 
@@ -93,9 +96,4 @@ public interface Model {
      * @throws IllegalArgumentException If a contact contains invalid sorting data.
      */
     void sortFilteredPersonList(SortField field);
-
-    /**
-     * Returns the contact loading status recorded at application startup.
-     */
-    ContactLoadStatus getContactLoadStatus();
 }
