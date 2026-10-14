@@ -1,6 +1,7 @@
 package seedu.address.logic.parser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
 
 import org.junit.jupiter.api.Test;
@@ -28,5 +29,18 @@ class DepartCommandParserTest {
                 DepartCommandParser.MESSAGE_INVALID_CONTACT_ID);
         assertParseFailure(parser, " 1 --set Engineering --set Sales",
                 DepartCommandParser.MESSAGE_EMPTY_DEPARTMENT);
+    }
+
+    @Test
+    void parse_quotedDepartment_returnsCommand() throws Exception {
+        assertEquals(new DepartCommand(Index.fromOneBased(1), "1", new Department("R&D Engineering")),
+                parser.parse(" 1 --set \"R&D Engineering\""));
+    }
+
+    @Test
+    void parse_unknownOptionOrUnmatchedQuote_throwsParseException() {
+        String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, DepartCommand.MESSAGE_USAGE);
+        assertParseFailure(parser, " 1 --set Engineering --unknown", expectedMessage);
+        assertParseFailure(parser, " 1 --set \"Engineering", expectedMessage);
     }
 }
