@@ -28,9 +28,15 @@ jobs:
           java-version: '25'
           java-package: jdk+fx
 
+      - name: Install test window manager
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends openbox x11-utils
+
       - name: Build and check with Gradle (virtual display)
         if: runner.os == 'Linux'
-        run: xvfb-run -a ./gradlew check coverage
+        run: xvfb-run -a .github/run-gui-checks.sh
 
       - name: Build and check with Gradle
         if: runner.os != 'Linux'
