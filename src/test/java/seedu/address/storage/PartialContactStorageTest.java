@@ -34,12 +34,16 @@ public class PartialContactStorageTest {
         Person person = readPerson(",\"phone\":\"911\",\"tags\":[\"" + "a".repeat(31) + "\"]");
         assertEquals("911", person.getPhone().value);
         assertEquals("a".repeat(31), person.getTags().iterator().next().tagName);
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(folder.resolve("contacts.json"));
+        storage.saveAddressBook(storage.readAddressBook().orElseThrow());
+        assertEquals(person, storage.readAddressBook().orElseThrow().getPersonList().getFirst());
     }
 
     @Test
     public void read_invalidSuppliedFields_stillRejectsCorruptedData() {
         for (String fields : List.of(",\"phone\":\"abc\"", ",\"email\":\"broken\"", ",\"address\":\" \"",
-                ",\"department\":\"!\"", ",\"tags\":[\"bad tag\"]")) {
+                ",\"department\":\"!\"", ",\"tags\":[\"bad tag\"]",
+                ",\"tags\":[\"" + "a".repeat(31) + "!\"]")) {
             assertThrows(DataLoadingException.class, () -> readPerson(fields));
         }
     }

@@ -70,10 +70,10 @@ public class AddCommandParser implements Parser<AddCommand> {
         Set<Tag> tags = new HashSet<>();
         for (String value : arguments.getAllValues(PREFIX_TAG)) {
             String normalized = value.trim().replaceFirst("^[#/]+", "");
-            Tag tag = ParserUtil.parseTag(normalized);
             if (normalized.length() > 30) {
                 throw new ParseException(AddCommand.MESSAGE_INVALID_TAG);
             }
+            Tag tag = ParserUtil.parseTag(normalized);
             tags.add(tag);
         }
         return new AddCommand(new Person(name, phone, email, address, tags, department));

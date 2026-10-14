@@ -22,9 +22,16 @@ public class SortCommandParserTest {
     }
 
     @Test
-    public void parse_missingOptionOrValue_failure() {
-        for (String args : new String[] {"", "  ", "-b", "--by"}) {
+    public void parse_missingOption_failure() {
+        for (String args : new String[] {"", "  "}) {
             assertParseFailure(parser, args, SortCommandParser.MESSAGE_MISSING_OPTION);
+        }
+    }
+
+    @Test
+    public void parse_missingField_failure() {
+        for (String args : new String[] {"-b", "--by", "  -b  ", "  --by\t"}) {
+            assertParseFailure(parser, args, SortCommandParser.MESSAGE_MISSING_FIELD);
         }
     }
 
