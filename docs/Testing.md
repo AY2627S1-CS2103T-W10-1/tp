@@ -43,6 +43,14 @@ all stored contacts, UTF-8 CSV escaping, duplicate rows, existing destinations a
 CSV files, which it deletes afterward. GUI tests use software rendering. On headless Linux run
 `xvfb-run -a ./gradlew check coverage`; the Linux CI job provides the virtual display.
 `LogicManagerTest` also verifies that successful CSV creation remains successful when JSON storage rejects writes.
+It checks that partial contacts export omitted fields as empty CSV cells, including contacts hidden by a tag filter,
+while preserving the filter and JSON data.
+
+### GUI checks for partial contacts
+
+`PartialAddUiTest` exercises real FXML and the MainWindow add/edit/depart flow, missing-field display,
+identity errors and persistence. On headless Linux run `xvfb-run -a ./gradlew check coverage`; GUI tests use
+software rendering. Other platforms can use `./gradlew check coverage`.
 
 ### Contact details interface tests
 
