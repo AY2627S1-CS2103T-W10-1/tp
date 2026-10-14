@@ -19,6 +19,7 @@ import seedu.address.logic.commands.DepartCommand;
 import seedu.address.logic.commands.EditCommand;
 import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
 import seedu.address.logic.commands.ExitCommand;
+import seedu.address.logic.commands.ExportCommand;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.commands.ListCommand;
@@ -26,6 +27,7 @@ import seedu.address.logic.commands.UndoCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.TagsMatchPredicate;
 import seedu.address.testutil.EditPersonDescriptorBuilder;
 import seedu.address.testutil.PersonBuilder;
 import seedu.address.testutil.PersonUtil;
@@ -33,6 +35,19 @@ import seedu.address.testutil.PersonUtil;
 public class AddressBookParserTest {
 
     private final AddressBookParser parser = new AddressBookParser();
+
+    @Test
+    public void parseCommand_commandWordIgnoresCase_argumentsPreserveCase() throws Exception {
+        for (String commandWord : List.of("find", "FIND", "FiNd")) {
+            assertEquals(new FindCommand(new TagsMatchPredicate(List.of("Friends"))),
+                    parser.parseCommand(commandWord + " --tag Friends"));
+            assertThrows(ParseException.class,
+                    String.format(FindCommandParser.MESSAGE_UNKNOWN_OPTION, "--TAG"), () ->
+                            parser.parseCommand(commandWord + " --TAG Friends"));
+        }
+        assertTrue(parser.parseCommand("LiSt") instanceof ListCommand);
+        assertEquals(new DeleteCommand(INDEX_FIRST_PERSON), parser.parseCommand("DELETE 1"));
+    }
 
     @Test
     public void parseCommand_add() throws Exception {
@@ -75,6 +90,13 @@ public class AddressBookParserTest {
     }
 
     @Test
+    public void parseCommand_export() throws Exception {
+        assertEquals(new ExportCommand("contacts.csv"), parser.parseCommand("export --csv"));
+        assertEquals(new ExportCommand("contacts.csv"), parser.parseCommand("export -c"));
+        assertEquals(new ExportCommand("team.csv"), parser.parseCommand("export --csv team.csv"));
+    }
+
+    @Test
     public void parseCommand_find() throws Exception {
         List<String> keywords = List.of("foo", "bar", "baz");
         FindCommand command = (FindCommand) parser.parseCommand(
@@ -90,8 +112,25 @@ public class AddressBookParserTest {
 
     @Test
     public void parseCommand_list() throws Exception {
-        assertTrue(parser.parseCommand(ListCommand.COMMAND_WORD) instanceof ListCommand);
-        assertTrue(parser.parseCommand(ListCommand.COMMAND_WORD + " 3") instanceof ListCommand);
+        for (String input : List.of("list", "ls", "  list  ", "  ls  ", "\tlist\t", "\tls\t")) {
+            assertTrue(parser.parseCommand(input) instanceof ListCommand);
+        }
+    }
+
+    @Test
+    public void parseCommand_listWithParameters_throwsParseException() {
+        String expectedMessage = "The list command does not accept any parameters. Usage: list | ls";
+        for (String input : List.of("list 3", "ls 3", "list name", "ls --sort", " list 3 ", "ls\tname",
+                "LIST name", "LS 3", "LiSt --sort", "lS\tname")) {
+            assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand(input));
+        }
+    }
+
+    @Test
+    public void parseCommand_listWithDifferentCase_success() throws Exception {
+        for (String input : List.of("LIST", "List", "LiSt", "LS", "Ls", "lS")) {
+            assertTrue(parser.parseCommand(input) instanceof ListCommand);
+        }
     }
 
     @Test
