@@ -11,9 +11,14 @@ title: Developer Guide
 This project is based on the AddressBook-Level3 project created by the [SE-EDU initiative](https://se-education.org).
 
 * [SE-EDU initiative](https://se-education.org)
+* He Qianyi used OpenAI Codex to assist with feature 4 (partial-contact addition): parser/options,
+  omitted-field representation, duplicate identity, storage/UI integration, tests and related UG/DG documentation.
 * He Qianyi used OpenAI Codex to assist with the feature 3 `view CONTACT_ID` implementation, including the
   command/parser, details window, command-result integration, tests, and related
   User Guide/Developer Guide documentation.
+
+OpenAI Codex assisted He Qianyi with the Feature 11 CSV export implementation, tests and documentation.
+He Qianyi is responsible for reviewing and understanding these changes.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -129,7 +134,7 @@ The `Model` component,
 
 * stores the address book data i.e., all `Person` objects (which are contained in a `UniquePersonList` object).
 * maintains an observable display-order projection separate from the canonical person list. A `FilteredList` over this projection applies the current filter and preserves display-only sorting. It exposes an unmodifiable `ObservableList<Person>` shared by the UI and index-based commands.
-* records startup contact-loading status and session-local deletion history alongside the contact data.
+* records session-local deletion history alongside the contact data.
 * stores a `UserPrefs` object that represents the user’s preferences (currently, just the GUI settings). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
 
@@ -161,10 +166,84 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
+### CSV export (Feature 11 / UC9)
+
+`AddressBookParser` dispatches `export` to `ExportCommandParser`. The parser requires `-c` or `--csv`, accepts
+one optional basename (with matching quotes for spaces), and defaults to `contacts.csv`.
+`CsvContactExporter.isValidFileName` rejects paths, invalid characters and reserved Windows device names
+so the command has the same filename policy on all supported platforms. The filename policy follows
+[Windows filename restrictions](https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file).
+
+`ExportCommand` snapshots `model.getAddressBook().getPersonList()` rather than the filtered list.
+It rejects an empty snapshot, then delegates file writing to the storage helper `CsvContactExporter`.
+The command leaves the model and filter unchanged. A successful command returns the row count and filename
+through the existing feedback display. Its `requiresStorageSave()` override skips the unrelated JSON save:
+once the CSV exists, a JSON save failure must not turn a successful export into an error.
+
+The exporter writes UTF-8 with a fixed six-column header and CRLF record separators. Values containing
+commas, double quotes, CR or LF are quoted, and inner double quotes are doubled, following
+[RFC 4180](https://www.rfc-editor.org/rfc/rfc4180). It writes raw field values, maps an absent department
+to an empty cell, sorts tags and joins them with `; `. It preserves input order and repeated records.
+Raw empty values also allow partial contacts to be exported when the partial-add feature is integrated.
+
+The exporter writes and closes a temporary file in the destination directory before moving it to the
+requested name. It checks for an existing destination and moves without `REPLACE_EXISTING`, so a file
+created during export is also protected. The temporary file is cleaned up on completion or failure.
+`FileAlreadyExistsException` produces a choose-another-filename message; other `IOException`s produce
+a file creation error instead of a success result. The default output directory is the process working
+directory; an injectable exporter isolates tests and simulates permission or interrupted-write failures.
+
+Export uses validated in-memory contacts. Invalid JSON/contact data is handled by the existing startup
+loader; export does not re-read a JSON file edited externally during the session. It adds no recovery path
+for corrupted persistent data. Parser, model integration, real file, cleanup and JavaFX command-box tests
+cover the export flow, including a filtered list and an existing destination.
+
+### Adding contacts with partial information
+
+`AddCommandParser` supports both the existing slash prefixes and add-specific long options. The latter
+use `AddArgumentTokenizer` to preserve quoted multiword values and distinguish literal text from option names.
+Only name is required. Omitted phone, email and address use immutable `notProvided()` value objects whose
+stored values are empty strings and whose display strings are `Not provided`. Their public constructors and
+parser validators still reject empty supplied values. Department uses the existing optional model from #71;
+its command and validation remain in the teammate's implementation.
+
+`JsonAdaptedPerson` maps null, omitted or empty phone/email/address fields to the missing value objects;
+nonempty invalid data still causes a loading error. Existing fully populated data retains its fields.
+New `add` input validates phone numbers as 7–15 digits and tags as 1–30 characters with the team-specified
+hyphen/underscore support and leading `#`/`/` normalization. Storage retains compatibility with previously
+valid short phone numbers and longer tags through `Tag.fromStoredValue`; normal tag validation uses the
+shared 1–30 character limit, including tag searches. This avoids a migration of old contact data.
+Tag search and matching reuse the teammate's implementation.
+
+`Person.isSamePerson` compares name, phone and email, including missing values. Address, Department and
+tags do not contribute to identity. The shared uniqueness check allows same-name contacts with different
+phone/email and rejects edit operations that would create a duplicate identity. Existing `edit` and `depart`
+commands can complete partial contacts while preserving their other fields.
+
+`AddCommand` returns full labelled feedback, sorted tags and missing-field placeholders. `PersonCard` shows
+those same placeholders for missing fields and `None` for no tags. `LogicManager` retains the existing save
+failure behaviour: it reports the error instead of returning an addition-success result.
+
+### Listing all contacts: design specification
+
+The list feature lets users review every stored contact after applying a search or filter.
+It accepts `list` or `ls`, with no parameters. Command words are case-insensitive;
+`LIST`, `List`, and `LS` are accepted. Leading and trailing spaces are ignored.
+Both spellings clear the current filter and display sorting, showing contacts in stored order.
+
+Any extra input produces exactly:
+`The list command does not accept any parameters. Usage: list | ls`
+Rejecting extra input prevents users from assuming unsupported filtering or sorting options were applied.
+
+`AddressBookParser` routes both spellings to `ListCommandParser`, which rejects nonblank arguments
+before creating the shared `ListCommand`. Its execution uses `PREDICATE_SHOW_ALL_PERSONS` through
+`Model.updateFilteredPersonList` to restore the full contact list and stored order.
+
 ### Contact display sorting
 
 `AddressBookParser` delegates `sort` to `SortCommandParser`, which accepts complete option tokens and normalizes
-aliases to `SortField`. `SortCommand` requests ordering from the model and produces numbered feedback.
+aliases to `SortField`. `SortCommand` requests ordering from the model and produces one-line feedback with the
+displayed contact count and selected field.
 Its `requiresStorageSave()` override skips the save normally performed by `LogicManager`; existing commands retain
 their previous save behavior. Parse-error precedence is descending option, unsupported argument structure,
 missing option/value, then invalid field; the user guide lists the exact messages.
@@ -181,19 +260,23 @@ It keeps duplicate occurrences and never mutates input. Stability uses the curre
 switching fields. No contact-name tie-breaker is applied. Sorting a canonical-source `SortedList` without preserving current tie order would violate this rule.
 
 `SortField.DEPARTMENT` reads the optional stored value from `Person.getDepartment()`. Department and tag
-constructors validate their immutable values; sorting rejects null tag elements before changing the display. Missing departments sort last and display as `Not assigned`.
+constructors validate their immutable values; sorting rejects null tag elements before changing the display.
+Missing departments sort last.
 Tag keys use the case-insensitive minimum of the unordered tag set; empty tag sets are absent keys.
 Tag sorting does not group a contact by all of its tags, and does not change the stored tag set.
 `ContactSorterTest` verifies real department values, case-insensitive ordering, missing values, and stable ties.
 `view`, `depart`, `edit`, and `delete` resolve indices against the same sorted display; undo preserves department data.
 
-`MainApp` records `ContactLoadStatus`: successful or missing-file/sample loading is `READY`; ordinary I/O failures
-are `UNREADABLE`; malformed JSON and invalid model values are `INVALID`. Sorting checks this status before reporting
-an empty list and rejects null tag elements before publishing a new order. Failure status lasts until restart.
+`MainApp` logs startup loading failures and initializes an empty address book when loading fails.
+Sorting uses the current in-memory contacts, so valid contacts added afterward can be sorted without restarting.
+An empty displayed list produces `No contacts found to sort.` Sorting still rejects null tag elements before
+publishing a new order. A missing data file retains the existing sample-data behavior.
 
 Regression coverage includes parser boundaries, aliases and errors; stable department and tag ordering; observable
-display/filter behavior; editing and deleting sorted indices; unchanged storage; and startup error messages.
+display/filter behavior; editing and deleting sorted indices; unchanged storage; and recovery after startup loading
+failures, including sorting contacts after successful additions and saves in the same session.
 Run `./gradlew check coverage` (Windows: `.\gradlew.bat check coverage`) with Java 25.
+
 ### Viewing contact details
 
 `AddressBookParser` routes `view CONTACT_ID` to `ViewCommandParser`, which validates the contact ID using
@@ -361,14 +444,14 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 ### Use cases
 
-(For all use cases below, the **System** is the `AddressBook` and the **Actor** is the `user`, unless specified otherwise)
+(For all use cases below, the **System** is `sudoContact` and the **Actor** is the `user`, unless specified otherwise)
 
 **Use Case: UC1 - List all contacts**
 
 **MSS**
 
 1. User requests to list all contacts
-2. AddressBook shows a list of contacts
+2. sudoContact shows a list of contacts
 
    use case ends
 
@@ -385,24 +468,24 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 1. User displays contacts, either by <u>listing all contacts (UC1)</u> or filtering the list.
 2. User requests ascending sorting using `sort -b FIELD` or `sort --by FIELD`.
-3. AddressBook validates the option and field, then sorts only the currently displayed contacts.
-4. AddressBook shows the sorted list and numbered feedback. The active filter, contact data, and saved order are unchanged.
+3. sudoContact validates the option and field, then sorts only the currently displayed contacts.
+4. sudoContact shows the sorted list and numbered feedback. The active filter, contact data, and saved order are unchanged.
 
    Use case ends.
 
 **Extensions**
 
 * 2a. The option or field is missing, invalid, repeated, or accompanied by unsupported arguments.
-  * 2a1. AddressBook reports the corresponding parsing error; the current display order is unchanged.
+  * 2a1. sudoContact reports the corresponding parsing error; the current display order is unchanged.
   * Use case ends.
 * 2b. The request contains an explicit `--descending` token.
-  * 2b1. AddressBook reports that only ascending sorting is supported.
+  * 2b1. sudoContact reports that only ascending sorting is supported.
   * Use case ends.
 * 3a. The displayed list is empty and startup contact loading succeeded.
-  * 3a1. AddressBook displays `No contacts found to sort.`
+  * 3a1. sudoContact displays `No contacts found to sort.`
   * Use case ends.
 * 3b. Contact loading failed at startup, or a displayed contact contains invalid department or tag data.
-  * 3b1. AddressBook reports the loading or invalid-data error without changing display order or writing the file.
+  * 3b1. sudoContact reports the loading or invalid-data error without changing display order or writing the file.
   * Use case ends.
 
 **Use case: UC3 - Delete a contact**
@@ -412,8 +495,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 1. User <u>lists all contacts (UC1)</u>.
 2. User requests to delete a contact using its index in the currently
    displayed list.
-3. AddressBook deletes the selected contact.
-4. AddressBook displays the deleted contact's details and informs the
+3. sudoContact deletes the selected contact.
+4. sudoContact displays the deleted contact's details and informs the
    user that the deletion can be undone.
 
    Use case ends.
@@ -432,7 +515,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * 2a. The deletion request has an invalid format or the index is
   missing, invalid, or outside the displayed list's range.
 
-  * 2a1. AddressBook shows an error message and indicates the
+  * 2a1. sudoContact shows an error message and indicates the
     required format or valid index range.
 
   Use case resumes at step 2.
@@ -442,9 +525,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 **MSS**
 
 1. User requests to undo a deletion.
-2. AddressBook restores the most recently deleted contact that has
+2. sudoContact restores the most recently deleted contact that has
    not yet been restored in the current session, including its details.
-3. AddressBook displays the restored contact's details.
+3. sudoContact displays the restored contact's details.
 
    Use case ends.
 
@@ -452,32 +535,30 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 1a. The undo request includes additional arguments.
 
-  * 1a1. AddressBook shows an error message explaining that undo
+  * 1a1. sudoContact shows an error message explaining that undo
     does not accept arguments.
 
   Use case resumes at step 1.
 
 * 1b. There are no deletions available to undo in the current session.
 
-  * 1b1. AddressBook informs the user that there are no deletions
+  * 1b1. sudoContact informs the user that there are no deletions
     left to undo.
 
   Use case ends.
 
 * 2a. A duplicate contact already exists.
 
-  * 2a1. AddressBook rejects the restoration and identifies the
+  * 2a1. sudoContact rejects the restoration and identifies the
     existing contact that prevents it.
-  * 2a2. AddressBook retains the deleted contact for a later
+  * 2a2. sudoContact retains the deleted contact for a later
     undo attempt.
 
   Use case ends.
 
-**System:** sudoContact
 
 **Use case:** UC5 - Record which department a contact belongs to
 
-**Actor:** User
 
 **MSS:**
 
@@ -521,26 +602,29 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case resumes at step 5.
 
-**System:** sudoContact
-
 **Use case:** UC6 - Search contacts by tags
 
-**Actor:** User
+**Command format:** `find --tag TAG [--tag TAG ...]`
+
+The command word `find` is case-insensitive. The option `--tag` and tag values are
+case-sensitive. Each tag value requires its own `--tag` option; name keywords cannot
+be combined with tag search in the same command.
 
 **MSS:**
 
 1.  User requests to search for contacts with one or more tags.
-2.  User enters a `find` command with one or more `--tag` values.
+2.  User enters a `find` command with one or more `--tag TAG` pairs.
 3.  sudoContact validates all specified tags.
-4.  sudoContact searches the contacts for those matching the specified tags.
+4.  sudoContact searches all contacts for those having any of the specified tags (OR matching),
+    using case-sensitive, whole-tag matching.
 5.  sudoContact displays each matching contact once.
-6.  sudoContact displays the matching contacts to the user.
+6.  sudoContact displays the number of matching contacts.
 
     Use case ends.
 
 **Extensions:**
 
-* 3a. A specified tag contains invalid characters or spaces.
+* 3a. A specified tag contains invalid characters, internal spaces, or more than 30 characters.
 
     * 3a1. sudoContact displays `Invalid Tag: '[INPUT]' must be 1-30 characters using only letters, numbers, hyphens (-), and underscores (_), with no spaces.`
 
@@ -552,24 +636,35 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case ends.
 
+* 3c. No valid `--tag` option is present and an option-like argument is supplied
+  (e.g. `find --tags friends`, `find --TAG friends`, or `find -tag friends`).
+
+    * 3c1. sudoContact displays `Invalid find option: '[INPUT]'. Use find --tag TAG [--tag TAG ...] or find KEYWORD [MORE_KEYWORDS].`
+
+      Use case ends.
+
+* 3d. Arguments precede the first valid `--tag` option (e.g. `find Alice --tag friends`),
+  or the `find` command has no arguments.
+
+    * 3d1. sudoContact displays an invalid command format error and the `find` usage instructions.
+
+      Use case ends.
+
 * 4a. No contacts match the specified tag(s).
 
     * 4a1. sudoContact displays `No contacts found with the specified tag(s).`
 
       Use case ends.
 
-* 4b. Multiple tags are specified and a contact matches more than one of them.
+* 4b. Multiple tags are specified and a contact matches more than one of them,
+  or the same tag is specified more than once.
 
     * 4b1. sudoContact displays the matching contact only once.
 
       Use case resumes at step 5.
 
 
-**Use case: UC8 - View one contact's full details**
-
-**System:** sudoContact
-
-**Actor:** User
+**Use case: UC7 - View one contact's full details**
 
 **MSS**
 
@@ -603,11 +698,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case ends.
 
-**Use case: UC9 - Add a contact with partial information**
-
-**System:** sudoContact
-
-**Actor:** User
+**Use case: UC8 - Add a contact with partial information**
 
 **MSS**
 
@@ -652,15 +743,11 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case ends.
 
-**Use case: UC10 - Export contacts to a CSV file**
-
-**System:** sudoContact
-
-**Actor:** User
+**Use case: UC9 - Export contacts to a CSV file**
 
 **MSS**
 
-1. User enters `export --csv [FILENAME]`.
+1. User enters `export -c|--csv [FILENAME]`.
 2. sudoContact validates the supplied filename, or selects `contacts.csv`
    if no filename was supplied.
 3. sudoContact retrieves all stored contacts.
@@ -698,9 +785,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case ends.
 
-**Use Case: UC11 - View available commands and their usage**
-
-  **Actor:** User
+**Use Case: UC10 - View available commands and their usage**
 
   **MSS**
 
@@ -753,13 +838,34 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * **Partial contact**: A contact with a name but without some optional details, such as a phone number, email address, department, or tags.
 * **Duplicate contact**: An existing contact with the same name as a contact being added, edited, or restored. Only names are compared, and the comparison is case-sensitive.
 * **CSV export**: A UTF-8 comma-separated values file containing a header row and one row for each stored contact.
-* **Tag**: An optional label attached to a contact to support categorisation and searching. Tag matching is case-insensitive.
+* **Tag**: An optional label attached to a contact to support categorisation and searching. Tag matching is case-sensitive.
 
 --------------------------------------------------------------------------------------------------------------------
 
 ## **Appendix: Instructions for manual testing**
 
 Given below are instructions to test the app manually.
+
+### Exporting contacts as CSV
+
+Use a disposable launch folder with sample contacts, and a filename that does not already exist.
+
+1. Enter `find Benson`, then `export --csv team.csv`. Expected: feedback reports the full stored contact
+   count; the displayed search stays unchanged. Open `team.csv` as UTF-8 text and check the six-column
+   header, all stored contacts, quoted addresses containing commas, empty departments and tag cells.
+1. Enter `export --csv team.csv` again. Expected: an existing-file error; the original CSV is unchanged.
+1. Enter `export --csv`. Expected: `contacts.csv` is created with the same contents (if the name is unused).
+1. Enter `export --csv "my contacts.csv"`. Expected: the file with spaces in its name is created.
+1. Enter `export --csv ../contacts.csv`, `export --csv NUL.csv`, `export --csv ''`, `export --csv a.txt`,
+   `export --json` and `export --csv a.csv b.csv`. Expected: an error and no new export file.
+1. Add a contact with address `北京, "总部"`, then export to an unused filename. Expected: the Unicode
+   address is intact, surrounded by quotes, with each inner quote doubled.
+1. In a disposable address book, enter `clear`, then export to an unused filename. Expected:
+   `No contacts found to export.`; no file is created. An empty *search result* with stored contacts should
+   still export those contacts successfully.
+1. Launch from a folder without write permission using a non-administrator account, keeping JSON data
+   in a writable location through the app configuration. Export to an unused filename. Expected: a file
+   creation error; no success message or partially written destination. Restore permissions afterward.
 
 <div markdown="span" class="alert alert-info">:information_source: **Note:** These instructions only provide a starting point for testers to work on;
 testers are expected to do more *exploratory* testing.
@@ -783,6 +889,25 @@ testers are expected to do more *exploratory* testing.
        Expected: The most recent window size and location are retained.
 
 1. _{ more test cases …​ }_
+
+### Adding and completing a partial contact
+
+1. Add `add --name "Dana Lim"` to an address book that has no Dana Lim contact.
+   Expected: successful addition, phone/email/address/department show `Not provided`, tags show `None`.
+1. Restart the app. Expected: Dana Lim is still present with the same omitted fields.
+1. Run `find Dana`, `edit 1 -p 91234567 -e dana@example.com -a Main Road`, then `depart 1 --set Engineering`.
+   Expected: the contact has the supplied details; restart preserves all fields.
+1. Add another `Dana Lim` with a different phone or email. Expected: the same name is accepted.
+   Repeat the exact name/phone/email with different tags or department. Expected: duplicate error, no new entry.
+1. Try `add --name ""`, `add --name Alice --phone 123456`, `add --name Alice --email broken`,
+   `add --name Alice --department !`, `add --name Alice --tag "two words"`, and
+   `add --name Alice --unknown value`. Expected: errors; existing contacts and the saved file stay unchanged.
+1. Try an unmatched quote and repeated `--name`, `--phone`, `--email`, `--address` or `--department`.
+   Expected: format or duplicate-option error. Multiple `--tag` flags are accepted.
+1. Run `add --name Chen --tag #intern new-client team_intern --tag intern`.
+   Expected: three distinct tags, displayed without the leading `#` and preserved after restart.
+1. Run the equivalent short-flag form, for example `add -n Bob Lee -p 91234567 -d Engineering`.
+   Expected: equivalent partial-contact support; omitted fields remain unprovided.
 
 ### Viewing a contact's details
 
@@ -857,5 +982,7 @@ testers are expected to do more *exploratory* testing.
 9. After sorting, run `view 1`, then `depart 1 --set Support`; confirm both target the displayed first contact.
    Check the new indices after assignment resets sorting. Delete a sorted contact and run `undo`; confirm its
    department and tags are restored and the full list returns to canonical order.
-10. Using a disposable copy of the application, start with malformed contact JSON; confirm sorting reports invalid data.
-   Fix the file and restart before testing successful sorting again.
+10. Using a disposable copy of the application, start with malformed contact JSON; confirm the list is empty and
+    sorting reports `No contacts found to sort.` without overwriting the file. Add two valid contacts with different
+    tags and confirm they are saved. Sort by tags in the same session; confirm sorting succeeds and the saved file
+    remains unchanged. Repeat after a startup file-read failure once the file is writable again.

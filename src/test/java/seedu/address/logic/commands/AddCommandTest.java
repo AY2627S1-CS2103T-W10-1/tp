@@ -15,10 +15,8 @@ import org.junit.jupiter.api.Test;
 
 import javafx.collections.ObservableList;
 import seedu.address.commons.core.GuiSettings;
-import seedu.address.logic.Messages;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.AddressBook;
-import seedu.address.model.ContactLoadStatus;
 import seedu.address.model.Model;
 import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.ReadOnlyUserPrefs;
@@ -40,7 +38,8 @@ public class AddCommandTest {
 
         CommandResult commandResult = new AddCommand(validPerson).execute(modelStub);
 
-        assertEquals(String.format(AddCommand.MESSAGE_SUCCESS, Messages.format(validPerson)),
+        assertEquals("Contact added successfully: Amy Bee | Phone: 85355255 | Email: amy@gmail.com"
+                + " | Department: Not provided | Address: 123, Jurong West Ave 6, #08-111 | Tags: None",
                 commandResult.getFeedbackToUser());
         assertEquals(List.of(validPerson), modelStub.personsAdded);
     }
@@ -89,11 +88,6 @@ public class AddCommandTest {
      * A default model stub that has all of the methods failing.
      */
     private class ModelStub implements Model {
-        @Override
-        public ContactLoadStatus getContactLoadStatus() {
-            throw new AssertionError("This method should not be called.");
-        }
-
         @Override
         public void sortFilteredPersonList(SortField field) {
             throw new AssertionError("This method should not be called.");

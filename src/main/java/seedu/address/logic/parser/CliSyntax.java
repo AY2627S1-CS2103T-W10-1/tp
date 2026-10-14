@@ -10,6 +10,7 @@ public class CliSyntax {
     public static final Prefix PREFIX_PHONE = new Prefix("-p", "--phone");
     public static final Prefix PREFIX_EMAIL = new Prefix("-e", "--email");
     public static final Prefix PREFIX_ADDRESS = new Prefix("-a", "--address");
+    public static final Prefix PREFIX_DEPARTMENT = new Prefix("-d", "--department");
     public static final Prefix PREFIX_TAG = new Prefix("-t", "--tag");
     public static final Prefix PREFIX_SET = new Prefix("--set");
 

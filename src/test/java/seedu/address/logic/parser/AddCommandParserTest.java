@@ -41,7 +41,6 @@ import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
-import seedu.address.model.person.Phone;
 import seedu.address.model.tag.Tag;
 import seedu.address.testutil.PersonBuilder;
 
@@ -69,27 +68,23 @@ public class AddCommandParserTest {
     public void parse_longFormFlags_success() {
         Person expectedPerson = new PersonBuilder(BOB).withTags(VALID_TAG_FRIEND).build();
 
-        // long forms only
         assertParseSuccess(parser, " --name " + VALID_NAME_BOB + " --phone " + VALID_PHONE_BOB
                 + " --email " + VALID_EMAIL_BOB + " --address " + VALID_ADDRESS_BOB + " --tag " + VALID_TAG_FRIEND,
-                new AddCommand(expectedPerson));
-
-        // short and long forms mixed
-        assertParseSuccess(parser, NAME_DESC_BOB + " --phone " + VALID_PHONE_BOB + EMAIL_DESC_BOB
-                + " --address " + VALID_ADDRESS_BOB + TAG_DESC_FRIEND,
                 new AddCommand(expectedPerson));
     }
 
     @Test
-    public void parse_repeatedFlagInShortAndLongForm_failure() {
-        String otherFields = " -n John -p 98765432 -a Block 123";
+    public void parse_shortAndLongFormsMixed_failure() {
+        String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE);
 
-        // same short form repeated
-        assertParseFailure(parser, otherFields + " -e Doe -e test@test.com",
-                Messages.getErrorMessageForDuplicatePrefixes(PREFIX_EMAIL));
+        // add accepts one syntax per command
+        assertParseFailure(parser, NAME_DESC_BOB + " --phone " + VALID_PHONE_BOB, expectedMessage);
+        assertParseFailure(parser, " --name " + VALID_NAME_BOB + PHONE_DESC_BOB, expectedMessage);
+    }
 
-        // short and long forms of the same flag
-        assertParseFailure(parser, otherFields + " -e Doe --email test@test.com",
+    @Test
+    public void parse_repeatedShortFlag_failure() {
+        assertParseFailure(parser, " -n John -p 98765432 -a Block 123 -e Doe -e test@test.com",
                 Messages.getErrorMessageForDuplicatePrefixes(PREFIX_EMAIL));
     }
 
@@ -182,18 +177,6 @@ public class AddCommandParserTest {
         assertParseFailure(parser, VALID_NAME_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + ADDRESS_DESC_BOB,
                 expectedMessage);
 
-        // missing phone prefix
-        assertParseFailure(parser, NAME_DESC_BOB + VALID_PHONE_BOB + EMAIL_DESC_BOB + ADDRESS_DESC_BOB,
-                expectedMessage);
-
-        // missing email prefix
-        assertParseFailure(parser, NAME_DESC_BOB + PHONE_DESC_BOB + VALID_EMAIL_BOB + ADDRESS_DESC_BOB,
-                expectedMessage);
-
-        // missing address prefix
-        assertParseFailure(parser, NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + VALID_ADDRESS_BOB,
-                expectedMessage);
-
         // all prefixes missing
         assertParseFailure(parser, VALID_NAME_BOB + VALID_PHONE_BOB + VALID_EMAIL_BOB + VALID_ADDRESS_BOB,
                 expectedMessage);
@@ -207,7 +190,7 @@ public class AddCommandParserTest {
 
         // invalid phone
         assertParseFailure(parser, NAME_DESC_BOB + INVALID_PHONE_DESC + EMAIL_DESC_BOB + ADDRESS_DESC_BOB
-                + TAG_DESC_HUSBAND + TAG_DESC_FRIEND, Phone.MESSAGE_CONSTRAINTS);
+                + TAG_DESC_HUSBAND + TAG_DESC_FRIEND, AddCommand.MESSAGE_INVALID_PHONE);
 
         // invalid email
         assertParseFailure(parser, NAME_DESC_BOB + PHONE_DESC_BOB + INVALID_EMAIL_DESC + ADDRESS_DESC_BOB

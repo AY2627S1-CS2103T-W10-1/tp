@@ -5,7 +5,7 @@ import static seedu.address.commons.util.AppUtil.checkArgument;
 
 /**
  * Represents a Person's email in the address book.
- * Guarantees: immutable; is valid as declared in {@link #isValidEmail(String)}
+ * Guarantees: immutable; omitted or valid as declared in {@link #isValidEmail(String)}
  */
 public class Email {
 
@@ -44,6 +44,20 @@ public class Email {
         value = email;
     }
 
+    private Email() {
+        value = "";
+    }
+
+    /** Returns an omitted optional field, without accepting blank user input. */
+    public static Email notProvided() {
+        return new Email();
+    }
+
+    /** Returns whether this field contains supplied information. */
+    public boolean isProvided() {
+        return !value.isEmpty();
+    }
+
     /**
      * Returns true if a given string is a valid email.
      */
@@ -53,7 +67,7 @@ public class Email {
 
     @Override
     public String toString() {
-        return value;
+        return isProvided() ? value : "Not provided";
     }
 
     @Override
