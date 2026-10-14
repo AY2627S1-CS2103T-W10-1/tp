@@ -17,6 +17,9 @@ This project is based on the AddressBook-Level3 project created by the [SE-EDU i
   command/parser, details window, command-result integration, tests, and related
   User Guide/Developer Guide documentation.
 
+OpenAI Codex assisted He Qianyi with the Feature 11 CSV export implementation, tests and documentation.
+He Qianyi is responsible for reviewing and understanding these changes.
+
 --------------------------------------------------------------------------------------------------------------------
 
 ## **Setting up, getting started**
@@ -163,6 +166,38 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
+### CSV export (Feature 11 / UC9)
+
+`AddressBookParser` dispatches `export` to `ExportCommandParser`. The parser requires `-c` or `--csv`, accepts
+one optional basename (with matching quotes for spaces), and defaults to `contacts.csv`.
+`CsvContactExporter.isValidFileName` rejects paths, invalid characters and reserved Windows device names
+so the command has the same filename policy on all supported platforms. The filename policy follows
+[Windows filename restrictions](https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file).
+
+`ExportCommand` snapshots `model.getAddressBook().getPersonList()` rather than the filtered list.
+It rejects an empty snapshot, then delegates file writing to the storage helper `CsvContactExporter`.
+The command leaves the model and filter unchanged. A successful command returns the row count and filename
+through the existing feedback display. Its `requiresStorageSave()` override skips the unrelated JSON save:
+once the CSV exists, a JSON save failure must not turn a successful export into an error.
+
+The exporter writes UTF-8 with a fixed six-column header and CRLF record separators. Values containing
+commas, double quotes, CR or LF are quoted, and inner double quotes are doubled, following
+[RFC 4180](https://www.rfc-editor.org/rfc/rfc4180). It writes raw field values, maps an absent department
+to an empty cell, sorts tags and joins them with `; `. It preserves input order and repeated records.
+Raw empty values also allow partial contacts to be exported when the partial-add feature is integrated.
+
+The exporter writes and closes a temporary file in the destination directory before moving it to the
+requested name. It checks for an existing destination and moves without `REPLACE_EXISTING`, so a file
+created during export is also protected. The temporary file is cleaned up on completion or failure.
+`FileAlreadyExistsException` produces a choose-another-filename message; other `IOException`s produce
+a file creation error instead of a success result. The default output directory is the process working
+directory; an injectable exporter isolates tests and simulates permission or interrupted-write failures.
+
+Export uses validated in-memory contacts. Invalid JSON/contact data is handled by the existing startup
+loader; export does not re-read a JSON file edited externally during the session. It adds no recovery path
+for corrupted persistent data. Parser, model integration, real file, cleanup and JavaFX command-box tests
+cover the export flow, including a filtered list and an existing destination.
+
 ### Adding contacts with partial information
 
 `AddCommandParser` supports both the existing slash prefixes and add-specific long options. The latter
@@ -241,6 +276,7 @@ Regression coverage includes parser boundaries, aliases and errors; stable depar
 display/filter behavior; editing and deleting sorted indices; unchanged storage; and recovery after startup loading
 failures, including sorting contacts after successful additions and saves in the same session.
 Run `./gradlew check coverage` (Windows: `.\gradlew.bat check coverage`) with Java 25.
+
 ### Viewing contact details
 
 `AddressBookParser` routes `view CONTACT_ID` to `ViewCommandParser`, which validates the contact ID using
@@ -730,7 +766,7 @@ be combined with tag search in the same command.
 
 **MSS**
 
-1. User enters `export --csv [FILENAME]`.
+1. User enters `export -c|--csv [FILENAME]`.
 2. sudoContact validates the supplied filename, or selects `contacts.csv`
    if no filename was supplied.
 3. sudoContact retrieves all stored contacts.
@@ -830,6 +866,27 @@ be combined with tag search in the same command.
 ## **Appendix: Instructions for manual testing**
 
 Given below are instructions to test the app manually.
+
+### Exporting contacts as CSV
+
+Use a disposable launch folder with sample contacts, and a filename that does not already exist.
+
+1. Enter `find Benson`, then `export --csv team.csv`. Expected: feedback reports the full stored contact
+   count; the displayed search stays unchanged. Open `team.csv` as UTF-8 text and check the six-column
+   header, all stored contacts, quoted addresses containing commas, empty departments and tag cells.
+1. Enter `export --csv team.csv` again. Expected: an existing-file error; the original CSV is unchanged.
+1. Enter `export --csv`. Expected: `contacts.csv` is created with the same contents (if the name is unused).
+1. Enter `export --csv "my contacts.csv"`. Expected: the file with spaces in its name is created.
+1. Enter `export --csv ../contacts.csv`, `export --csv NUL.csv`, `export --csv ''`, `export --csv a.txt`,
+   `export --json` and `export --csv a.csv b.csv`. Expected: an error and no new export file.
+1. Add a contact with address `北京, "总部"`, then export to an unused filename. Expected: the Unicode
+   address is intact, surrounded by quotes, with each inner quote doubled.
+1. In a disposable address book, enter `clear`, then export to an unused filename. Expected:
+   `No contacts found to export.`; no file is created. An empty *search result* with stored contacts should
+   still export those contacts successfully.
+1. Launch from a folder without write permission using a non-administrator account, keeping JSON data
+   in a writable location through the app configuration. Export to an unused filename. Expected: a file
+   creation error; no success message or partially written destination. Restore permissions afterward.
 
 <div markdown="span" class="alert alert-info">:information_source: **Note:** These instructions only provide a starting point for testers to work on;
 testers are expected to do more *exploratory* testing.

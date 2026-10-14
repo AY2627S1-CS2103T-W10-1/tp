@@ -342,10 +342,46 @@ Exits the program.
 
 Format: `exit`
 
+### Exporting contacts as CSV: `export`
+
+Creates a CSV copy of **all stored contacts**, including contacts hidden by a search.
+Export does not change your contacts or the displayed list.
+
+Format: `export -c|--csv [FILENAME]`
+
+* Omit `FILENAME` to use `contacts.csv`. Use either `-c` or `--csv` before the filename.
+* Use a filename ending in lowercase `.csv`, without a folder path. Surround a filename containing spaces
+  with matching double or single quotes, for example `export --csv "my contacts.csv"`.
+* Filenames cannot be empty or contain `< > : " / \ | ? *` or control characters. Leading or trailing spaces
+  and reserved device names such as `CON.csv`, `NUL.csv` and `COM1.csv` are rejected.
+* The file is created in the folder from which you launched the app. Following the Quick start instructions,
+  this is the folder containing the JAR file.
+* Existing files are never overwritten. Choose another filename or move the existing file before retrying.
+* The UTF-8 file starts with `Name,Phone,Email,Department,Address,Tags`. Each stored contact gets one row,
+  in stored order, even if several records have the same name. Missing details produce empty cells.
+  Tags appear alphabetically in one cell, separated by `; `. Commas, quotes and line breaks within a value
+  are preserved using CSV quoting. Phone numbers retain their original digits in the file; when importing
+  into a spreadsheet, select a text column to keep leading zeroes.
+
+Examples:
+
+* `export --csv` creates `contacts.csv`.
+* `export -c team.csv` creates `team.csv` using the short option.
+* `find John` followed by `export --csv team.csv` still exports every stored contact.
+* `export --csv "my contacts.csv"` creates `my contacts.csv`.
+
+Success: `Exported 3 contacts to contacts.csv.` (the count reflects your stored contacts).
+An empty address book reports `No contacts found to export.` and creates no file.
+Invalid arguments report the command format or an invalid filename. If the folder is unavailable,
+unwritable or out of space, the app reports that it cannot create the CSV; choose a writable launch folder
+or free space and retry. Export is a copy for external use; it does not replace the app's JSON data file.
+
 ### Saving the data
 
-AddressBook automatically saves data after successful commands except `sort`. You do not need to save manually.
+AddressBook automatically saves data after successful commands except `sort` and `export`.
+You do not need to save manually.
 `sort` changes only the displayed order; it does not write the contact file or persist the sort order.
+`export` writes a separate CSV copy; it does not modify or save the JSON contact file.
 Departments and tags are contact data and are saved normally when changed.
 
 ### Editing the data file
@@ -386,6 +422,7 @@ Action | Format, Examples
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit** | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
+**Export** | `export -c|--csv [FILENAME]`<br> e.g., `export -c team.csv`
 **View** | `view CONTACT_ID`<br> e.g., `view 2`
 **List** | `list` or `ls`
 **Depart** | `depart CONTACT_ID --set DEPARTMENT`<br> e.g., `depart 1 --set Engineering`

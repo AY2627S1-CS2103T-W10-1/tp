@@ -17,6 +17,7 @@ import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -117,6 +118,58 @@ public class LogicManagerTest {
     public void execute_storageThrowsAdException_throwsCommandException() {
         assertCommandFailureForExceptionFromStorage(DUMMY_AD_EXCEPTION, String.format(
                 LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT, DUMMY_AD_EXCEPTION.getMessage()));
+    }
+
+    @Test
+    public void execute_exportSucceedsWhenAddressBookCannotBeSaved() throws Exception {
+        model.addPerson(AMY);
+        String fileName = "tp-export-test-" + UUID.randomUUID() + ".csv";
+        Path csvPath = Path.of(fileName).toAbsolutePath();
+        JsonAddressBookStorage addressBookStorage =
+                new JsonAddressBookStorage(temporaryFolder.resolve("blockedAddressBook.json")) {
+                    @Override
+                    public void saveAddressBook(ReadOnlyAddressBook addressBook) throws IOException {
+                        throw DUMMY_AD_EXCEPTION;
+                    }
+                };
+        StorageManager storage = new StorageManager(addressBookStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json")));
+        logic = new LogicManager(model, storage);
+
+        try {
+            CommandResult result = logic.execute("export --csv " + fileName);
+            assertEquals(String.format("Exported 1 contacts to %s.", fileName), result.getFeedbackToUser());
+            assertEquals(2, Files.readAllLines(csvPath).size());
+            assertEquals(List.of(AMY), model.getAddressBook().getPersonList());
+        } finally {
+            Files.deleteIfExists(csvPath);
+        }
+    }
+
+    @Test
+    public void execute_exportPartialContacts_preservesMissingFieldsAndFilter() throws Exception {
+        logic.execute("add --name Alice");
+        logic.execute("add --name Bob --tag /client");
+        logic.execute("find --tag client");
+        List<Person> storedBefore = List.copyOf(model.getAddressBook().getPersonList());
+        List<Person> displayedBefore = List.copyOf(model.getFilteredPersonList());
+        assertEquals(List.of(storedBefore.get(1)), displayedBefore);
+        Path dataPath = temporaryFolder.resolve("addressBook.json");
+        String jsonBefore = Files.readString(dataPath);
+        String fileName = "tp-export-test-" + UUID.randomUUID() + ".csv";
+        Path csvPath = Path.of(fileName).toAbsolutePath();
+
+        try {
+            CommandResult result = logic.execute("EXPORT -c " + fileName);
+            assertEquals("Exported 2 contacts to " + fileName + ".", result.getFeedbackToUser());
+            assertEquals("Name,Phone,Email,Department,Address,Tags\r\nAlice,,,,,\r\nBob,,,,,client\r\n",
+                    Files.readString(csvPath));
+            assertEquals(storedBefore, model.getAddressBook().getPersonList());
+            assertEquals(displayedBefore, model.getFilteredPersonList());
+            assertEquals(jsonBefore, Files.readString(dataPath));
+        } finally {
+            Files.deleteIfExists(csvPath);
+        }
     }
 
     @Test
