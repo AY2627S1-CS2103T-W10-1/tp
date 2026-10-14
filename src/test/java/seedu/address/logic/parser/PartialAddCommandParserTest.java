@@ -1,9 +1,15 @@
 package seedu.address.logic.parser;
 
+import static seedu.address.logic.parser.CliSyntax.PREFIX_ADDRESS;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_DEPARTMENT;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_EMAIL;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -100,17 +106,15 @@ public class PartialAddCommandParserTest {
     }
 
     @Test
-    public void parse_shortFlagsInLongOptionValues_failure() {
-        String error = String.format(Messages.MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE);
-        for (String prefix : List.of("-n", "-p", "-e", "-a", "-d", "-t")) {
-            assertParseFailure(parser, " --name Alice --address Main Road " + prefix + " 91234567", error);
-            assertParseFailure(parser, " --name Alice --address Main Road " + prefix, error);
-            assertParseFailure(parser, " --name Alice --tag intern " + prefix + " client", error);
+    public void parse_shortFlagsAfterLongOptions_startNewField() {
+        Person expected = new Person(new Name("Alice"), new Phone("91234567"), Email.notProvided(),
+                new Address("Main Road"), Set.of(), new Department("Engineering"));
+        for (String separator : List.of(" ", "\t", "\n")) {
+            assertParseSuccess(parser, " --name Alice --address Main Road" + separator + "-p 91234567"
+                    + " -d Engineering", new AddCommand(expected));
         }
-        assertParseFailure(parser, " --name Alice --department Engineering -p 91234567", error);
-        assertParseFailure(parser, " --name Alice -p 91234567 --address Main Road", error);
-        assertParseFailure(parser, " --name Alice --address Main Road\t-p 91234567", error);
-        assertParseFailure(parser, " --name Alice --address Main Road\n-p 91234567", error);
+        assertParseSuccess(parser, " --name Alice -p 91234567 --address Main Road --department Engineering",
+                new AddCommand(expected));
     }
 
     @Test
@@ -141,19 +145,24 @@ public class PartialAddCommandParserTest {
     public void parse_unknownOptionsOrMalformedQuotes_failure() {
         String error = String.format(Messages.MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE);
         for (String args : List.of(" --name Alice --unknown x", " --name=Alice", " --name \"Alice",
-                " --name 'Alice'junk", " --name Ali\"ce", " --name Alice --tags client", " --name Alice --",
-                " -n Alice -a Main Road --unknown x", " -n Alice --phone 91234567")) {
+                " --name 'Alice'junk", " --name Alice --tags client", " --name Alice --",
+                " -n Alice -a Main Road --unknown x")) {
             assertParseFailure(parser, args, error);
         }
+
+        // a quote inside a word is an ordinary character, so the name itself is invalid
+        assertParseFailure(parser, " --name Ali\"ce", Name.MESSAGE_CONSTRAINTS);
     }
 
     @Test
     public void parse_duplicateSingleValueOptions_failure() {
-        for (String option : new String[]{"--name", "--phone", "--email", "--department", "--address"}) {
+        Map<String, Prefix> options = Map.of("--name", PREFIX_NAME, "--phone", PREFIX_PHONE,
+                "--email", PREFIX_EMAIL, "--department", PREFIX_DEPARTMENT, "--address", PREFIX_ADDRESS);
+        options.forEach((option, prefix) -> {
             String args = option.equals("--name") ? " --name Alice --name Bob"
                     : " --name Alice " + option + " value " + option + " other";
-            assertParseFailure(parser, args, Messages.getErrorMessageForDuplicatePrefixes(new Prefix(option)));
-        }
+            assertParseFailure(parser, args, Messages.getErrorMessageForDuplicatePrefixes(prefix));
+        });
     }
 
     private Person partial(String name, Phone phone, Email email) {

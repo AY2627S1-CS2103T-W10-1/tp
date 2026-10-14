@@ -200,9 +200,11 @@ cover the export flow, including a filtered list and an existing destination.
 
 ### Adding contacts with partial information
 
-`AddCommandParser` supports both the existing slash prefixes and add-specific long options. The latter
-use `AddArgumentTokenizer` to preserve quoted multiword values and distinguish literal text from option names.
-Only name is required. Omitted phone, email and address use immutable `notProvided()` value objects whose
+`AddCommandParser` and `EditCommandParser` share `ArgumentTokenizer`. Each `Prefix` in `CliSyntax` has a
+short and a long form (e.g. `-n`/`--name`), and both forms map to the same `ArgumentMultimap` key, so they can
+be mixed and repeats in either form are detected as duplicates. The tokenizer splits input into words, treats a
+quoted word as literal text (never a flag), rejects unknown `--` options, and stores each word after `-t`/`--tag`
+as a separate tag. Only name is required. Omitted phone, email and address use immutable `notProvided()` value objects whose
 stored values are empty strings and whose display strings are `Not provided`. Their public constructors and
 parser validators still reject empty supplied values. Department uses the existing optional model from #71;
 its command and validation remain in the teammate's implementation.

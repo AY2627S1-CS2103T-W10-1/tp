@@ -21,7 +21,7 @@ public class ArgumentTokenizerTest {
     private final Prefix hatQ = new Prefix("^Q");
 
     @Test
-    public void tokenize_emptyArgsString_noValues() {
+    public void tokenize_emptyArgsString_noValues() throws Exception {
         String argsString = "  ";
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(argsString, pSlash);
 
@@ -60,7 +60,7 @@ public class ArgumentTokenizerTest {
     }
 
     @Test
-    public void tokenize_noPrefixes_allTakenAsPreamble() {
+    public void tokenize_noPrefixes_allTakenAsPreamble() throws Exception {
         String argsString = "  some random string /t tag with leading and trailing spaces ";
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(argsString);
 
@@ -70,7 +70,7 @@ public class ArgumentTokenizerTest {
     }
 
     @Test
-    public void tokenize_oneArgument() {
+    public void tokenize_oneArgument() throws Exception {
         // Preamble present
         String argsString = "  Some preamble string p/ Argument value ";
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(argsString, pSlash);
@@ -86,7 +86,7 @@ public class ArgumentTokenizerTest {
     }
 
     @Test
-    public void tokenize_multipleArguments() {
+    public void tokenize_multipleArguments() throws Exception {
         // Only two arguments are present
         String argsString = "SomePreambleString -t dashT-Value p/ pSlash value";
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(argsString, pSlash, dashT, hatQ);
@@ -114,15 +114,15 @@ public class ArgumentTokenizerTest {
 
         /* Also covers: testing for prefixes not specified as a prefix */
 
-        // Prefixes not previously given to the tokenizer should not return any values
-        argsString = unknownPrefix + "some value";
-        argMultimap = ArgumentTokenizer.tokenize(argsString, pSlash, dashT, hatQ);
-        assertArgumentAbsent(argMultimap, unknownPrefix);
-        assertPreamblePresent(argMultimap, argsString); // Unknown prefix is taken as part of preamble
+        // Long options not given to the tokenizer are rejected
+        assertThrows(ParseException.class, () ->
+                ArgumentTokenizer.tokenize(unknownPrefix + " some value", pSlash, dashT, hatQ));
+        assertThrows(ParseException.class, () ->
+                ArgumentTokenizer.tokenize("preamble -t value " + unknownPrefix, pSlash, dashT, hatQ));
     }
 
     @Test
-    public void tokenize_multipleArgumentsWithRepeats() {
+    public void tokenize_multipleArgumentsWithRepeats() throws Exception {
         // Two arguments repeated, some have empty values
         String argsString = "SomePreambleString -t dashT-Value ^Q ^Q -t another dashT value p/ pSlash value -t";
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(argsString, pSlash, dashT, hatQ);
@@ -133,7 +133,7 @@ public class ArgumentTokenizerTest {
     }
 
     @Test
-    public void tokenize_multipleArgumentsJoined() {
+    public void tokenize_multipleArgumentsJoined() throws Exception {
         String argsString = "SomePreambleStringp/ pSlash joined-tjoined -t not joined^Qjoined";
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(argsString, pSlash, dashT, hatQ);
         assertPreamblePresent(argMultimap, "SomePreambleStringp/ pSlash joined-tjoined");
@@ -143,7 +143,7 @@ public class ArgumentTokenizerTest {
     }
 
     @Test
-    public void tokenize_prefixNotFollowedByWhitespace_notRecognised() {
+    public void tokenize_prefixNotFollowedByWhitespace_notRecognised() throws Exception {
         // Value glued to the prefix
         String argsString = "SomePreambleString -tglued -n name";
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(argsString, dashT, dashN);
@@ -151,15 +151,20 @@ public class ArgumentTokenizerTest {
         assertArgumentAbsent(argMultimap, dashT);
         assertArgumentPresent(argMultimap, dashN, "name");
 
-        // Prefix-like text inside a value
-        argsString = " -n Blk 5 -apt 3 --names";
+        // Short-prefix-like text inside a value
+        argsString = " -n Blk 5 -apt 3";
         argMultimap = ArgumentTokenizer.tokenize(argsString, dashT, dashN);
         assertPreambleEmpty(argMultimap);
-        assertArgumentPresent(argMultimap, dashN, "Blk 5 -apt 3 --names");
+        assertArgumentPresent(argMultimap, dashN, "Blk 5 -apt 3");
+
+        // Long-option-like text must be quoted, otherwise it is an unknown option
+        assertThrows(ParseException.class, () -> ArgumentTokenizer.tokenize(" -n Blk 5 --names", dashT, dashN));
+        argMultimap = ArgumentTokenizer.tokenize(" -n Blk 5 \"--names\"", dashT, dashN);
+        assertArgumentPresent(argMultimap, dashN, "Blk 5 --names");
     }
 
     @Test
-    public void tokenize_prefixFollowedByOtherWhitespace_recognised() {
+    public void tokenize_prefixFollowedByOtherWhitespace_recognised() throws Exception {
         String argsString = " -n\tname -t\nvalue";
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(argsString, dashT, dashN);
         assertArgumentPresent(argMultimap, dashN, "name");
@@ -167,7 +172,7 @@ public class ArgumentTokenizerTest {
     }
 
     @Test
-    public void tokenize_longAlias_mapsToSamePrefix() {
+    public void tokenize_longAlias_mapsToSamePrefix() throws Exception {
         // Long form only
         String argsString = "SomePreambleString --name long value -t dashT-Value";
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(argsString, dashT, dashN);
@@ -182,7 +187,7 @@ public class ArgumentTokenizerTest {
     }
 
     @Test
-    public void tokenize_shortAndLongFormsMixed_valuesAccumulatedInOrder() {
+    public void tokenize_shortAndLongFormsMixed_valuesAccumulatedInOrder() throws Exception {
         String argsString = " -n first --name second -n third";
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(argsString, dashN);
         assertPreambleEmpty(argMultimap);
@@ -190,9 +195,54 @@ public class ArgumentTokenizerTest {
     }
 
     @Test
-    public void tokenize_shortAndLongFormsMixed_detectedAsDuplicate() {
+    public void tokenize_shortAndLongFormsMixed_detectedAsDuplicate() throws Exception {
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(" -n first --name second", dashN);
         assertThrows(ParseException.class, () -> argMultimap.verifyNoDuplicatePrefixesFor(dashN));
+    }
+
+    @Test
+    public void tokenize_quotedValues_keptAsOneWord() throws Exception {
+        // a prefix inside quotes is part of the value
+        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(" -n \"Blk 5 -t 3\" -t 'x'", dashT, dashN);
+        assertArgumentPresent(argMultimap, dashN, "Blk 5 -t 3");
+        assertArgumentPresent(argMultimap, dashT, "x");
+
+        // quoted and unquoted words are joined
+        argMultimap = ArgumentTokenizer.tokenize(" -n Main \"--name\" Road", dashN);
+        assertArgumentPresent(argMultimap, dashN, "Main --name Road");
+
+        // quotes inside an unquoted word are ordinary characters
+        argMultimap = ArgumentTokenizer.tokenize(" -n O'Brien Road", dashN);
+        assertArgumentPresent(argMultimap, dashN, "O'Brien Road");
+
+        // empty quotes give an empty value
+        argMultimap = ArgumentTokenizer.tokenize(" -n \"\"", dashN);
+        assertArgumentPresent(argMultimap, dashN, "");
+    }
+
+    @Test
+    public void tokenize_malformedQuotes_throwsParseException() throws Exception {
+        assertThrows(ParseException.class, () -> ArgumentTokenizer.tokenize(" -n \"Alice", dashN));
+        assertThrows(ParseException.class, () -> ArgumentTokenizer.tokenize(" -n 'Alice'junk", dashN));
+    }
+
+    @Test
+    public void tokenize_eachWordAsValue_wordsStoredSeparately() throws Exception {
+        Prefix tags = new Prefix("-t", "--tag").withEachWordAsValue();
+
+        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(" -t a b --tag c \"d e\"", tags);
+        assertArgumentPresent(argMultimap, tags, "a", "b", "c", "d e");
+
+        // an empty value is still stored once
+        argMultimap = ArgumentTokenizer.tokenize(" -t", tags);
+        assertArgumentPresent(argMultimap, tags, "");
+    }
+
+    @Test
+    public void tokenize_whitespaceBetweenWords_normalised() throws Exception {
+        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize("  1 \t2 -n  Main \n Road ", dashN);
+        assertPreamblePresent(argMultimap, "1 2");
+        assertArgumentPresent(argMultimap, dashN, "Main Road");
     }
 
     @Test

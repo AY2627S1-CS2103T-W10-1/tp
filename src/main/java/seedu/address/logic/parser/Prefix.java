@@ -13,6 +13,7 @@ import java.util.List;
 public class Prefix {
     private final String prefix;
     private final List<String> allForms;
+    private final boolean eachWordIsValue;
 
     /**
      * Creates a prefix with the given primary form and optional aliases.
@@ -21,11 +22,28 @@ public class Prefix {
      * @param aliases Alternative forms that are recognised as the same prefix
      */
     public Prefix(String prefix, String... aliases) {
-        this.prefix = prefix;
+        this(toForms(prefix, aliases), false);
+    }
+
+    private Prefix(List<String> allForms, boolean eachWordIsValue) {
+        this.prefix = allForms.get(0);
+        this.allForms = allForms;
+        this.eachWordIsValue = eachWordIsValue;
+    }
+
+    private static List<String> toForms(String prefix, String... aliases) {
         List<String> forms = new ArrayList<>();
         forms.add(prefix);
         forms.addAll(Arrays.asList(aliases));
-        this.allForms = Collections.unmodifiableList(forms);
+        return Collections.unmodifiableList(forms);
+    }
+
+    /**
+     * Returns a copy of this prefix whose words are each stored as a separate value,
+     * e.g. {@code -t intern client} gives the values {@code intern} and {@code client}.
+     */
+    public Prefix withEachWordAsValue() {
+        return new Prefix(allForms, true);
     }
 
     public String getPrefix() {
@@ -37,6 +55,13 @@ public class Prefix {
      */
     public List<String> getAllForms() {
         return allForms;
+    }
+
+    /**
+     * Returns true if each word following this prefix is a separate value.
+     */
+    public boolean isEachWordAValue() {
+        return eachWordIsValue;
     }
 
     @Override

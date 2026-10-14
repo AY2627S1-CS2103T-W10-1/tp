@@ -62,15 +62,23 @@ sudoContact is a **desktop application for managing contacts, optimized for use 
 
 * The field flags for `add` and `edit` each have a short and a long form:
   `-n`/`--name`, `-p`/`--phone`, `-e`/`--email`, `-a`/`--address`, `-t`/`--tag`, and `-d`/`--department` for `add`.<br>
-  `edit` accepts both forms in the same command, for example `edit 1 --name John Doe -p 98765432`.
-  `add` takes one form per command; see [`add`](#adding-a-contact-with-partial-information-add).
+  Both forms can be used in the same command, for example `add --name John Doe -p 98765432`.
 
 * A flag must be a separate word, with a space before it and a space (or the end of the command) after it.<br>
   For example, `-n John` sets the name, but `-nJohn` does not. Text such as `Blk 5 -apt 3` inside a value is kept
-  as part of the value, but a value cannot contain a flag as a separate word, such as `-t` with spaces around it.
+  as part of the value.
 
-* Flags are lowercase. Giving a single-valued field more than once, in either form, is an error.<br>
-  For example, `edit 1 -e a@example.com --email b@example.com` is rejected.
+* Quotes are optional. Wrap a value in matching single or double quotes only when it contains a flag as a
+  separate word, or a word starting with `--`.<br>
+  For example, `edit 1 -a Blk 5 -t 3` sets the address to `Blk 5` and adds the tag `3`, while
+  `edit 1 -a "Blk 5 -t 3"` sets the address to `Blk 5 -t 3`. A quote inside a word, as in `O'Brien`, needs no
+  special treatment. Unmatched quotes and unknown options such as `--nme` are rejected.
+
+* Several tags can follow one tag flag, for example `-t friend family` or `--tag friend --tag family`.
+
+* Flags are lowercase. Giving a single-valued field more than once, in either form, is an error that names both
+  forms of the flag.<br>
+  For example, `edit 1 -e a@example.com --email b@example.com` is rejected with a message naming `-e/--email`.
 
 * Extraneous parameters for `help`, `exit`, and `clear` are ignored.<br>
   For example, `help 123` is interpreted as `help`. The `list` and `ls` commands reject extra parameters.
@@ -92,8 +100,8 @@ Adds a contact even if you only know their name. You can fill in other details l
 Format: `add --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMENT] [--address ADDRESS] [--tag TAG ...]`
 
 * Only `--name` is required. Names must be nonblank and contain letters, numbers or spaces.
-* Options can appear in any order. Use matching single or double quotes around multiword values,
-  for example `--name "Alice Tan"` or `--department "Human Resources"`.
+* Options can appear in any order. Quotes around multiword values are optional:
+  `--name "Alice Tan"` and `--name Alice Tan` are the same.
 * Phone numbers supplied to `add` must contain 7–15 digits, with no spaces or `+` sign.
 * A supplied email must be valid, such as `alice@example.com`.
 * Department names use the `depart` rules: 2–50 letters, numbers, spaces, hyphens or `&`.
@@ -107,9 +115,8 @@ Format: `add --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMEN
   email is a duplicate, including when those optional fields are absent. Different departments or tags alone
   do not distinguish duplicate contacts.
 
-Short flags also work: `add -n NAME [-p PHONE] [-e EMAIL] [-d DEPARTMENT] [-a ADDRESS] [-t TAG]…`.
-Use one form per command; a command that mixes short and long flags is rejected. Short-flag values do not
-need quotes; repeat `-t` for multiple tags.
+Short flags also work, and can be mixed with long ones:
+`add -n NAME [-p PHONE] [-e EMAIL] [-d DEPARTMENT] [-a ADDRESS] [-t TAG ...]`.
 
 Examples:
 

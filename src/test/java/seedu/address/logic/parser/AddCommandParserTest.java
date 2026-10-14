@@ -74,18 +74,30 @@ public class AddCommandParserTest {
     }
 
     @Test
-    public void parse_shortAndLongFormsMixed_failure() {
-        String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE);
+    public void parse_shortAndLongFormsMixed_success() {
+        Person expectedPerson = new PersonBuilder(BOB).withTags(VALID_TAG_FRIEND).build();
 
-        // add accepts one syntax per command
-        assertParseFailure(parser, NAME_DESC_BOB + " --phone " + VALID_PHONE_BOB, expectedMessage);
-        assertParseFailure(parser, " --name " + VALID_NAME_BOB + PHONE_DESC_BOB, expectedMessage);
+        assertParseSuccess(parser, NAME_DESC_BOB + " --phone " + VALID_PHONE_BOB + EMAIL_DESC_BOB
+                + " --address " + VALID_ADDRESS_BOB + TAG_DESC_FRIEND, new AddCommand(expectedPerson));
     }
 
     @Test
-    public void parse_repeatedShortFlag_failure() {
-        assertParseFailure(parser, " -n John -p 98765432 -a Block 123 -e Doe -e test@test.com",
+    public void parse_repeatedFlagInShortAndLongForm_failure() {
+        String otherFields = " -n John -p 98765432 -a Block 123";
+
+        // same short form repeated
+        assertParseFailure(parser, otherFields + " -e Doe -e test@test.com",
                 Messages.getErrorMessageForDuplicatePrefixes(PREFIX_EMAIL));
+
+        // short and long forms of the same flag
+        assertParseFailure(parser, otherFields + " -e Doe --email test@test.com",
+                Messages.getErrorMessageForDuplicatePrefixes(PREFIX_EMAIL));
+    }
+
+    @Test
+    public void parse_duplicateFieldMessage_namesBothForms() {
+        assertParseFailure(parser, " -n Alice --name Bob",
+                Messages.MESSAGE_DUPLICATE_FIELDS + "-n/--name");
     }
 
     @Test
