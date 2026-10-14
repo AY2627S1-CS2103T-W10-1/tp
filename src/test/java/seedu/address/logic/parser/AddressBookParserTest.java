@@ -139,6 +139,26 @@ public class AddressBookParserTest {
     }
 
     @Test
+    public void parseCommand_uppercaseCommandWord() throws Exception {
+        assertTrue(parser.parseCommand("LIST") instanceof ListCommand);
+        assertTrue(parser.parseCommand("HELP") instanceof HelpCommand);
+        assertEquals(new DeleteCommand(INDEX_FIRST_PERSON), parser.parseCommand("DELETE 1"));
+    }
+
+    @Test
+    public void parseCommand_mixedCaseCommandWord() throws Exception {
+        assertTrue(parser.parseCommand("List") instanceof ListCommand);
+        assertTrue(parser.parseCommand("eXiT") instanceof ExitCommand);
+        assertEquals(new UndoCommand(), parser.parseCommand("Undo"));
+    }
+
+    @Test
+    public void parseCommand_mixedCaseCommandWord_argumentsUnchanged() throws Exception {
+        FindCommand command = (FindCommand) parser.parseCommand("FIND Alice BOB");
+        assertEquals(new FindCommand(new NameContainsKeywordsPredicate(List.of("Alice", "BOB"))), command);
+    }
+
+    @Test
     public void parseCommand_unrecognisedInput_throwsParseException() {
         assertThrows(ParseException.class, String.format(MESSAGE_INVALID_COMMAND_FORMAT, HelpCommand.MESSAGE_USAGE), ()
             -> parser.parseCommand(""));
@@ -147,5 +167,6 @@ public class AddressBookParserTest {
     @Test
     public void parseCommand_unknownCommand_throwsParseException() {
         assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("unknownCommand"));
+        assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("LISTS"));
     }
 }
