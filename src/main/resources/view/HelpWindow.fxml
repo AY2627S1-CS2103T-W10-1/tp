@@ -22,6 +22,7 @@
       <VBox fx:id="helpContainer" spacing="10">
         <children>
           <Label fx:id="helpHeading" text="Available commands" />
+          <Label fx:id="helpCloseHint" text="Press q while this window is active to close it." wrapText="true" />
           <TextArea fx:id="helpText" editable="false" wrapText="true" VBox.vgrow="ALWAYS" />
         </children>
         <padding>

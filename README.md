@@ -43,7 +43,7 @@ The following command formats describe sudoContact's product interface. Replace 
 | Task | Command format | Example |
 | --- | --- | --- |
 | Add a contact | `add --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMENT] [--tag TAG ...]` | `add --name "Alice Tan" --email "alice@example.com" --department Engineering --tag client` |
-| Set a department | `depart CONTACT_ID --set DEPARTMENT`<br>`depart -c CONTACT_ID -s DEPARTMENT`<br>`depart CONTACT_ID DEPARTMENT` | `depart 3 --set "Engineering"` |
+| Set a department | `depart CONTACT_ID --set DEPARTMENT` | `depart 3 --set "Engineering"` |
 | Find by tags | `find --tag TAG [--tag TAG ...]` | `find --tag client --tag important` |
 | View a contact | `view INDEX` | `view 2` |
 | List contacts | `list` or `ls` | `ls` |
@@ -51,11 +51,16 @@ The following command formats describe sudoContact's product interface. Replace 
 | Delete a contact | `delete INDEX` | `delete 2` |
 | Restore the latest deletion | `undo` | `undo` |
 | Export contacts | `export --csv [FILENAME]` | `export --csv investors.csv` (`contacts.csv` when omitted) |
-| Show help | `help [COMMAND]` or `?` | `help depart` |
+| Show help | `help [COMMAND]` or `? [COMMAND]` | `help depart` |
 
 `INDEX` refers to the one-based position in the contact list currently displayed. This makes it possible to find or filter a group first and then act on a specific result.
 
 Use a single hyphen for short options and a double hyphen for long options. For example, `sort -b department` and `sort --by department` are equivalent. Command options and their values are shown above wherever applicable.
+
+Use `help` or `?` for the command overview, and `help COMMAND` (for example, `help depart`)
+for usage, supported options, and examples. Help also covers `edit`, `clear`, and `exit`.
+Command names and help topics are case-insensitive; aliases such as `ls` are accepted.
+The Help menu and `F1` show the overview. Press `q` in the Help window to close it.
 
 ## Data rules
 

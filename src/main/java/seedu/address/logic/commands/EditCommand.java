@@ -20,6 +20,7 @@ import seedu.address.commons.util.CollectionUtil;
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.exceptions.CommandException;
+import seedu.address.logic.help.HelpPage;
 import seedu.address.model.Model;
 import seedu.address.model.person.Address;
 import seedu.address.model.person.Department;
@@ -35,6 +36,28 @@ import seedu.address.model.tag.Tag;
 public class EditCommand extends Command {
 
     public static final String COMMAND_WORD = "edit";
+
+    /** Detailed usage, supported options and examples for this command. */
+    public static final HelpPage HELP_PAGE = new HelpPage(COMMAND_WORD, String.join("\n",
+            "Changes details of a contact in the displayed list.",
+            "Usage: edit INDEX [--name NAME] [--phone PHONE] [--email EMAIL]",
+            "       [--address ADDRESS] [--tag TAG ...]",
+            "",
+            "Options:",
+            "  -n, --name     Replacement name.",
+            "  -p, --phone    Replacement phone number.",
+            "  -e, --email    Replacement email address.",
+            "  -a, --address  Replacement postal address.",
+            "  -t, --tag      Replacement tags; an empty tag option clears all tags.",
+            "",
+            "INDEX is a positive, one-based position in the currently displayed list.",
+            "Provide at least one field. Omitted fields remain unchanged.",
+            "Tags replace the existing set. Use depart to change the department.",
+            "After a successful edit, all contacts are shown in stored order.",
+            "",
+            "Examples:",
+            "  edit 1 --phone 91234567 --email alice@example.com",
+            "  edit 1 -t"));
 
     public static final String MESSAGE_USAGE = COMMAND_WORD + ": Edits the details of the person identified "
             + "by the index number used in the displayed person list. "

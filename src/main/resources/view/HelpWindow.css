@@ -8,6 +8,11 @@
     -fx-font-weight: bold;
 }
 
+#helpCloseHint {
+    -fx-text-fill: #cccccc;
+    -fx-font-size: 12px;
+}
+
 #helpText {
     -fx-text-fill: white;
     -fx-control-inner-background: #252525;

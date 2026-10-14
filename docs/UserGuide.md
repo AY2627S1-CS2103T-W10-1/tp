@@ -80,20 +80,29 @@ sudoContact is a **desktop application for managing contacts, optimized for use 
   forms of the flag.<br>
   For example, `edit 1 -e a@example.com --email b@example.com` is rejected with a message naming `-e/--email`.
 
-* Extraneous parameters for `help`, `exit`, and `clear` are ignored.<br>
-  For example, `help 123` is interpreted as `help`. The `list` and `ls` commands reject extra parameters.
+* Extraneous parameters for `exit` and `clear` are ignored.<br>
+  The `list` and `ls` commands reject extra parameters. Help accepts at most one known command name.
 
 * Command words are case-insensitive, but parameters keep their case.<br>
-  For example, `LIST` and `List` are interpreted as `list`, and `EDIT 1 n/John Doe` still sets the name to `John Doe`.
+  For example, `LIST` and `List` are interpreted as `list`, and `EDIT 1 -n "John Doe"` still sets the name to `John Doe`.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </div>
 
 ### Viewing help: `help`
 
-Opens a scrollable window listing every available command with a short description. You can also open it from the Help menu or with `F1`. Press `q` while the Help window is active to close it.
+Opens a scrollable window listing every available command with a short description.
+Supply a command name to view its syntax, supported options, examples, and behavior notes.
+You can also open the overview from the Help menu or with `F1`.
+Press unmodified `q` while the Help window is active to close it.
 
-Format: `help`
+Format: `help [COMMAND]` or `? [COMMAND]`
+
+Examples: `help`, `help depart`, `? sort`, `help ls`.
+
+Command names are case-insensitive, and aliases (`ls` and `?`) are accepted as topics.
+Unknown topics and multiple arguments are rejected. Repeated help requests update the same window,
+and restore it if minimized. Help preserves contacts, the active filter, display order, and deletion history.
 
 
 ### Adding a contact with partial information: `add`
@@ -279,6 +288,7 @@ Format: `edit INDEX [-n NAME] [-p PHONE] [-e EMAIL] [-a ADDRESS] [-t TAG]…​`
 * Edits the person at the specified `INDEX`. The index refers to the index number shown in the displayed person list. The index **must be a positive integer** 1, 2, 3, …​
 * At least one of the optional fields must be provided.
 * Existing values will be updated to the input values.
+* After a successful edit, the full list is shown in stored order.
 * When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
 * To remove all of a person's tags, enter `-t` without a tag after it.
 
@@ -344,9 +354,9 @@ Format: `undo`
 * Run `undo` again to restore earlier deletions, most recent first.
 * Deletions are remembered only until you close the app.
 * The restored person is added to the end of the list, and the full list is shown.
-* If a person with the same name (case-sensitive) already exists, e.g. because you added them again, `undo` fails
-  and shows that person.
-  To restore the deleted person, first `edit` the existing person's name, then run `undo` again.
+* If a person with the same name, phone **and** email already exists, `undo` fails and shows that person.
+  A matching name alone does not prevent restoration. To restore the deleted person, first change the
+  existing person's name, phone or email with `edit`, then run `undo` again.
 * `undo` does not take any parameters. For example, `undo 2` shows an error.
 
 Examples:
@@ -355,7 +365,8 @@ Examples:
 
 ### Clearing all entries: `clear`
 
-Clears all entries from the address book.
+Clears all entries from the address book. This operation cannot be undone.
+Earlier individual deletions remain available to `undo` during the current session.
 
 Format: `clear`
 
@@ -432,7 +443,6 @@ _Details coming soon ..._
 ## Known issues
 
 1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. The remedy is to delete the `preferences.json` file created by the application before running the application again.
-2. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or the keyboard shortcut `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -451,4 +461,4 @@ Action | Format, Examples
 **Depart** | `depart CONTACT_ID --set DEPARTMENT`<br> e.g., `depart 1 --set Engineering`
 **Sort** | `sort -b FIELD` or `sort --by FIELD`, where `FIELD` is `department`, `dept`, `tag`, or `tags`
 **Undo** | `undo`
-**Help** | `help`
+**Help** | `help [COMMAND]` or `? [COMMAND]`

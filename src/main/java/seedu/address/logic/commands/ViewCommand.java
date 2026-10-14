@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import seedu.address.commons.core.index.Index;
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.commands.exceptions.CommandException;
+import seedu.address.logic.help.HelpPage;
 import seedu.address.model.Model;
 import seedu.address.model.person.Person;
 
@@ -17,6 +18,18 @@ import seedu.address.model.person.Person;
 public class ViewCommand extends Command {
 
     public static final String COMMAND_WORD = "view";
+
+    /** Detailed usage, supported options and examples for this command. */
+    public static final HelpPage HELP_PAGE = new HelpPage(COMMAND_WORD, String.join("\n",
+            "Shows a contact's full details in a separate window.",
+            "Usage: view INDEX",
+            "",
+            "INDEX is a positive, one-based position in the currently displayed list.",
+            "Preserves the active filter and display order.",
+            "",
+            "Examples:",
+            "  view 2"));
+
     public static final String MESSAGE_USAGE = COMMAND_WORD
             + ": Shows the full details of the contact identified by CONTACT_ID in the displayed list.\n"
             + "Parameters: CONTACT_ID (must be a positive integer)\n"

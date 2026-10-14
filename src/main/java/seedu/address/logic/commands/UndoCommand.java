@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.exceptions.CommandException;
+import seedu.address.logic.help.HelpPage;
 import seedu.address.model.Model;
 import seedu.address.model.person.Person;
 
@@ -13,6 +14,19 @@ import seedu.address.model.person.Person;
 public class UndoCommand extends Command {
 
     public static final String COMMAND_WORD = "undo";
+
+    /** Detailed usage, supported options and examples for this command. */
+    public static final HelpPage HELP_PAGE = new HelpPage(COMMAND_WORD, String.join("\n",
+            "Restores the most recently deleted contact in this session.",
+            "Usage: undo",
+            "",
+            "Accepts no parameters. Repeated calls restore earlier deletions, newest first.",
+            "Restoration fails if there is no deletion to undo or the same name, phone and email already exist.",
+            "The restored contact is appended to the stored list; all contacts are shown in stored order.",
+            "Only individual delete commands can be undone, not clear, add or edit.",
+            "",
+            "Examples:",
+            "  undo"));
 
     public static final String MESSAGE_USAGE = COMMAND_WORD
             + ": Restores the most recently deleted person in this session.\n"

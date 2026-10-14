@@ -27,6 +27,7 @@ import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
+import seedu.address.logic.help.HelpCatalog;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
@@ -106,6 +107,25 @@ public class LogicManagerTest {
             assertEquals(List.of(AMY), model.getFilteredPersonList());
             assertEquals(storedBefore, model.getAddressBook().getPersonList());
         }
+    }
+
+    @Test
+    public void execute_help_doesNotSaveEvenWhenStorageCannotWrite() throws Exception {
+        model.addPerson(AMY);
+        JsonAddressBookStorage blockedStorage =
+                new JsonAddressBookStorage(temporaryFolder.resolve("blocked.json")) {
+                    @Override
+                    public void saveAddressBook(ReadOnlyAddressBook addressBook) {
+                        throw new AssertionError("Help must not save the address book");
+                    }
+                };
+        logic = new LogicManager(model, new StorageManager(blockedStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))));
+        for (String input : List.of("help", "?", "help depart", "? ls")) {
+            assertTrue(logic.execute(input).getHelpPage().isPresent());
+            assertEquals(List.of(AMY), model.getAddressBook().getPersonList());
+        }
+        assertEquals(HelpCatalog.getOverview(), logic.execute("help").getHelpPage().orElseThrow());
     }
 
     @Test

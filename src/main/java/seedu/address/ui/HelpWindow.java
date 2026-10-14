@@ -1,14 +1,18 @@
 package seedu.address.ui;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.logging.Logger;
 
 import javafx.fxml.FXML;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 import seedu.address.commons.core.LogsCenter;
-import seedu.address.logic.commands.HelpCommand;
+import seedu.address.logic.help.HelpCatalog;
+import seedu.address.logic.help.HelpPage;
 
 /**
  * Controller for the command help window.
@@ -17,6 +21,9 @@ public class HelpWindow extends UiPart<Stage> {
 
     private static final Logger logger = LogsCenter.getLogger(HelpWindow.class);
     private static final String FXML = "HelpWindow.fxml";
+
+    @FXML
+    private Label helpHeading;
 
     @FXML
     private TextArea helpText;
@@ -28,7 +35,7 @@ public class HelpWindow extends UiPart<Stage> {
      */
     public HelpWindow(Stage root) {
         super(FXML, root);
-        helpText.setText(HelpCommand.HELP_TEXT);
+        setPage(HelpCatalog.getOverview());
         getRoot().setWidth(560);
         getRoot().setHeight(420);
         getRoot().getScene().addEventFilter(KeyEvent.KEY_PRESSED, event -> {
@@ -48,27 +55,37 @@ public class HelpWindow extends UiPart<Stage> {
     }
 
     /**
-     * Shows the help window.
-     * @throws IllegalStateException
-     *     <ul>
-     *         <li>
-     *             if this method is called on a thread other than the JavaFX Application Thread.
-     *         </li>
-     *         <li>
-     *             if this method is called during animation or layout processing.
-     *         </li>
-     *         <li>
-     *             if this method is called on the primary stage.
-     *         </li>
-     *         <li>
-     *             if {@code dialogStage} is already showing.
-     *         </li>
-     *     </ul>
+     * Shows the current help content, restoring and focusing the existing window if necessary.
+     * Must be called on the JavaFX Application Thread.
      */
     public void show() {
-        logger.fine("Showing available commands.");
-        getRoot().show();
-        getRoot().centerOnScreen();
+        logger.fine("Showing command help.");
+        if (!isShowing()) {
+            getRoot().show();
+            getRoot().centerOnScreen();
+        }
+        getRoot().setIconified(false);
+        focus();
+    }
+
+    /**
+     * Displays the selected page in this window and resets the text selection and scrolling.
+     * Must be called on the JavaFX Application Thread.
+     *
+     * @param page Command manual or overview to show.
+     * @throws NullPointerException If {@code page} is null.
+     */
+    public void showPage(HelpPage page) {
+        setPage(requireNonNull(page));
+        show();
+    }
+
+    private void setPage(HelpPage page) {
+        helpHeading.setText(page.title());
+        helpText.setText(page.text());
+        helpText.positionCaret(0);
+        helpText.setScrollTop(0);
+        helpText.setScrollLeft(0);
     }
 
     /**
@@ -86,9 +103,11 @@ public class HelpWindow extends UiPart<Stage> {
     }
 
     /**
-     * Focuses on the help window.
+     * Brings the help window to the front and focuses its text for keyboard navigation and dismissal.
      */
     public void focus() {
+        getRoot().toFront();
         getRoot().requestFocus();
+        helpText.requestFocus();
     }
 }

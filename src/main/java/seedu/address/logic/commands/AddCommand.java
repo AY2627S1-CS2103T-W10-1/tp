@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.commands.exceptions.CommandException;
+import seedu.address.logic.help.HelpPage;
 import seedu.address.model.Model;
 import seedu.address.model.person.Person;
 
@@ -15,6 +16,27 @@ import seedu.address.model.person.Person;
 public class AddCommand extends Command {
 
     public static final String COMMAND_WORD = "add";
+
+    /** Detailed usage, supported options and examples for this command. */
+    public static final HelpPage HELP_PAGE = new HelpPage(COMMAND_WORD, String.join("\n",
+            "Adds a contact; only the name is required.",
+            "Usage: add --name NAME [--phone PHONE] [--email EMAIL]",
+            "       [--address ADDRESS] [--department DEPARTMENT] [--tag TAG ...]",
+            "",
+            "Options:",
+            "  -n, --name        Required contact name.",
+            "  -p, --phone       Optional phone number (7-15 digits).",
+            "  -e, --email       Optional valid email address.",
+            "  -a, --address     Optional postal address.",
+            "  -d, --department  Optional department (2-50 characters).",
+            "  -t, --tag         Optional tags; repeat the option or supply several tags.",
+            "",
+            "Quote values containing spaces. Single-valued options cannot be repeated.",
+            "Contacts may share a name; duplicate name, phone and email combinations are rejected.",
+            "",
+            "Examples:",
+            "  add --name \"Alice Tan\"",
+            "  add -n \"Alice Tan\" -e alice@example.com -d Engineering -t client important"));
 
     public static final String MESSAGE_USAGE = COMMAND_WORD + ": Adds a contact; only the name is required.\n"
             + "Parameters: --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMENT] "
