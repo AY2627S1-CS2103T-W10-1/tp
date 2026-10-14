@@ -5,7 +5,7 @@ import static seedu.address.commons.util.AppUtil.checkArgument;
 
 /**
  * Represents a Person's phone number in the address book.
- * Guarantees: immutable; is valid as declared in {@link #isValidPhone(String)}
+ * Guarantees: immutable; omitted or valid as declared in {@link #isValidPhone(String)}
  */
 public class Phone {
 
@@ -26,6 +26,20 @@ public class Phone {
         value = phone;
     }
 
+    private Phone() {
+        value = "";
+    }
+
+    /** Returns an omitted optional field, without accepting blank user input. */
+    public static Phone notProvided() {
+        return new Phone();
+    }
+
+    /** Returns whether this field contains supplied information. */
+    public boolean isProvided() {
+        return !value.isEmpty();
+    }
+
     /**
      * Returns true if a given string is a valid phone number.
      */
@@ -35,7 +49,7 @@ public class Phone {
 
     @Override
     public String toString() {
-        return value;
+        return isProvided() ? value : "Not provided";
     }
 
     @Override

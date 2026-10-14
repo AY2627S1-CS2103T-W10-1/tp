@@ -21,9 +21,18 @@ public class Tag {
      * @param tagName A valid tag name.
      */
     public Tag(String tagName) {
+        this(tagName, VALIDATION_REGEX);
+    }
+
+    private Tag(String tagName, String validationRegex) {
         requireNonNull(tagName);
-        checkArgument(isValidTagName(tagName), MESSAGE_CONSTRAINTS);
+        checkArgument(tagName.matches(validationRegex), MESSAGE_CONSTRAINTS);
         this.tagName = tagName;
+    }
+
+    /** Reads a stored tag, preserving older tags that exceed the current input length limit. */
+    public static Tag fromStoredValue(String tagName) {
+        return new Tag(tagName, "[a-zA-Z0-9_-]+");
     }
 
     /**
