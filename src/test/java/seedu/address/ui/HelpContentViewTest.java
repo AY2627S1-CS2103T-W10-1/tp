@@ -159,6 +159,69 @@ public class HelpContentViewTest {
         });
     }
 
+    @Test
+    public void manual_usageAtEndOfPage_keepsAllSyntaxLines() throws Exception {
+        FxTestUtil.run(() -> {
+            HelpContentView view = new HelpContentView();
+            view.showPage(new HelpPage("list", "Lists contacts.\nUsage: list\n       ls"));
+            assertTrue(visibleText(view).contains("Lists contacts."));
+            assertEquals(1, view.lookupAll(".help-usage").size());
+            assertTrue(visibleText(view.lookup(".help-usage")).contains("list\n       ls"));
+            assertEquals(List.of("Usage"), sectionHeadings(view));
+        });
+    }
+
+    @Test
+    public void manual_optionsAtEndOfPage_keepsOptionsAndHighlighting() throws Exception {
+        FxTestUtil.run(() -> {
+            HelpContentView view = new HelpContentView();
+            view.showPage(new HelpPage("find", "Finds contacts.\nOptions:\n  -t, --tag TAG"));
+            assertTrue(visibleText(view).contains("Finds contacts."));
+            assertEquals(1, view.lookupAll(".help-options").size());
+            assertTrue(visibleText(view.lookup(".help-options")).contains("-t, --tag TAG"));
+            assertEquals(List.of("--tag", "-t"), view.lookupAll(".help-token").stream()
+                    .map(Text.class::cast).map(Text::getText).sorted().toList());
+            assertEquals(List.of("Options"), sectionHeadings(view));
+        });
+    }
+
+    @Test
+    public void manual_multipleNotesAndNotesAfterExamples_showsEveryParagraphAndOneNotesHeading() throws Exception {
+        FxTestUtil.run(() -> {
+            HelpContentView view = new HelpContentView();
+            view.showPage(new HelpPage("list", "Usage: list\n\nFirst note.\n\nSecond note."
+                    + "\n\nExamples:\n  list\n\nFinal note."));
+            String rendered = visibleText(view);
+            assertTrue(rendered.contains("First note."));
+            assertTrue(rendered.contains("Second note."));
+            assertTrue(rendered.contains("Final note."));
+            assertEquals(1, view.lookupAll(".help-example").size());
+            assertTrue(visibleText(view.lookup(".help-example")).contains("list"));
+            assertEquals(List.of("Usage", "Notes", "Examples"), sectionHeadings(view));
+        });
+    }
+
+    @Test
+    public void manual_headingsImmediatelyAfterProse_remainSeparateSections() throws Exception {
+        FxTestUtil.run(() -> {
+            HelpContentView view = new HelpContentView();
+            view.showPage(new HelpPage("find", "Finds contacts.\nOptions:\n  --tag TAG"
+                    + "\n\nSearch notes.\nExamples:\n  find --tag client"));
+            assertEquals(List.of("Options", "Examples"), sectionHeadings(view));
+            List<Node> descriptions = view.getChildren().stream()
+                    .filter(node -> node.getStyleClass().contains("help-description")).toList();
+            assertEquals(List.of("Finds contacts.", "Search notes."),
+                    descriptions.stream().map(HelpContentViewTest::visibleText).toList());
+            assertTrue(visibleText(view.lookup(".help-options")).contains("--tag TAG"));
+            assertTrue(visibleText(view.lookup(".help-example")).contains("find --tag client"));
+        });
+    }
+
+    private static List<String> sectionHeadings(HelpContentView view) {
+        return view.getChildren().stream().filter(node -> node.getStyleClass().contains("help-section-heading"))
+                .map(Label.class::cast).map(Label::getText).toList();
+    }
+
     private static String visibleText(Node node) {
         if (node instanceof Label label) {
             return label.getText();
