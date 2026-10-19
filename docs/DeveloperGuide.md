@@ -19,7 +19,7 @@ This project is based on the AddressBook-Level3 project created by the [SE-EDU i
 
 OpenAI Codex assisted He Qianyi with the Feature 11 CSV export implementation, tests and documentation.
 He Qianyi is responsible for reviewing and understanding these changes.
-He Qianyi used OpenAI Codex to assist with updating and verifying the UI class diagram for contact details.
+He Qianyi used OpenAI Codex to assist with updating and verifying the UI class diagram and the UML sequence diagrams for contact viewing, partial-contact addition and CSV export.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -174,6 +174,11 @@ This section describes some noteworthy details on how certain features are imple
 
 ### CSV export (Feature 11 / UC9)
 
+The sequence below shows a successful CSV export. Parsing is summarized in a reference frame; the command
+reads all stored contacts, writes the CSV through `CsvContactExporter`, and skips the normal JSON save.
+
+![Successful CSV export sequence](images/ExportCsvSequenceDiagram.png)
+
 `AddressBookParser` dispatches `export` to `ExportCommandParser`. The parser requires `-c` or `--csv`, accepts
 one optional basename (with matching quotes for spaces), and defaults to `contacts.csv`.
 `CsvContactExporter.isValidFileName` rejects paths, invalid characters and reserved Windows device names
@@ -205,6 +210,11 @@ for corrupted persistent data. Parser, model integration, real file, cleanup and
 cover the export flow, including a filtered list and an existing destination.
 
 ### Adding contacts with partial information
+
+The sequence below shows the successful addition of a name-only contact. Parsing creates missing-value
+objects for omitted fields; the command checks for duplicates, adds the contact, and follows the normal JSON save.
+
+![Successful partial-contact addition sequence](images/AddPartialContactSequenceDiagram.png)
 
 `AddCommandParser` and `EditCommandParser` share `ArgumentTokenizer`. Each `Prefix` in `CliSyntax` has a
 short and a long form (e.g. `-n`/`--name`), and both forms map to the same `ArgumentMultimap` key, so they can
@@ -286,6 +296,11 @@ failures, including sorting contacts after successful additions and saves in the
 Run `./gradlew check coverage` (Windows: `.\gradlew.bat check coverage`) with Java 25.
 
 ### Viewing contact details
+
+The sequence below shows a successful `view 1` request for a nonempty displayed list. It resolves the
+displayed index and completes the normal JSON save before returning the snapshot to the reusable details window.
+
+![Successful contact-details sequence](images/ViewContactSequenceDiagram.png)
 
 `AddressBookParser` routes `view CONTACT_ID` to `ViewCommandParser`, which validates the contact ID using
 `ParserUtil.parseIndex`. `ViewCommand` resolves that contact ID against `Model.getFilteredPersonList()` so that

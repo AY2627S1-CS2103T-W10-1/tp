@@ -1,0 +1,63 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+title Adding a partial contact: successful execution
+
+participant ":LogicManager" as LogicManager LOGIC_COLOR
+participant ":AddCommand" as AddCommand LOGIC_COLOR
+participant ":Model" as Model MODEL_COLOR
+participant ":Storage" as Storage STORAGE_COLOR
+
+[-> LogicManager : execute("add --name Alice")
+activate LogicManager
+ref over LogicManager, AddCommand
+AddressBookParser and AddCommandParser
+validate input and create AddCommand(p).
+end ref
+note over AddCommand
+p has the required name.
+Omitted phone, email and address use notProvided().
+Department is absent and the tag set is empty.
+end note
+
+LogicManager -> AddCommand : execute(model)
+activate AddCommand
+AddCommand -> Model : hasPerson(p)
+activate Model
+Model --> AddCommand : false
+deactivate Model
+AddCommand -> Model : addPerson(p)
+activate Model
+note over Model
+Add p to the address book;
+refresh the display to show all contacts.
+end note
+Model --> AddCommand
+deactivate Model
+AddCommand --> LogicManager : result: CommandResult(feedback)
+deactivate AddCommand
+
+LogicManager -> AddCommand : requiresStorageSave()
+activate AddCommand
+AddCommand --> LogicManager : true
+deactivate AddCommand
+LogicManager -> Model : getAddressBook()
+activate Model
+Model --> LogicManager : addressBook
+deactivate Model
+LogicManager -> Storage : saveAddressBook(addressBook)
+activate Storage
+note over Storage
+JsonAdaptedPerson serializes missing
+phone, email and address as empty strings.
+end note
+Storage --> LogicManager : saved successfully
+deactivate Storage
+[<-- LogicManager : result
+deactivate LogicManager
+
+note over LogicManager
+The UI displays the addition feedback:
+missing details are Not provided; no tags is None.
+end note
+@enduml
