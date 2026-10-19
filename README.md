@@ -43,7 +43,10 @@ The following command formats describe sudoContact's product interface. Replace 
 | Task | Command format | Example |
 | --- | --- | --- |
 | Add a contact | `add --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMENT] [--tag TAG ...]` | `add --name "Alice Tan" --email "alice@example.com" --department Engineering --tag client` |
-| Set a department | `depart CONTACT_ID --set DEPARTMENT` | `depart 3 --set "Engineering"` |
+| List departments | `depart --list` | `depart --list` |
+| Add a department | `depart --add DEPARTMENT` | `depart --add Engineering` |
+| Rename a department | `depart --edit OLD_NAME NEW_NAME` | `depart --edit Engineering "Research & Development"` |
+| Assign a department | `edit CONTACT_ID --department DEPARTMENT` | `edit 3 --department Engineering` |
 | Find by tags | `find --tag TAG [--tag TAG ...]` | `find --tag client --tag important` |
 | View a contact | `view INDEX` | `view 2` |
 | List contacts | `list` or `ls` | `ls` |
@@ -54,6 +57,9 @@ The following command formats describe sudoContact's product interface. Replace 
 | Show help | `help [COMMAND]` or `? [COMMAND]` | `help depart` |
 
 `INDEX` refers to the one-based position in the contact list currently displayed. This makes it possible to find or filter a group first and then act on a specific result.
+
+Register a department with `depart --add` before assigning it through `add` or `edit`.
+Quote department names containing spaces in `depart` commands. Renaming updates all associated contacts.
 
 Use a single hyphen for short options and a double hyphen for long options. For example, `sort -b department` and `sort --by department` are equivalent. Command options and their values are shown above wherever applicable.
 

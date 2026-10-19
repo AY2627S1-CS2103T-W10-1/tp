@@ -206,7 +206,7 @@ be mixed and repeats in either form are detected as duplicates. The tokenizer sp
 quoted word as literal text (never a flag), rejects unknown `--` options, and stores each word after `-t`/`--tag`
 as a separate tag. Only name is required. Omitted phone, email and address use immutable `notProvided()` value objects whose
 stored values are empty strings and whose display strings are `Not provided`. Their public constructors and
-parser validators still reject empty supplied values. Department remains optional. The planned department
+parser validators still reject empty supplied values. Department remains optional. The department
 catalogue and assignment rules are specified below under Department management.
 
 `JsonAdaptedPerson` maps null, omitted or empty phone/email/address fields to the missing value objects;
@@ -220,16 +220,16 @@ Tag search and matching reuse the teammate's implementation.
 `Person.isSamePerson` compares name, phone and email, including missing values. Address, Department and
 tags do not contribute to identity. The shared uniqueness check allows same-name contacts with different
 phone/email and rejects edit operations that would create a duplicate identity. `edit` can complete partial
-contacts while preserving their other fields. Under the planned department specification, an assigned
+contacts while preserving their other fields. Under the department specification, an assigned
 department must already exist in the department catalogue.
 
 `AddCommand` returns full labelled feedback, sorted tags and missing-field placeholders. `PersonCard` shows
 those same placeholders for missing fields and `None` for no tags. `LogicManager` retains the existing save
 failure behaviour: it reports the error instead of returning an addition-success result.
 
-### Department management: planned specification
+### Department management: design specification
 
-This section specifies the intended behaviour; implementation is pending. `depart` manages a shared
+The department catalogue is stored alongside contacts in the address book. `depart` manages a shared
 catalogue of department names, while `edit` assigns a catalogue entry to an individual contact.
 The catalogue includes departments with no assigned contacts and is independent of the current contact filter.
 
@@ -245,7 +245,7 @@ and `edit 1 --department "Research & Development"`. Quote names containing space
 arguments of `depart --edit`. The command word is `depart` for all three catalogue operations.
 The previous `depart CONTACT_ID --set DEPARTMENT` form is replaced by `edit CONTACT_ID --department DEPARTMENT`.
 
-Department names must contain 2–50 characters using only letters, numbers, spaces, `-`, or `&`.
+Department names are case-sensitive and must contain 2–50 characters using only letters, numbers, spaces, `-`, or `&`.
 Reject empty or invalid names, duplicate catalogue additions, an unknown rename source, and a rename target
 that already belongs to another catalogue entry. Reject missing arguments, extra arguments, and combined
 catalogue operations without modifying the catalogue or contacts.
@@ -259,6 +259,19 @@ An unknown department is rejected without changing any supplied contact fields; 
 with `depart --add`. Omitting `--department` preserves the contact's existing department. A successful assignment
 replaces only that contact's department, along with any other explicitly supplied edit fields; it does not rename
 a catalogue entry or affect other contacts. Contacts may still have no department.
+`add --department` applies the same catalogue membership check before adding a contact.
+
+`AddressBook` owns the observable department catalogue and exposes an unmodifiable view through
+`ReadOnlyAddressBook`. `DepartCommandParser` uses the shared quote-aware word lexer to enforce one operation
+and its exact argument count. `depart --list` skips the storage save and preserves display state.
+`ModelManager.renameDepartment` updates both stored contacts and deletion history, so `undo` cannot restore
+an obsolete department name. A rename retains the active filter and resets display sorting.
+Renaming an entry to its own name is allowed. `clear` resets the catalogue together with contacts.
+
+`JsonSerializableAddressBook` persists names in a `departments` array, including unused entries.
+Legacy files without this array derive the catalogue from their contact assignments. Files containing an explicit
+catalogue reject duplicate or invalid names and contact assignments absent from the catalogue.
+`DepartmentIntegrationTest` covers persistence, rejected edits, listing without writes, and rename followed by undo.
 
 ### Listing all contacts: design specification
 
@@ -654,7 +667,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 Assigning a department to an individual contact is handled separately by
 `edit CONTACT_ID --department DEPARTMENT`; the name must already exist in the catalogue.
-See [Department management](#department-management-planned-specification) for the assignment validation rules.
+See [Department management](#department-management-design-specification) for the assignment validation rules.
 
 **Use case:** UC6 - Search contacts by tags
 
@@ -885,7 +898,7 @@ be combined with tag search in the same command.
 
 * **Contact**: A stored record for a person or organisation, containing a name and any available contact details, department, and tags.
 * **Contact ID**: A positive one-based position in the currently displayed list, used by `view`, `edit`, and `delete`. Filtering or sorting can change which contact occupies a position.
-* **Department**: An optional organisational unit associated with a contact. Under the planned specification, assignments must use a name from the shared department catalogue; renaming an entry updates all associated contacts.
+* **Department**: An optional organisational unit associated with a contact. Under this specification, assignments must use a name from the shared department catalogue; renaming an entry updates all associated contacts.
 * **Department catalogue**: The complete set of registered department names, including unused entries, managed with `depart --list`, `depart --add`, and `depart --edit`.
 * **Mainstream OS**: Windows, Linux, Unix, or macOS
 * **Matching contact**: For a tag search, a contact that has every tag specified in the command. A matching contact is displayed once even when it has more than one specified tag.
@@ -946,11 +959,10 @@ testers are expected to do more *exploratory* testing.
 
 1. _{ more test cases …​ }_
 
-### Department catalogue and assignments (planned acceptance checks)
+### Department catalogue and assignments
 
-These checks describe the planned behaviour and are not evidence of passing implementation tests.
-Other department assignment examples below also assume this specification is implemented; register their
-names first with `depart --add` (Engineering, "R&D Engineering", Sales, and Support as applicable).
+For the department assignment examples below, register the required names first with `depart --add`
+(Engineering, "R&D Engineering", Sales, and Support as applicable).
 
 1. With an empty catalogue, run `depart --list`. Expected: an explicit empty-catalogue result.
 2. Run `depart --add Engineering` and `depart --add "Customer Support"`, then `depart --list`.
@@ -977,7 +989,7 @@ names first with `depart --add` (Engineering, "R&D Engineering", Sales, and Supp
 1. Add `add --name "Dana Lim"` to an address book that has no Dana Lim contact.
    Expected: successful addition, phone/email/address/department show `Not provided`, tags show `None`.
 1. Restart the app. Expected: Dana Lim is still present with the same omitted fields.
-1. Run `find Dana`, `edit 1 -p 91234567 -e dana@example.com -a Main Road`, then `edit 1 --department Engineering`.
+1. Run `find Dana`, then `edit 1 -p 91234567 -e dana@example.com -a Main Road --department Engineering`.
    Expected: the contact has the supplied details; restart preserves all fields.
 1. Add another `Dana Lim` with a different phone or email. Expected: the same name is accepted.
    Repeat the exact name/phone/email with different tags or department. Expected: duplicate error, no new entry.

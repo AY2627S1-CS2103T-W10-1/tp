@@ -25,7 +25,7 @@ public class Department {
     }
 
     public static boolean isValidDepartment(String test) {
-        return test != null && test.matches(VALIDATION_REGEX);
+        return test != null && !test.isBlank() && test.matches(VALIDATION_REGEX);
     }
 
     @Override

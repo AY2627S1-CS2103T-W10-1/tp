@@ -4,6 +4,7 @@ import java.util.function.Predicate;
 
 import javafx.collections.ObservableList;
 import seedu.address.commons.core.GuiSettings;
+import seedu.address.model.person.Department;
 import seedu.address.model.person.Person;
 
 /**
@@ -76,6 +77,17 @@ public interface Model {
      * The person identity of {@code editedPerson} must not be the same as another existing person in the address book.
      */
     void setPerson(Person target, Person editedPerson);
+
+    /** Registers a new department. The name must not already exist. */
+    void addDepartment(Department department);
+
+    /** Renames an existing department and its assignments, including deletion history. */
+    void renameDepartment(Department oldDepartment, Department newDepartment);
+
+    /** Returns whether a department is registered. */
+    default boolean hasDepartment(Department department) {
+        return getAddressBook().getDepartmentList().contains(department);
+    }
 
     /** Returns an unmodifiable view of the filtered person list */
     ObservableList<Person> getFilteredPersonList();
