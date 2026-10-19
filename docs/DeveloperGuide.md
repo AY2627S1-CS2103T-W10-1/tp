@@ -113,7 +113,7 @@ How the `Logic` component works:
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
 1. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
    Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
-1. `LogicManager` saves the canonical address book if `Command.requiresStorageSave()` returns true. `SortCommand` returns false because ordering is display-only; existing commands retain normal saving.
+1. `LogicManager` saves the canonical address book if `Command.requiresStorageSave()` returns true. `SortCommand` returns false because ordering is display-only; unconfirmed `ClearCommand` also returns false.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
@@ -279,6 +279,23 @@ display/filter behavior; editing and deleting sorted indices; unchanged storage;
 failures, including sorting contacts after successful additions and saves in the same session.
 Run `./gradlew check coverage` (Windows: `.\gradlew.bat check coverage`) with Java 25.
 
+### Clearing contacts with confirmation
+
+`AddressBookParser` delegates `clear` to `ClearCommandParser`. After trimming surrounding whitespace,
+the parser accepts only blank arguments or the exact `--confirm` flag. All other arguments produce
+`MESSAGE_INVALID_COMMAND_FORMAT` with `ClearCommand.MESSAGE_USAGE` before any command executes.
+
+`ClearCommand` stores an immutable confirmation flag. Without confirmation, it counts the canonical
+address book's contacts and returns a warning; contacts, display filtering and sorting, and deletion
+history remain unchanged. Its `requiresStorageSave()` override returns false in this case.
+With confirmation, it resets the address book and allows `LogicManager` to save the empty book.
+Clearing does not add contacts to individual-deletion history, so it cannot be undone.
+Earlier individual deletions remain available to `undo`.
+
+Regression tests cover strict parsing, warning counts with hidden contacts, unchanged display and undo
+history, skipped saves for unconfirmed or invalid input, and reloading the empty saved address book
+after confirmed deletion.
+
 ### Viewing contact details
 
 `AddressBookParser` routes `view CONTACT_ID` to `ViewCommandParser`, which validates the contact ID using
@@ -364,7 +381,7 @@ Step 5. The user then decides to execute the command `list`. Commands that do no
 
 ![UndoRedoState4](images/UndoRedoState4.png)
 
-Step 6. The user executes `clear`, which calls `Model#commitAddressBook()`. Since the `currentStatePointer` is not pointing at the end of the `addressBookStateList`, all address book states after the `currentStatePointer` will be purged. Reason: It no longer makes sense to redo the `add -n David …​` command. This is the behavior that most modern desktop applications follow.
+Step 6. The user executes `clear --confirm`, which calls `Model#commitAddressBook()`. Since the `currentStatePointer` is not pointing at the end of the `addressBookStateList`, all address book states after the `currentStatePointer` will be purged. Reason: It no longer makes sense to redo the `add -n David …​` command. This is the behavior that most modern desktop applications follow.
 
 ![UndoRedoState5](images/UndoRedoState5.png)
 
@@ -849,6 +866,23 @@ be combined with tag search in the same command.
 
 Given below are instructions to test the app manually.
 
+### Clearing contacts with confirmation
+
+Use disposable data and record the full stored contact count before testing.
+
+1. Enter `clear`. Expected: the warning reports the full stored contact count and explains
+   `clear --confirm`; all contacts remain. Restart and check that stored contacts are unchanged.
+1. Filter with `find`, then enter `clear`. Expected: the warning counts all stored contacts,
+   including hidden contacts; the displayed search result remains unchanged.
+1. Enter `clear 1`, `clear --CONFIRM`, `clear --confirm extra`, and `clear --confirm --confirm`.
+   Expected: each produces an invalid command format error; no contacts are deleted.
+1. Enter `clear --confirm`. Expected: all contacts disappear, including hidden contacts.
+   Restart and verify that the address book is empty.
+1. With no earlier individual deletions in the session, enter `undo` after a confirmed clear.
+   Expected: there are no deletions to undo. Separately, delete one contact before clearing and
+   verify that `undo` restores only that earlier individual deletion.
+1. On an empty address book, enter `clear`. Expected: a warning with a count of 0.
+
 ### Exporting contacts as CSV
 
 Use a disposable launch folder with sample contacts, and a filename that does not already exist.
@@ -863,7 +897,7 @@ Use a disposable launch folder with sample contacts, and a filename that does no
    `export --json` and `export --csv a.csv b.csv`. Expected: an error and no new export file.
 1. Add a contact with address `北京, "总部"`, then export to an unused filename. Expected: the Unicode
    address is intact, surrounded by quotes, with each inner quote doubled.
-1. In a disposable address book, enter `clear`, then export to an unused filename. Expected:
+1. In a disposable address book, enter `clear --confirm`, then export to an unused filename. Expected:
    `No contacts found to export.`; no file is created. An empty *search result* with stored contacts should
    still export those contacts successfully.
 1. Launch from a folder without write permission using a non-administrator account, keeping JSON data

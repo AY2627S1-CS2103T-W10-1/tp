@@ -34,7 +34,7 @@ sudoContact is a **desktop application for managing contacts, optimized for use 
 
    * `delete 3` : Deletes the 3rd contact shown in the current list.
 
-   * `clear` : Deletes all contacts.
+   * `clear` : Shows a warning with the total contact count. Use `clear --confirm` to delete all contacts.
 
    * `exit` : Exits the app.
 
@@ -80,7 +80,7 @@ sudoContact is a **desktop application for managing contacts, optimized for use 
   forms of the flag.<br>
   For example, `edit 1 -e a@example.com --email b@example.com` is rejected with a message naming `-e/--email`.
 
-* Extraneous parameters for `exit` and `clear` are ignored.<br>
+* Extraneous parameters for `exit` are ignored. `clear` accepts only the optional `--confirm` flag.<br>
   The `list` and `ls` commands reject extra parameters. Help accepts at most one known command name.
 
 * Command words are case-insensitive, but parameters keep their case.<br>
@@ -365,10 +365,24 @@ Examples:
 
 ### Clearing all entries: `clear`
 
-Clears all entries from the address book. This operation cannot be undone.
+Deletes all contacts only when explicitly confirmed. This operation cannot be undone.
 Earlier individual deletions remain available to `undo` during the current session.
 
-Format: `clear`
+Format: `clear [--confirm]`
+
+* `clear` shows a warning without changing contacts or saving the address book:
+  `This will delete all N contacts and cannot be undone. Type "clear --confirm" to proceed.`
+* `N` counts **all stored contacts**, including contacts hidden by a search.
+* `clear --confirm` deletes all stored contacts and saves the empty address book immediately.
+  It can be entered directly without first entering `clear`.
+* Only the exact lowercase flag `--confirm` is accepted. Surrounding whitespace is allowed.
+  Other arguments, such as `clear 1`, `clear --CONFIRM`, or `clear --confirm extra`, show an
+  invalid command format error without deleting or saving anything.
+* On an empty address book, `clear` still shows a warning with a count of 0.
+
+Examples:
+* `clear` shows the warning and leaves all contacts unchanged.
+* `clear --confirm` deletes all contacts, including those hidden by the current filter.
 
 ### Exiting the program: `exit`
 
@@ -451,7 +465,7 @@ _Details coming soon ..._
 Action | Format, Examples
 --------|------------------
 **Add** | `add --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMENT] [--address ADDRESS] [--tag TAG ...]`<br> or `add -n NAME [-p PHONE] [-e EMAIL] [-d DEPARTMENT] [-a ADDRESS] [-t TAG]…` <br> e.g., `add --name "James Ho" --email jamesho@example.com`
-**Clear** | `clear`
+**Clear** | `clear` (warning), `clear --confirm` (delete all)
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit** | `edit INDEX [-n NAME] [-p PHONE_NUMBER] [-e EMAIL] [-a ADDRESS] [-t TAG]…​`<br> e.g., `edit 2 -n James Lee -e jameslee@example.com`
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
