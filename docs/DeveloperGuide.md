@@ -206,8 +206,8 @@ be mixed and repeats in either form are detected as duplicates. The tokenizer sp
 quoted word as literal text (never a flag), rejects unknown `--` options, and stores each word after `-t`/`--tag`
 as a separate tag. Only name is required. Omitted phone, email and address use immutable `notProvided()` value objects whose
 stored values are empty strings and whose display strings are `Not provided`. Their public constructors and
-parser validators still reject empty supplied values. Department uses the existing optional model from #71;
-its command and validation remain in the teammate's implementation.
+parser validators still reject empty supplied values. Department remains optional. The planned department
+catalogue and assignment rules are specified below under Department management.
 
 `JsonAdaptedPerson` maps null, omitted or empty phone/email/address fields to the missing value objects;
 nonempty invalid data still causes a loading error. Existing fully populated data retains its fields.
@@ -219,12 +219,46 @@ Tag search and matching reuse the teammate's implementation.
 
 `Person.isSamePerson` compares name, phone and email, including missing values. Address, Department and
 tags do not contribute to identity. The shared uniqueness check allows same-name contacts with different
-phone/email and rejects edit operations that would create a duplicate identity. Existing `edit` and `depart`
-commands can complete partial contacts while preserving their other fields.
+phone/email and rejects edit operations that would create a duplicate identity. `edit` can complete partial
+contacts while preserving their other fields. Under the planned department specification, an assigned
+department must already exist in the department catalogue.
 
 `AddCommand` returns full labelled feedback, sorted tags and missing-field placeholders. `PersonCard` shows
 those same placeholders for missing fields and `None` for no tags. `LogicManager` retains the existing save
 failure behaviour: it reports the error instead of returning an addition-success result.
+
+### Department management: planned specification
+
+This section specifies the intended behaviour; implementation is pending. `depart` manages a shared
+catalogue of department names, while `edit` assigns a catalogue entry to an individual contact.
+The catalogue includes departments with no assigned contacts and is independent of the current contact filter.
+
+| Command | Behaviour |
+| --- | --- |
+| `depart --list` | List all departments in the catalogue, including unused departments. Report an empty catalogue when none exist. |
+| `depart --add DEPARTMENT` | Add a new department to the catalogue without assigning it to any contact. |
+| `depart --edit OLD_DEPARTMENT NEW_DEPARTMENT` | Rename an existing catalogue entry and update every contact assigned to it, including contacts hidden by a filter. |
+| `edit CONTACT_ID --department DEPARTMENT` | Assign an existing catalogue department to the contact at the specified displayed-list position. The short option `-d` is also supported. |
+
+Examples: `depart --add Engineering`, `depart --list`, `depart --edit Engineering "Research & Development"`,
+and `edit 1 --department "Research & Development"`. Quote names containing spaces to distinguish the two
+arguments of `depart --edit`. The command word is `depart` for all three catalogue operations.
+The previous `depart CONTACT_ID --set DEPARTMENT` form is replaced by `edit CONTACT_ID --department DEPARTMENT`.
+
+Department names must contain 2–50 characters using only letters, numbers, spaces, `-`, or `&`.
+Reject empty or invalid names, duplicate catalogue additions, an unknown rename source, and a rename target
+that already belongs to another catalogue entry. Reject missing arguments, extra arguments, and combined
+catalogue operations without modifying the catalogue or contacts.
+
+Renaming changes the catalogue entry and all its contact assignments as one logical operation; other contact
+fields remain unchanged. Persist the catalogue (including unused entries) and updated assignments across restarts.
+Listing departments does not modify contacts, the catalogue, filtering, or sorting.
+
+`edit` validates both the displayed contact ID and membership of the requested name in the catalogue.
+An unknown department is rejected without changing any supplied contact fields; the user must first register it
+with `depart --add`. Omitting `--department` preserves the contact's existing department. A successful assignment
+replaces only that contact's department, along with any other explicitly supplied edit fields; it does not rename
+a catalogue entry or affect other contacts. Contacts may still have no department.
 
 ### Listing all contacts: design specification
 
@@ -267,7 +301,7 @@ Missing departments sort last.
 Tag keys use the case-insensitive minimum of the unordered tag set; empty tag sets are absent keys.
 Tag sorting does not group a contact by all of its tags, and does not change the stored tag set.
 `ContactSorterTest` verifies real department values, case-insensitive ordering, missing values, and stable ties.
-`view`, `depart`, `edit`, and `delete` resolve indices against the same sorted display; undo preserves department data.
+`view`, `edit`, and `delete` resolve indices against the same sorted display; undo preserves department data.
 
 `MainApp` logs startup loading failures and initializes an empty address book when loading fails.
 Sorting uses the current in-memory contacts, so valid contacts added afterward can be sorted without restarting.
@@ -284,7 +318,7 @@ Run `./gradlew check coverage` (Windows: `.\gradlew.bat check coverage`) with Ja
 `AddressBookParser` routes `view CONTACT_ID` to `ViewCommandParser`, which validates the contact ID using
 `ParserUtil.parseIndex`. `ViewCommand` resolves that contact ID against `Model.getFilteredPersonList()` so that
 filtering and sorting determine the selected row. `CONTACT_ID` is the same one-based displayed-list
-position used by `depart`, represented internally by `Index`. It reports an empty list or the valid contact ID range
+position used by `edit`, represented internally by `Index`. It reports an empty list or the valid contact ID range
 before accessing the contact.
 
 The command formats all currently supported fields as labelled, untruncated lines, sorts tags for stable output,
@@ -300,7 +334,7 @@ The `help` command skips storage saves and passes its selected `HelpPage` to the
 
 Department display reads `Person.getDepartment()` from the Department implementation tracked by issue #65.
 The optional value is shown in full, or as `Department: Not provided` when absent. The `view` command uses
-the same displayed-list position as `depart`, so setting a department and then viewing that contact remains
+the same displayed-list position as `edit`, so setting a department and then viewing that contact remains
 consistent after filtering.
 
 ### \[Proposed\] Undo/redo feature
@@ -560,50 +594,62 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
   Use case ends.
 
 
-**Use case:** UC5 - Record which department a contact belongs to
-
+**Use case:** UC5 - Manage departments and assign a contact's department (planned)
 
 **MSS:**
 
-1.  User requests to assign a department to a contact.
-2.  User enters `depart CONTACT_ID --set DEPARTMENT`.
-3.  sudoContact validates the contact ID and department.
-4.  sudoContact assigns the specified department to the contact.
-5.  sudoContact displays a confirmation showing the contact and its updated department.
+1. User enters `depart --list` to review all registered departments.
+2. User enters `depart --add Engineering` to register a new department.
+3. sudoContact validates the name, adds it to the catalogue, and confirms the addition.
+4. User enters `edit CONTACT_ID --department Engineering`.
+5. sudoContact validates the displayed contact ID and checks that Engineering exists in the catalogue.
+6. sudoContact updates the contact and displays a confirmation.
 
-    Use case ends.
+   Use case ends.
 
 **Extensions:**
 
-* 3a. The contact ID format is invalid.
+* 1a. The catalogue is empty.
 
-    * 3a1. sudoContact displays `Invalid Contact ID: Must be a positive integer.`
+  * 1a1. sudoContact reports that no departments have been registered.
 
-      Use case ends.
+  Use case resumes at step 2.
 
-* 3b. The specified contact does not exist.
+* 3a. The name is missing, invalid, or already registered.
 
-    * 3b1. sudoContact displays `Contact non-existent: No contact found with ID '[INPUT]'.`
+  * 3a1. sudoContact reports the validation error without changing any data.
 
-      Use case ends.
+  Use case ends.
 
-* 3c. The department value is missing.
+* 5a. The contact ID is invalid or outside the currently displayed list.
 
-    * 3c1. sudoContact displays `Department name cannot be empty.`
+  * 5a1. sudoContact reports the contact ID error without changing any data.
 
-      Use case ends.
+  Use case ends.
 
-* 3d. The department value does not satisfy the required format or length.
+* 5b. The department name is missing, invalid, or not in the catalogue.
 
-    * 3d1. sudoContact displays `Invalid Department: Must be 2-50 characters using only letters, numbers, spaces, '-', or '&'.`
+  * 5b1. sudoContact rejects the entire edit. For an unregistered name, it directs the user to
+    `depart --list` or `depart --add DEPARTMENT`.
 
-      Use case ends.
+  Use case ends.
 
-* 4a. The contact already has a department.
+* 6a. The contact already has a department.
 
-    * 4a1. sudoContact overwrites the existing department with the newly specified department.
+  * 6a1. sudoContact replaces that contact's assignment with the selected catalogue department.
 
-      Use case resumes at step 5.
+  Use case ends.
+
+* 1b. User wants to rename a department for all associated contacts.
+
+  * 1b1. User enters `depart --edit Engineering "Research & Development"`.
+  * 1b2. sudoContact validates the existing name and the new name.
+  * 1b3. sudoContact renames the catalogue entry and updates all associated contacts, including hidden contacts.
+  * 1b4. sudoContact confirms the rename.
+  * 1b2a. The source does not exist, the target belongs to another entry, or either name is missing or invalid.
+    sudoContact reports an error without changing the catalogue or contacts.
+
+  Use case ends.
 
 **Use case:** UC6 - Search contacts by tags
 
@@ -832,8 +878,9 @@ be combined with tag search in the same command.
 ### Glossary
 
 * **Contact**: A stored record for a person or organisation, containing a name and any available contact details, department, and tags.
-* **Contact ID**: A positive one-based position in the currently displayed list, used by `view` and `depart`. Filtering or sorting can change which contact occupies a position; `edit` and `delete` use the same displayed indices.
-* **Department**: An optional organisational unit associated with a contact. Setting a new department replaces that contact's existing department.
+* **Contact ID**: A positive one-based position in the currently displayed list, used by `view`, `edit`, and `delete`. Filtering or sorting can change which contact occupies a position.
+* **Department**: An optional organisational unit associated with a contact. Under the planned specification, assignments must use a name from the shared department catalogue; renaming an entry updates all associated contacts.
+* **Department catalogue**: The complete set of registered department names, including unused entries, managed with `depart --list`, `depart --add`, and `depart --edit`.
 * **Mainstream OS**: Windows, Linux, Unix, or macOS
 * **Matching contact**: For a tag search, a contact that has every tag specified in the command. A matching contact is displayed once even when it has more than one specified tag.
 * **Private contact detail**: A contact detail that is not meant to be shared with others
@@ -893,12 +940,38 @@ testers are expected to do more *exploratory* testing.
 
 1. _{ more test cases …​ }_
 
+### Department catalogue and assignments (planned acceptance checks)
+
+These checks describe the planned behaviour and are not evidence of passing implementation tests.
+Other department assignment examples below also assume this specification is implemented; register their
+names first with `depart --add` (Engineering, "R&D Engineering", Sales, and Support as applicable).
+
+1. With an empty catalogue, run `depart --list`. Expected: an explicit empty-catalogue result.
+2. Run `depart --add Engineering` and `depart --add "Customer Support"`, then `depart --list`.
+   Expected: both names appear even when no contacts use them. Restart and confirm both remain.
+3. Assign Engineering to two contacts with `edit CONTACT_ID --department Engineering` and filter to show only one.
+   Run `depart --edit Engineering "Research & Development"`.
+   Expected: the catalogue and both contacts use the new name; unrelated fields are unchanged.
+   Restart and confirm the rename persists. The old name is no longer available for assignment.
+4. Run `edit 1 --department "Customer Support"`. Expected: only the selected contact's assignment changes.
+   Edit its phone without a department option. Expected: its department is preserved.
+5. Run `edit 1 --department Unregistered --phone 91234567` with Unregistered absent from the catalogue.
+   Expected: the entire edit fails; neither department nor phone changes.
+6. Try adding an existing name, renaming an unknown source, renaming to another existing entry,
+   empty or invalid names, missing or extra arguments, and combined `depart` operations.
+   Expected: errors with no catalogue or contact changes.
+7. Apply a contact filter and sort, then run `depart --list`.
+   Expected: every registered department is listed; the filter and displayed contact order remain unchanged.
+8. Sort contacts and use `edit 1 -d "Customer Support"`.
+   Expected: the first displayed contact is updated. Try invalid and out-of-range contact IDs;
+   expect an error with no data changes.
+
 ### Adding and completing a partial contact
 
 1. Add `add --name "Dana Lim"` to an address book that has no Dana Lim contact.
    Expected: successful addition, phone/email/address/department show `Not provided`, tags show `None`.
 1. Restart the app. Expected: Dana Lim is still present with the same omitted fields.
-1. Run `find Dana`, `edit 1 -p 91234567 -e dana@example.com -a Main Road`, then `depart 1 --set Engineering`.
+1. Run `find Dana`, `edit 1 -p 91234567 -e dana@example.com -a Main Road`, then `edit 1 --department Engineering`.
    Expected: the contact has the supplied details; restart preserves all fields.
 1. Add another `Dana Lim` with a different phone or email. Expected: the same name is accepted.
    Repeat the exact name/phone/email with different tags or department. Expected: duplicate error, no new entry.
@@ -930,9 +1003,9 @@ testers are expected to do more *exploratory* testing.
       The main result box shows only `Showing details of contact CONTACT_ID: NAME`.
    1. View a contact without tags. Expected: `Tags: None`.
    1. View a contact without a department. Expected: `Department: Not provided`.
-   1. Run `find Benson`, then `depart 1 --set R&D Engineering` and `view 1`.
+   1. Run `find Benson`, then `edit 1 --department "R&D Engineering"` and `view 1`.
       Expected: the selected contact's details include `Department: R&D Engineering`, with the filter unchanged.
-   1. Change the selected contact's department with `depart 1 --set Sales`.
+   1. Change the selected contact's department with `edit 1 --department Sales`.
       Expected: the details snapshot stays unchanged until `view 1` displays `Department: Sales`.
    1. View another contact. Expected: the existing window updates rather than creating another window.
    1. Close the details window, then run `view 1`. Expected: the window reopens with the current details.
@@ -975,14 +1048,15 @@ testers are expected to do more *exploratory* testing.
 
 1. Add contacts with multiple tags, including mixed-case tags and contacts without tags.
 2. Run `sort --by tags`; confirm ordering by the smallest tag, missing tags last, and updated displayed indices.
-3. Assign departments using `depart`, then run `sort -b dept`; confirm alphabetical order and absent departments last.
+3. Register departments with `depart --add DEPARTMENT` and assign them using `edit CONTACT_ID --department DEPARTMENT`.
+   Run `sort -b dept`; confirm alphabetical order and absent departments last.
 4. Run `find NAME`, then sort; confirm hidden contacts remain hidden. Run `list` to restore the normal order.
 5. Sort again and edit or delete index 1; confirm the first displayed contact is affected and the remaining display resets.
 6. Try a repeated option, an invalid field, and `--descending`; confirm exact errors without changing display order.
 7. Compare the contact data file before and after sorting; its contents should be unchanged.
 8. Give two contacts departments that differ only by case. Sort by tags, then by department; confirm their
    relative order from the tag sort is retained. Repeat with missing fields to confirm those contacts appear last.
-9. After sorting, run `view 1`, then `depart 1 --set Support`; confirm both target the displayed first contact.
+9. After sorting, run `view 1`, then `edit 1 --department Support`; confirm both target the displayed first contact.
    Check the new indices after assignment resets sorting. Delete a sorted contact and run `undo`; confirm its
    department and tags are restored and the full list returns to canonical order.
 10. Using a disposable copy of the application, start with malformed contact JSON; confirm the list is empty and
