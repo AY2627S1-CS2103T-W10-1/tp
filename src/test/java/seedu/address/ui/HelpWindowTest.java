@@ -7,8 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.TextArea;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import seedu.address.logic.commands.AddCommand;
@@ -28,20 +29,21 @@ public class HelpWindowTest {
             HelpWindow window = new HelpWindow();
             window.show();
 
-            TextArea text = (TextArea) window.getRoot().getScene().lookup("#helpText");
-            assertEquals(HelpCatalog.getOverview().text(), text.getText());
-            assertFalse(text.isEditable());
-            assertTrue(text.isWrapText());
+            ScrollPane scroll = (ScrollPane) window.getRoot().getScene().lookup("#helpScroll");
+            HelpContentView content = (HelpContentView) scroll.getContent();
+            assertEquals(HelpCatalog.getOverview().text(), content.getAccessibleText());
+            assertTrue(scroll.isFitToWidth());
+            assertEquals(13, content.lookupAll(".help-command-row").size());
             assertTrue(window.isShowing());
 
-            text.fireEvent(keyPress(KeyCode.A, false, false, false, false));
-            text.fireEvent(keyPress(KeyCode.Q, false, false, true, false));
-            text.fireEvent(keyPress(KeyCode.Q, false, true, false, false));
-            text.fireEvent(keyPress(KeyCode.Q, false, false, false, true));
-            text.fireEvent(keyPress(KeyCode.Q, true, false, false, false));
+            scroll.fireEvent(keyPress(KeyCode.A, false, false, false, false));
+            scroll.fireEvent(keyPress(KeyCode.Q, false, false, true, false));
+            scroll.fireEvent(keyPress(KeyCode.Q, false, true, false, false));
+            scroll.fireEvent(keyPress(KeyCode.Q, false, false, false, true));
+            scroll.fireEvent(keyPress(KeyCode.Q, true, false, false, false));
             assertTrue(window.isShowing());
 
-            text.fireEvent(keyPress(KeyCode.Q, false, false, false, false));
+            scroll.fireEvent(keyPress(KeyCode.Q, false, false, false, false));
             assertFalse(window.isShowing());
 
             window.show();
@@ -54,24 +56,41 @@ public class HelpWindowTest {
         FxTestUtil.run(() -> {
             HelpWindow window = new HelpWindow();
             window.showPage(AddCommand.HELP_PAGE);
-            TextArea text = (TextArea) window.getRoot().getScene().lookup("#helpText");
+            ScrollPane scroll = (ScrollPane) window.getRoot().getScene().lookup("#helpScroll");
+            HelpContentView content = (HelpContentView) scroll.getContent();
             Label heading =
                     (Label) window.getRoot().getScene().lookup("#helpHeading");
             assertEquals("add", heading.getText());
-            assertEquals(AddCommand.HELP_PAGE.text(), text.getText());
-            text.positionCaret(text.getLength());
-            text.setScrollTop(100);
+            assertEquals(AddCommand.HELP_PAGE.text(), content.getAccessibleText());
+            window.getRoot().getScene().getRoot().applyCss();
+            window.getRoot().getScene().getRoot().layout();
+            scroll.fireEvent(keyPress(KeyCode.PAGE_DOWN, false, false, false, false));
+            assertTrue(scroll.getVvalue() > 0);
+            scroll.setVvalue(1);
+            scroll.setHvalue(1);
 
             window.showPage(SortCommand.HELP_PAGE);
             assertEquals("sort", heading.getText());
-            assertEquals(SortCommand.HELP_PAGE.text(), text.getText());
-            assertEquals(0, text.getCaretPosition());
-            assertEquals(0, text.getScrollTop());
+            assertEquals(SortCommand.HELP_PAGE.text(), content.getAccessibleText());
+            assertEquals(0, scroll.getVvalue());
+            assertEquals(0, scroll.getHvalue());
             assertTrue(window.isShowing());
 
             window.showPage(HelpCatalog.getOverview());
             assertEquals("Available commands", heading.getText());
-            assertEquals(HelpCatalog.getOverview().text(), text.getText());
+            assertEquals(HelpCatalog.getOverview().text(), content.getAccessibleText());
+        });
+    }
+
+    @Test
+    public void q_closesWindowWhenCopyButtonHasFocus() throws Exception {
+        FxTestUtil.run(() -> {
+            HelpWindow window = new HelpWindow();
+            window.showPage(AddCommand.HELP_PAGE);
+            Button copy = (Button) window.getRoot().getScene().lookup(".help-copy");
+            copy.requestFocus();
+            copy.fireEvent(keyPress(KeyCode.Q, false, false, false, false));
+            assertFalse(window.isShowing());
         });
     }
 

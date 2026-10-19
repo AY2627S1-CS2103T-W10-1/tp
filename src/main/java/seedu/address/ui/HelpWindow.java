@@ -6,7 +6,7 @@ import java.util.logging.Logger;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
-import javafx.scene.control.TextArea;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
@@ -26,7 +26,10 @@ public class HelpWindow extends UiPart<Stage> {
     private Label helpHeading;
 
     @FXML
-    private TextArea helpText;
+    private ScrollPane helpScroll;
+
+    @FXML
+    private HelpContentView helpContent;
 
     /**
      * Creates a new HelpWindow.
@@ -69,7 +72,7 @@ public class HelpWindow extends UiPart<Stage> {
     }
 
     /**
-     * Displays the selected page in this window and resets the text selection and scrolling.
+     * Displays the selected page in this window and resets scrolling.
      * Must be called on the JavaFX Application Thread.
      *
      * @param page Command manual or overview to show.
@@ -82,10 +85,9 @@ public class HelpWindow extends UiPart<Stage> {
 
     private void setPage(HelpPage page) {
         helpHeading.setText(page.title());
-        helpText.setText(page.text());
-        helpText.positionCaret(0);
-        helpText.setScrollTop(0);
-        helpText.setScrollLeft(0);
+        helpContent.showPage(page);
+        helpScroll.setVvalue(0);
+        helpScroll.setHvalue(0);
     }
 
     /**
@@ -103,11 +105,11 @@ public class HelpWindow extends UiPart<Stage> {
     }
 
     /**
-     * Brings the help window to the front and focuses its text for keyboard navigation and dismissal.
+     * Brings the help window to the front and focuses its scroll pane for keyboard navigation and dismissal.
      */
     public void focus() {
         getRoot().toFront();
         getRoot().requestFocus();
-        helpText.requestFocus();
+        helpScroll.requestFocus();
     }
 }

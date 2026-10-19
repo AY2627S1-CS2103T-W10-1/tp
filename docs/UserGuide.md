@@ -92,7 +92,10 @@ sudoContact is a **desktop application for managing contacts, optimized for use 
 ### Viewing help: `help`
 
 Opens a scrollable window listing every available command with a short description.
-Supply a command name to view its syntax, supported options, examples, and behavior notes.
+Command names and aliases appear in bold cyan beside short descriptions.
+Supply a command name to view its syntax, supported options, examples, and behavior notes
+in separate sections. Commands and option names are highlighted; use the **Copy** buttons
+beside usage and examples to copy their text.
 You can also open the overview from the Help menu or with `F1`.
 Press unmodified `q` while the Help window is active to close it.
 
