@@ -494,8 +494,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **Extensions**
 
-* 1a. The list is empty.
-*    1a1. shows a message indicating that there are no contacts.
+* 2a. The list is empty.
+
+  * 2a1. sudoContact shows a message indicating that there are no contacts.
 
   Use case ends.
 
@@ -594,62 +595,66 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
   Use case ends.
 
 
-**Use case:** UC5 - Manage departments and assign a contact's department (planned)
+**Use case:** UC5 - Manage departments
 
 **MSS:**
 
-1. User enters `depart --list` to review all registered departments.
-2. User enters `depart --add Engineering` to register a new department.
-3. sudoContact validates the name, adds it to the catalogue, and confirms the addition.
-4. User enters `edit CONTACT_ID --department Engineering`.
-5. sudoContact validates the displayed contact ID and checks that Engineering exists in the catalogue.
-6. sudoContact updates the contact and displays a confirmation.
+1. User requests one department catalogue operation using `depart --list`,
+   `depart --add DEPARTMENT`, or `depart --edit OLD_NAME NEW_NAME`.
+2. sudoContact validates the command format and any supplied department names.
+   For addition, the name must be valid and not already registered. For renaming,
+   the source must exist and the target must be valid and not belong to another catalogue entry.
+3. sudoContact performs the requested operation: retrieves all catalogue entries for `--list`,
+   adds the new entry for `--add`, or renames the entry and updates all associated contacts
+   (including hidden contacts) for `--edit`.
+4. sudoContact displays the complete catalogue, including unused departments, for `--list`,
+   or confirms the addition or rename for `--add` or `--edit`.
 
    Use case ends.
 
 **Extensions:**
 
-* 1a. The catalogue is empty.
+* 2a. The operation is missing or unknown, multiple operations are supplied, or required arguments
+  are missing or extra arguments are supplied.
 
-  * 1a1. sudoContact reports that no departments have been registered.
-
-  Use case resumes at step 2.
-
-* 3a. The name is missing, invalid, or already registered.
-
-  * 3a1. sudoContact reports the validation error without changing any data.
+  * 2a1. sudoContact reports the command format error and shows the accepted command forms.
+    The catalogue and contacts remain unchanged.
 
   Use case ends.
 
-* 5a. The contact ID is invalid or outside the currently displayed list.
+* 2b. A supplied department name is empty or does not satisfy the required format or length.
 
-  * 5a1. sudoContact reports the contact ID error without changing any data.
-
-  Use case ends.
-
-* 5b. The department name is missing, invalid, or not in the catalogue.
-
-  * 5b1. sudoContact rejects the entire edit. For an unregistered name, it directs the user to
-    `depart --list` or `depart --add DEPARTMENT`.
+  * 2b1. sudoContact reports the name validation error without changing the catalogue or contacts.
 
   Use case ends.
 
-* 6a. The contact already has a department.
+* 2c. For `depart --add`, the department name is already registered.
 
-  * 6a1. sudoContact replaces that contact's assignment with the selected catalogue department.
+  * 2c1. sudoContact reports that the department already exists without changing the catalogue or contacts.
+
+  Use case ends.
+
+* 2d. For `depart --edit`, the source department does not exist.
+
+  * 2d1. sudoContact reports that the source department does not exist without changing the catalogue or contacts.
 
   Use case ends.
 
-* 1b. User wants to rename a department for all associated contacts.
+* 2e. For `depart --edit`, the target name belongs to another catalogue entry.
 
-  * 1b1. User enters `depart --edit Engineering "Research & Development"`.
-  * 1b2. sudoContact validates the existing name and the new name.
-  * 1b3. sudoContact renames the catalogue entry and updates all associated contacts, including hidden contacts.
-  * 1b4. sudoContact confirms the rename.
-  * 1b2a. The source does not exist, the target belongs to another entry, or either name is missing or invalid.
-    sudoContact reports an error without changing the catalogue or contacts.
+  * 2e1. sudoContact reports that the target department already exists without changing the catalogue or contacts.
 
   Use case ends.
+
+* 3a. For `depart --list`, the catalogue is empty.
+
+  * 3a1. sudoContact reports that no departments have been registered.
+
+  Use case ends.
+
+Assigning a department to an individual contact is handled separately by
+`edit CONTACT_ID --department DEPARTMENT`; the name must already exist in the catalogue.
+See [Department management](#department-management-planned-specification) for the assignment validation rules.
 
 **Use case:** UC6 - Search contacts by tags
 
@@ -836,29 +841,30 @@ be combined with tag search in the same command.
 
 **Use Case: UC10 - View available commands and their usage**
 
-  **MSS**
+**MSS**
 
-  1. User enters `help`.
-  2. sudoContact displays the available commands and their usage.
-  3. User enters `help COMMAND` to learn more about a specific command.
-  4. sudoContact displays the usage of that command.
+1. User enters `help`.
+2. sudoContact displays the available commands and their usage.
+3. User enters `help COMMAND` to learn more about a specific command.
+4. sudoContact identifies the requested command and displays its usage.
 
-     Use case ends.
+   Use case ends.
 
-  **Extensions**
+**Extensions**
 
 * 1a. User enters `help COMMAND` directly.
-    * 1a1. Use case resumes at step 4.
 
-* 3a. User enters `help COMMAND` wrongly/for a command that does not exist
-    * 3a1. Inform user it is an unrecognized command
+  Use case resumes at step 4.
 
-      Use case ends
+* 2a. User only needs the list of available commands.
+
+  Use case ends.
 
 * 4a. The specified command does not exist.
-    * 4a1. sudoContact displays `Command not found`.
 
-      Use case ends
+  * 4a1. sudoContact reports that the requested command is unrecognized.
+
+  Use case ends.
 
 *{More to be added}*
 
@@ -1003,10 +1009,11 @@ names first with `depart --add` (Engineering, "R&D Engineering", Sales, and Supp
       The main result box shows only `Showing details of contact CONTACT_ID: NAME`.
    1. View a contact without tags. Expected: `Tags: None`.
    1. View a contact without a department. Expected: `Department: Not provided`.
-   1. Run `find Benson`, then `edit 1 --department "R&D Engineering"` and `view 1`.
-      Expected: the selected contact's details include `Department: R&D Engineering`, with the filter unchanged.
+   1. Run `find Benson`, then `edit 1 --department "R&D Engineering"`. Run `find Benson` again, then `view 1`.
+      Expected: Benson's details include `Department: R&D Engineering`; `view` preserves the current filter.
    1. Change the selected contact's department with `edit 1 --department Sales`.
-      Expected: the details snapshot stays unchanged until `view 1` displays `Department: Sales`.
+      Expected: the details snapshot stays unchanged. Run `find Benson` again, then `view 1`;
+      the refreshed snapshot displays `Department: Sales`.
    1. View another contact. Expected: the existing window updates rather than creating another window.
    1. Close the details window, then run `view 1`. Expected: the window reopens with the current details.
    1. Edit the viewed contact. Expected: the snapshot stays unchanged until another `view` command is run.
