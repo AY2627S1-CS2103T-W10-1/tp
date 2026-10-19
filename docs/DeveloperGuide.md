@@ -262,16 +262,35 @@ a catalogue entry or affect other contacts. Contacts may still have no departmen
 `add --department` applies the same catalogue membership check before adding a contact.
 
 `AddressBook` owns the observable department catalogue and exposes an unmodifiable view through
-`ReadOnlyAddressBook`. `DepartCommandParser` uses the shared quote-aware word lexer to enforce one operation
-and its exact argument count. `depart --list` skips the storage save and preserves display state.
+`ReadOnlyAddressBook.getDepartmentList()`. In the Model class diagram, `AddressBook` is associated with
+zero or more registered `Department` values, while each `Person` has zero or one assigned department.
+Department equality is based on the case-sensitive name; assignments do not require the same object instance
+as the catalogue entry.
+
+`AddressBookParser` routes `depart` to `DepartCommandParser`. The parser uses the shared quote-aware word
+lexer to enforce one operation and its exact argument count, validates names with `Department`, and creates
+`DepartCommand.list()`, `DepartCommand.add(...)`, or `DepartCommand.rename(...)`.
+`DepartCommand.execute` checks catalogue membership through `Model.hasDepartment` before a mutation.
+Additions delegate to `ModelManager.addDepartment`; renames delegate to `ModelManager.renameDepartment`.
+`AddressBook.renameDepartment` replaces matching contacts with copies produced by
+`Person.withRenamedDepartment`, preserving their other fields and leaving unrelated contacts unchanged.
+
+`depart --list` skips the storage save and preserves display state. Adding an unused catalogue entry also
+preserves contact filtering and sorting. `EditCommandParser` stores `-d`/`--department` in
+`EditPersonDescriptor`; `EditCommand` checks the displayed index and catalogue membership before updating
+any fields. A successful contact edit displays all contacts in stored order.
 `ModelManager.renameDepartment` updates both stored contacts and deletion history, so `undo` cannot restore
 an obsolete department name. A rename retains the active filter and resets display sorting.
 Renaming an entry to its own name is allowed. `clear` resets the catalogue together with contacts.
 
 `JsonSerializableAddressBook` persists names in a `departments` array, including unused entries.
-Legacy files without this array derive the catalogue from their contact assignments. Files containing an explicit
+Legacy files with an absent or null `departments` array derive the catalogue from their contact assignments. Files containing an explicit
 catalogue reject duplicate or invalid names and contact assignments absent from the catalogue.
+`LogicManager` saves successful catalogue additions, renames, and contact assignments through the normal
+storage flow. A save failure is reported instead of success; the in-memory change is not rolled back.
 `DepartmentIntegrationTest` covers persistence, rejected edits, listing without writes, and rename followed by undo.
+`DepartCommandParserTest`, `DepartCommandTest`, `AddressBookTest`, and `JsonSerializableAddressBookTest`
+cover invalid input, catalogue constraints, unaffected contacts, and legacy-data loading.
 
 #### Department command formats and feedback
 
@@ -325,6 +344,57 @@ unquoted names beginning with `--`. The exact feedback is:
 Invalid command format!
 depart --list | depart --add DEPARTMENT | depart --edit OLD_NAME NEW_NAME
 ```
+
+### Searching contacts by tags (UC6)
+
+The tag-search command is `find --tag TAG [--tag TAG ...]`. Each tag requires its own lowercase `--tag`
+option; the command word is case-insensitive. Tags are case-sensitive and contain 1-30 ASCII letters,
+digits, hyphens, or underscores. Surrounding whitespace is ignored, but internal whitespace is invalid.
+Unlike contact-input parsing, tag search does not remove quotes or leading `#` or `/` characters:
+`find --tag "client"` and `find --tag #client` are invalid; use `find --tag client`.
+
+#### Parsing and validation
+
+`AddressBookParser` delegates `find` to `FindCommandParser`. The parser recognizes standalone `--tag`
+tokens and treats the trimmed text between consecutive options as one tag value. It rejects text before
+the first `--tag`, preventing a combined name-and-tag search. It validates values from left to right using
+`Tag.isValidTagName`, reporting the first failure before constructing a command.
+
+| Condition | Feedback |
+| --- | --- |
+| Missing or whitespace-only value after `--tag` | `Tag cannot be empty: Please provide a valid tag after '--tag'.` |
+| Nonempty tag violates character or length constraints | `Invalid Tag: '[INPUT]' must be 1-30 characters using only letters, numbers, hyphens (-), and underscores (_), with no spaces.` |
+| No standalone `--tag`, but an option-like token is supplied | `Invalid find option: '[INPUT]'. Use find --tag TAG [--tag TAG ...] or find KEYWORD [MORE_KEYWORDS].` |
+| No arguments, or text before the first standalone `--tag` | `Invalid command format!` followed by a newline and `FindCommand.MESSAGE_USAGE`. |
+
+`[INPUT]` is the failing trimmed tag value or option token. Without a standalone `--tag`, a token beginning
+with `-`, an en dash, or an em dash is treated as an unsupported option; otherwise parsing follows the
+existing name-search path. After a valid `--tag`, unsupported option text is part of the value:
+`find --tag client --unknown` fails tag validation because the value contains a space.
+`find --tag --unknown` is a valid query for the literal tag `--unknown`, since hyphens are allowed.
+Quoted empty text is not a missing value: `find --tag ""` produces the invalid-tag message.
+Parsing failures leave the current filter, display order, and contacts unchanged.
+
+#### Matching and execution
+
+For valid tag input, the parser constructs `FindCommand(new TagsMatchPredicate(tags))`.
+`TagsMatchPredicate` keeps an immutable copy of the query and uses `String.equals` to compare complete
+stored tag names. A contact matches if any stored tag equals any requested tag (OR matching); substring
+matches and case-only differences do not match. Contacts with no tags do not match.
+
+`FindCommand.execute` passes the predicate to `Model.updateFilteredPersonList`. `ModelManager` restores
+the display projection to stored order and applies the new predicate across all stored contacts, replacing
+any previous filter and resetting sorting. Filtering selects entries from the stored contact list, so repeated
+query tags or multiple matching tags do not duplicate contacts in the results.
+
+A successful search reports `[COUNT] person(s) listed!`. If no contacts match, it displays an empty list and
+`No contacts found with the specified tag(s).`; this is a valid search result, not a validation error.
+Contact fields remain unchanged. `FindCommand` retains the normal `LogicManager` storage-save flow;
+a save failure is reported after the display filter has been updated.
+
+`FindCommandParserTest` covers repeated options, whitespace, tag length boundaries, invalid tags,
+unsupported options, and mixed name/tag input. `TagsMatchPredicateTest` verifies OR matching, exact case,
+whole-tag matching, and defensive copying. `FindCommandTest` verifies filtered results and feedback.
 
 ### Listing all contacts: design specification
 
@@ -939,7 +1009,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * **Department**: An optional organisational unit associated with a contact. Under this specification, assignments must use a name from the shared department catalogue; renaming an entry updates all associated contacts.
 * **Department catalogue**: The complete set of registered department names, including unused entries, managed with `depart --list`, `depart --add`, and `depart --edit`.
 * **Mainstream OS**: Windows, Linux, Unix, or macOS
-* **Matching contact**: For a tag search, a contact that has every tag specified in the command. A matching contact is displayed once even when it has more than one specified tag.
+* **Matching contact**: For a tag search, a contact that has at least one of the tags specified in the command (OR matching). A matching contact is displayed once even when it has more than one specified tag.
 * **Private contact detail**: A contact detail that is not meant to be shared with others
 * **Currently displayed list**: The contacts shown after any filtering or sorting. The `CONTACT_ID` used to view a contact refers to its one-based position in this list.
 * **Partial contact**: A contact with a name but without some optional details, such as a phone number, email address, department, or tags.
