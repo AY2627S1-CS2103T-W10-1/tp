@@ -19,6 +19,7 @@ This project is based on the AddressBook-Level3 project created by the [SE-EDU i
 
 OpenAI Codex assisted He Qianyi with the Feature 11 CSV export implementation, tests and documentation.
 He Qianyi is responsible for reviewing and understanding these changes.
+He Qianyi used OpenAI Codex to assist with updating and verifying the UI class diagram for contact details.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -82,6 +83,11 @@ The **API** of this component is specified in [`Ui.java`](https://github.com/se-
 ![Structure of the UI Component](images/UiClassDiagram.png)
 
 The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
+
+`MainWindow` also creates and retains one `ContactDetailsWindow`, which extends `UiPart<Stage>`.
+A successful `view` command supplies a details snapshot through `CommandResult`; `MainWindow` passes it to
+`ContactDetailsWindow.showDetails(String)`, reusing the same window for subsequent views. The details window
+is owned by the main stage and is hidden when the application exits.
 
 The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/ui/MainWindow.java).
 
