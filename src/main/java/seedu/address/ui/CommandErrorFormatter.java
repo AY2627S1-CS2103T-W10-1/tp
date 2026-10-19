@@ -21,6 +21,7 @@ public final class CommandErrorFormatter {
     /**
      * Preserves the error and appends up to two documented examples for the input's command word.
      * Command names and aliases are resolved case-insensitively through the help catalog.
+     * Registered command manuals must provide at least one example.
      * Unknown commands use {@code help}; errors already containing an examples section are unchanged.
      *
      * @param commandText Original command input.
@@ -39,7 +40,7 @@ public final class CommandErrorFormatter {
 
         String commandWord = commandText.trim().split("\\s+", 2)[0];
         List<String> examples = HelpCatalog.findPage(commandWord).map(HelpPage::examples)
-                .filter(commands -> !commands.isEmpty()).orElse(List.of(HelpCommand.COMMAND_WORD));
+                .orElse(List.of(HelpCommand.COMMAND_WORD));
         return message + "\n\nExamples:\n" + examples.stream().limit(MAX_EXAMPLES)
                 .map(example -> "  " + example).collect(Collectors.joining("\n"));
     }

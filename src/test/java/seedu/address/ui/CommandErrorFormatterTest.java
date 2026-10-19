@@ -1,6 +1,7 @@
 package seedu.address.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -17,6 +18,7 @@ public class CommandErrorFormatterTest {
     @Test
     public void format_knownCommand_keepsErrorFirstAndLimitsExamples() {
         for (var page : HelpCatalog.getPages()) {
+            assertFalse(page.examples().isEmpty(), page.title() + " must provide command examples");
             String formatted = CommandErrorFormatter.format(page.title() + " invalid", "Original error.");
             List<String> expected = page.examples().stream().limit(2).toList();
             assertEquals("Original error.\n\nExamples:\n  " + String.join("\n  ", expected), formatted);
