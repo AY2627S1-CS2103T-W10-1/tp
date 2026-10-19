@@ -15,7 +15,7 @@ This project is based on the AddressBook-Level3 project created by the [SE-EDU i
 
 sudoContact's minimum viable product (MVP) comprises the following 11 capabilities:
 
-1. Record which department a contact belongs to.
+1. Manage a shared department catalogue: list all registered departments (including unused ones), add departments, and rename them across all associated contacts. Assign or change a contact's department using a registered name.
 2. Search across all tags.
 3. View one contact's full details.
 4. Add a contact with only partial information.
