@@ -7,7 +7,7 @@ import seedu.address.model.AddressBook;
 import seedu.address.model.Model;
 
 /**
- * Clears the address book.
+ * Shows a warning or clears the address book when explicitly confirmed.
  */
 public class ClearCommand extends Command {
 
@@ -16,21 +16,61 @@ public class ClearCommand extends Command {
     /** Detailed usage, supported options and examples for this command. */
     public static final HelpPage HELP_PAGE = new HelpPage(COMMAND_WORD, String.join("\n",
             "Deletes all contacts from the address book.",
-            "Usage: clear",
+            "Usage: clear [--confirm]",
             "",
-            "Extra parameters are ignored. Clearing the address book cannot be undone.",
+            "Run clear to see the total contact count without deleting anything.",
+            "Run clear --confirm to delete all contacts, including those hidden by a filter.",
+            "Only --confirm is accepted. Clearing the address book cannot be undone.",
             "Earlier individual deletions remain available to undo in this session.",
             "",
             "Examples:",
-            "  clear"));
+            "  clear",
+            "  clear --confirm"));
 
     public static final String MESSAGE_SUCCESS = "Address book has been cleared!";
 
+    public static final String MESSAGE_USAGE = COMMAND_WORD
+            + ": Shows a warning before deleting all contacts.\n"
+            + "Use " + COMMAND_WORD + " --confirm to delete all contacts permanently.";
+
+    public static final String MESSAGE_CONFIRMATION =
+            "This will delete all %d contacts and cannot be undone. Type \"clear --confirm\" to proceed.";
+
+    private final boolean isConfirmed;
+
+    /**
+     * Creates a command that shows a warning without deleting contacts.
+     */
+    public ClearCommand() {
+        this(false);
+    }
+
+    /**
+     * Creates a clear command with the specified confirmation state.
+     */
+    public ClearCommand(boolean isConfirmed) {
+        this.isConfirmed = isConfirmed;
+    }
 
     @Override
     public CommandResult execute(Model model) {
         requireNonNull(model);
+        if (!isConfirmed) {
+            return new CommandResult(String.format(MESSAGE_CONFIRMATION,
+                    model.getAddressBook().getPersonList().size()));
+        }
         model.setAddressBook(new AddressBook());
         return new CommandResult(MESSAGE_SUCCESS);
+    }
+
+    @Override
+    public boolean requiresStorageSave() {
+        return isConfirmed;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return other == this
+                || (other instanceof ClearCommand otherCommand && isConfirmed == otherCommand.isConfirmed);
     }
 }
