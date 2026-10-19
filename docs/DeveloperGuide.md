@@ -243,12 +243,22 @@ before creating the shared `ListCommand`. Its execution uses `PREDICATE_SHOW_ALL
 
 ### Contact display sorting
 
-`AddressBookParser` delegates `sort` to `SortCommandParser`, which accepts complete option tokens and normalizes
-aliases to `SortField`. `SortCommand` requests ordering from the model and produces one-line feedback with the
-displayed contact count and selected field.
-Its `requiresStorageSave()` override skips the save normally performed by `LogicManager`; existing commands retain
-their previous save behavior. Parse-error precedence is descending option, unsupported argument structure,
-missing option/value, then invalid field; the user guide lists the exact messages.
+The sequence diagram below shows a successful `sort --by tags` command with a nonempty displayed list.
+It focuses on parsing and execution within Logic, treating Model as a black box.
+
+![Sequence diagram for the sort --by tags command](images/SortSequenceDiagram.png)
+
+`LogicManager` passes the command text to `AddressBookParser`, which delegates the arguments to
+`SortCommandParser`. The parser validates the option and field, normalizes `tags` to `SortField.TAGS`, and
+creates a `SortCommand`. `LogicManager` then executes the command, which calls `Model.sortFilteredPersonList`
+to reorder the displayed contacts while preserving the active filter and canonical contact order.
+The command returns a `CommandResult` with the displayed contact count and selected field.
+
+The diagram's final note summarizes the storage behavior: `SortCommand.requiresStorageSave()` returns false,
+so `LogicManager` returns the result without saving. Routine list reads, result construction, and this storage
+check are omitted from the diagram for clarity. Existing commands retain their previous save behavior.
+Parse-error precedence is descending option, unsupported argument structure, missing option/value, then invalid
+field; the user guide lists the exact messages.
 
 `ModelManager` maintains an observable display projection separate from `AddressBook`. `FilteredList` is backed by
 this projection, so the UI and index-based commands share the same displayed order. Sorting only rearranges visible
