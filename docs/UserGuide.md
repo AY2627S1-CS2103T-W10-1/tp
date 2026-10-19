@@ -89,6 +89,12 @@ sudoContact is a **desktop application for managing contacts, optimized for use 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </div>
 
+When a command fails, the result box keeps the original error and shows up to two example commands
+underneath it. These examples are shared with command help. Errors that already include examples
+are shown without another examples section. Unknown commands suggest `help` instead.
+Examples demonstrate valid syntax; an index, contact, filename, or storage problem may still need to be resolved.
+The failed input stays in the command box so you can correct it.
+
 ### Viewing help: `help`
 
 Opens a scrollable window listing every available command with a short description.
