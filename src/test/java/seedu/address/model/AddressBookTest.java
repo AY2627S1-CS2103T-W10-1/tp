@@ -88,6 +88,60 @@ public class AddressBookTest {
         assertEquals(expected, addressBook.toString());
     }
 
+    @Test
+    public void addDepartment_duplicate_rejectsWithoutChangingData() {
+        Department engineering = new Department("Engineering");
+        addressBook.addDepartment(engineering);
+        AddressBook before = new AddressBook(addressBook);
+
+        assertThrows(IllegalArgumentException.class, "Department already exists: Engineering", () ->
+                addressBook.addDepartment(new Department("Engineering")));
+        assertEquals(before, addressBook);
+    }
+
+    @Test
+    public void renameDepartment_invalidSourceOrDuplicateTarget_preservesCatalogueAndContacts() {
+        Department engineering = new Department("Engineering");
+        Department sales = new Department("Sales");
+        addressBook.addPerson(new PersonBuilder(ALICE).withDepartment("Engineering").build());
+        addressBook.addDepartment(sales);
+        AddressBook before = new AddressBook(addressBook);
+
+        assertThrows(IllegalArgumentException.class, () ->
+                addressBook.renameDepartment(new Department("Unknown"), sales));
+        assertEquals(before, addressBook);
+        assertThrows(IllegalArgumentException.class, () -> addressBook.renameDepartment(engineering, sales));
+        assertEquals(before, addressBook);
+    }
+
+    @Test
+    public void renameDepartment_mixedAssignments_changesOnlyMatchingContacts() {
+        Person engineeringContact = new PersonBuilder(ALICE).withDepartment("Engineering").build();
+        Person salesContact = new PersonBuilder().withName("Sales Contact").withDepartment("Sales").build();
+        Person unassignedContact = new PersonBuilder().withName("Unassigned Contact").build();
+        addressBook.setPersons(List.of(engineeringContact, salesContact, unassignedContact));
+
+        addressBook.renameDepartment(new Department("Engineering"), new Department("Research"));
+
+        assertEquals(List.of(new PersonBuilder(engineeringContact).withDepartment("Research").build(),
+                salesContact, unassignedContact), addressBook.getPersonList());
+        assertEquals(List.of(new Department("Research"), new Department("Sales")), addressBook.getDepartmentList());
+    }
+
+    @Test
+    public void equalsAndHashCode_includeUnusedCatalogueEntries() {
+        addressBook.addPerson(ALICE);
+        AddressBook copy = new AddressBook(addressBook);
+        assertEquals(addressBook, copy);
+        assertEquals(addressBook.hashCode(), copy.hashCode());
+
+        copy.addDepartment(new Department("Unused"));
+        assertFalse(addressBook.equals(copy));
+        addressBook.addDepartment(new Department("Unused"));
+        assertEquals(addressBook, copy);
+        assertEquals(addressBook.hashCode(), copy.hashCode());
+    }
+
     /**
      * A stub ReadOnlyAddressBook whose persons list can violate interface constraints.
      */

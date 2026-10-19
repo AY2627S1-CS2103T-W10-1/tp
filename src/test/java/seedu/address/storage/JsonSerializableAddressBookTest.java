@@ -69,4 +69,14 @@ public class JsonSerializableAddressBookTest {
                 new JsonSerializableAddressBook(List.of(person), List.of()).toModelType());
     }
 
+    @Test
+    public void toModelType_catalogueWithoutPersons_preservesUnusedDepartments() throws Exception {
+        String json = "{\"departments\": [\"Engineering\"]}";
+        AddressBook restored = JsonUtil.fromJsonString(json, JsonSerializableAddressBook.class).toModelType();
+        assertEquals(List.of(), restored.getPersonList());
+        assertEquals(List.of(new Department("Engineering")), restored.getDepartmentList());
+        String saved = JsonUtil.toJsonString(new JsonSerializableAddressBook(restored));
+        assertEquals(restored, JsonUtil.fromJsonString(saved, JsonSerializableAddressBook.class).toModelType());
+    }
+
 }
