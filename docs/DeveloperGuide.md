@@ -273,6 +273,59 @@ Legacy files without this array derive the catalogue from their contact assignme
 catalogue reject duplicate or invalid names and contact assignments absent from the catalogue.
 `DepartmentIntegrationTest` covers persistence, rejected edits, listing without writes, and rename followed by undo.
 
+#### Department command formats and feedback
+
+| Operation | Format | Required name arguments |
+| --- | --- | --- |
+| List | `depart --list` | None |
+| Add | `depart --add DEPARTMENT` | Exactly one |
+| Rename | `depart --edit OLD_NAME NEW_NAME` | Exactly two, source first |
+
+The command word `depart` is case-insensitive. Options are lowercase, case-sensitive, unquoted,
+and have no short forms. Choose exactly one operation; extra arguments and repeated or combined operations
+are rejected. Use ordinary ASCII hyphens and separate the option and arguments with whitespace.
+The old `depart CONTACT_ID --set DEPARTMENT` form is not supported.
+
+Names are case-sensitive and contain 2-50 characters from ASCII letters (`A-Z`, `a-z`), digits (`0-9`),
+spaces, `-`, and `&`; names consisting only of whitespace are invalid. Names containing spaces must be
+one quoted argument, using matching single or double quotes, e.g. `depart --edit Engineering "Customer Support"`.
+Quotes are removed before validation; spaces inside quotes are preserved and count towards the length limit.
+A closing quote must be followed by whitespace or the end of input. An unquoted name starting with `--`
+is treated as an invalid option-like argument. To use such a name, quote it.
+Renaming to the source's exact current name is allowed; renaming to another existing entry is not.
+
+**Validation order:** Command structure (including quotes, option and argument count) is checked first.
+Names are then validated left to right, checking blank values before character and length constraints.
+Only after all names are valid does the system check whether an addition is a duplicate, or, for a rename,
+whether the source exists followed by whether the target belongs to another entry. The first failure is reported;
+no catalogue or contact changes occur on validation failure. For example, `depart --edit Unknown !`
+reports the invalid target name before checking whether Unknown exists.
+
+In the messages below, bracketed placeholders are replaced by the supplied names without surrounding quote
+characters. Code blocks show actual line breaks.
+
+| Condition | Feedback |
+| --- | --- |
+| List a nonempty catalogue | `Departments:` followed by each registered name on a separate line. |
+| Add a department | `Added department: [NAME]` |
+| Rename a department | `Renamed department: [OLD_NAME] -> [NEW_NAME]` |
+| Invalid command structure, including a missing name argument | The format error shown below. |
+| Supplied name is empty or whitespace-only, e.g. `depart --add ""` | `Department name cannot be empty.` |
+| Nonblank name violates character or length constraints | `Invalid Department: Must be 2-50 characters using only letters, numbers, spaces, '-', or '&'.` |
+| Addition duplicates an existing entry | `Department already exists: [NAME]` |
+| Rename source does not exist | `Department does not exist: [OLD_NAME]. Use depart --list or depart --add DEPARTMENT.` |
+| Rename target belongs to another entry | `Department already exists: [NEW_NAME]` |
+| Catalogue is empty | `No departments have been registered.` |
+
+Invalid command structure includes missing, unknown or quoted operations; missing or extra arguments;
+repeated or combined operations; unmatched quotes or text immediately following a closing quote; and
+unquoted names beginning with `--`. The exact feedback is:
+
+```text
+Invalid command format!
+depart --list | depart --add DEPARTMENT | depart --edit OLD_NAME NEW_NAME
+```
+
 ### Listing all contacts: design specification
 
 The list feature lets users review every stored contact after applying a search or filter.
@@ -608,203 +661,112 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
   Use case ends.
 
 
-**Use case:** UC5 - Manage departments
+**Use case: UC5 - Manage departments**
 
-**Command formats:**
+**MSS**
 
-| Operation | Format | Required name arguments |
-| --- | --- | --- |
-| List | `depart --list` | None |
-| Add | `depart --add DEPARTMENT` | Exactly one |
-| Rename | `depart --edit OLD_NAME NEW_NAME` | Exactly two, source first |
-
-The command word `depart` is case-insensitive. Options are lowercase, case-sensitive, unquoted,
-and have no short forms. Choose exactly one operation; extra arguments and repeated or combined operations
-are rejected. Use ordinary ASCII hyphens and separate the option and arguments with whitespace.
-The old `depart CONTACT_ID --set DEPARTMENT` form is not supported.
-
-Names are case-sensitive and contain 2-50 characters from ASCII letters (`A-Z`, `a-z`), digits (`0-9`),
-spaces, `-`, and `&`; names consisting only of whitespace are invalid. Names containing spaces must be
-one quoted argument, using matching single or double quotes, e.g. `depart --edit Engineering "Customer Support"`.
-Quotes are removed before validation; spaces inside quotes are preserved and count towards the length limit.
-A closing quote must be followed by whitespace or the end of input. An unquoted name starting with `--`
-is treated as an invalid option-like argument. To use such a name, quote it.
-Renaming to the source's exact current name is allowed; renaming to another existing entry is not.
-
-**MSS:**
-
-1. User requests one department catalogue operation using one of the command formats above.
-2. sudoContact validates the command format and supplied names, then checks catalogue membership.
-3. sudoContact performs the requested operation: retrieves all catalogue entries for `--list`,
-   adds the new entry for `--add`, or renames the entry and updates all associated contacts
-   (including hidden contacts) for `--edit`.
-4. sudoContact displays `Departments:` followed by each registered name on a separate line for `--list`,
-   `Added department: [NAME]` for `--add`, or `Renamed department: [OLD_NAME] -> [NEW_NAME]` for `--edit`.
+1. User requests to list, add, or rename a department in the shared catalogue.
+2. sudoContact validates the request and any supplied department names.
+3. sudoContact retrieves the catalogue, adds the department, or renames it and updates
+   all associated contacts, according to the requested operation.
+4. sudoContact displays the catalogue or confirms the addition or rename.
 
    Use case ends.
 
-**Validation order:** Command structure (including quotes, option and argument count) is checked first.
-Names are then validated left to right, checking blank values before character and length constraints.
-Only after all names are valid does the system check whether an addition is a duplicate, or, for a rename,
-whether the source exists followed by whether the target belongs to another entry. The first failure is reported;
-no catalogue or contact changes occur on validation failure. For example, `depart --edit Unknown !`
-reports the invalid target name before checking whether Unknown exists.
+**Extensions**
 
-In the messages below, bracketed placeholders are replaced by the supplied names without surrounding quote
-characters. Code blocks show actual line breaks.
+* 2a. The request has an invalid format or missing or extra arguments.
 
-**Extensions:**
-
-* 2a. The command structure is invalid: the operation is missing, unknown or quoted; arguments are missing
-  or extra; operations are repeated or combined; quotes are unmatched or followed immediately by text;
-  or an unquoted name starts with `--`.
-
-  * 2a1. sudoContact displays:
-
-    ```text
-    Invalid command format!
-    depart --list | depart --add DEPARTMENT | depart --edit OLD_NAME NEW_NAME
-    ```
+  * 2a1. sudoContact shows an error and indicates the accepted command formats.
 
   Use case ends.
 
-* 2b. A supplied name is empty or contains only whitespace, e.g. `depart --add ""`.
-  This differs from `depart --add` with no name argument, which follows 2a.
+* 2b. A supplied department name is empty or violates the name constraints.
 
-  * 2b1. sudoContact displays `Department name cannot be empty.`
-
-  Use case ends.
-
-* 2c. A nonblank name violates the character or length constraints.
-
-  * 2c1. sudoContact displays `Invalid Department: Must be 2-50 characters using only letters, numbers, spaces, '-', or '&'.`
+  * 2b1. sudoContact shows an error explaining the name constraints.
 
   Use case ends.
 
-* 2d. For `depart --add`, the name is already registered.
+* 2c. The department to be added already exists.
 
-  * 2d1. sudoContact displays `Department already exists: [NAME]`.
-
-  Use case ends.
-
-* 2e. For `depart --edit`, the source does not exist.
-
-  * 2e1. sudoContact displays `Department does not exist: [OLD_NAME]. Use depart --list or depart --add DEPARTMENT.`
+  * 2c1. sudoContact informs the user that the department is already registered.
 
   Use case ends.
 
-* 2f. For `depart --edit`, the target belongs to another catalogue entry.
+* 2d. The department to be renamed does not exist.
 
-  * 2f1. sudoContact displays `Department already exists: [NEW_NAME]`.
-
-  Use case ends.
-
-* 3a. For `depart --list`, the catalogue is empty.
-
-  * 3a1. sudoContact displays `No departments have been registered.`
+  * 2d1. sudoContact informs the user that the department does not exist and suggests listing
+    or adding departments.
 
   Use case ends.
 
-Assigning a department to an individual contact is handled separately by
-`edit CONTACT_ID --department DEPARTMENT`; the name must already exist in the catalogue.
-See [Department management](#department-management-design-specification) for the assignment validation rules.
+* 2e. The new name belongs to another registered department.
+
+  * 2e1. sudoContact informs the user that the target name is already registered.
+
+  Use case ends.
+
+* 3a. The user requests the department list, but the catalogue is empty.
+
+  * 3a1. sudoContact informs the user that no departments have been registered.
+
+  Use case ends.
+
 
 **Use case:** UC6 - Search contacts by tags
 
-**Command format:** `find --tag TAG [--tag TAG ...]`
-
-The command word `find` is case-insensitive. The option `--tag` is lowercase and case-sensitive, has no short
-form, and must be a separate whitespace-delimited token using ordinary ASCII hyphens. Each tag requires
-its own `--tag`: use `find --tag friends --tag colleagues`, not `find --tag friends colleagues`.
-Name keywords cannot be combined with tag search in the same command.
-
-Each tag must contain 1-30 ASCII letters (`A-Z`, `a-z`), digits (`0-9`), hyphens (`-`), or underscores (`_`).
-Matching is case-sensitive and uses the whole tag. Surrounding whitespace is ignored, but internal whitespace
-is invalid. Tag queries do not support quoting or remove leading `#` or `/`: `find --tag "friends"`,
-`find --tag #friends`, and `find --tag /friends` all fail validation. Use `find --tag friends` to search for a tag
-stored as friends. Repeated tags are allowed, with each matching contact shown only once.
-
 **MSS:**
 
-1. User requests to search for contacts with one or more tags.
-2. User enters a `find` command with one or more `--tag TAG` pairs.
-3. sudoContact validates the command structure and every supplied tag.
-4. sudoContact searches for contacts having any of the specified tags (OR matching),
-   using case-sensitive, whole-tag matching.
-5. sudoContact displays each matching contact once.
-6. sudoContact displays `[COUNT] person(s) listed!`, replacing `[COUNT]` with the number of matching contacts.
+1.  User requests to search for contacts with one or more tags.
+2.  User enters a `find` command with one or more `--tag TAG` pairs.
+3.  sudoContact validates all specified tags.
+4.  sudoContact searches all contacts for those having any of the specified tags (OR matching),
+    using case-sensitive, whole-tag matching.
+5.  sudoContact displays each matching contact once.
+6.  sudoContact displays the number of matching contacts.
 
-   Use case ends.
-
-**Validation order:** An empty argument string produces the format error in 3d. If a standalone `--tag`
-is present, any text before its first occurrence also produces 3d. Otherwise, the text after each `--tag`,
-up to the next `--tag` or end of input, is trimmed and validated left to right: empty first, then character
-and length constraints. Only the first failing value is reported. Consequently, `find --tag ! --tag`
-reports an invalid tag, while `find --tag --tag !` reports an empty tag.
-
-If no standalone `--tag` exists, the parser reports 3c for the first whitespace-delimited token beginning
-with `-`, an en dash, or an em dash. With no such token, the command is a name search outside UC6.
-Unknown options after a valid `--tag` are part of its tag value, not a separate option error:
-`find --tag friends --unknown` reports an invalid tag for `friends --unknown`.
-However, `find --tag --unknown` is a valid query for the literal tag `--unknown`, because hyphens are allowed.
-Validation failures leave the displayed list and contact data unchanged.
-
-In the messages below, `[INPUT]` is replaced by the failing trimmed tag value or option token; quote characters
-in an invalid tag remain part of that value. Code blocks show actual line breaks.
+    Use case ends.
 
 **Extensions:**
 
-* 3a. A nonempty tag contains invalid characters, internal whitespace, or more than 30 characters.
-  This includes quoted tags, `#` or `/` prefixes, multiple values following one option, and unknown
-  option text following a valid `--tag` when the resulting value violates the tag constraints.
+* 3a. A specified tag contains invalid characters, internal spaces, or more than 30 characters.
 
-  * 3a1. sudoContact displays `Invalid Tag: '[INPUT]' must be 1-30 characters using only letters, numbers, hyphens (-), and underscores (_), with no spaces.`
+    * 3a1. sudoContact displays `Invalid Tag: '[INPUT]' must be 1-30 characters using only letters, numbers, hyphens (-), and underscores (_), with no spaces.`
 
-  Use case ends.
+      Use case ends.
 
-* 3b. A tag value is missing or contains only whitespace, e.g. `find --tag` or `find --tag --tag friends`.
-  A quoted empty string is nonempty parser input and follows 3a instead.
+* 3b. A tag value is missing.
 
-  * 3b1. sudoContact displays `Tag cannot be empty: Please provide a valid tag after '--tag'.`
+    * 3b1. sudoContact displays `Tag cannot be empty: Please provide a valid tag after '--tag'.`
 
-  Use case ends.
+      Use case ends.
 
-* 3c. No standalone `--tag` option is present and an option-like token is supplied,
-  e.g. `find --tags friends`, `find --TAG friends`, `find -tag friends`, or `find --tag=friends`.
+* 3c. No valid `--tag` option is present and an option-like argument is supplied
+  (e.g. `find --tags friends`, `find --TAG friends`, or `find -tag friends`).
 
-  * 3c1. sudoContact displays `Invalid find option: '[INPUT]'. Use find --tag TAG [--tag TAG ...] or find KEYWORD [MORE_KEYWORDS].`
+    * 3c1. sudoContact displays `Invalid find option: '[INPUT]'. Use find --tag TAG [--tag TAG ...] or find KEYWORD [MORE_KEYWORDS].`
 
-  Use case ends.
+      Use case ends.
 
-* 3d. Text precedes the first standalone `--tag` (e.g. `find Alice --tag friends` or
-  `find --unknown --tag friends`), or the `find` command has no arguments.
+* 3d. Arguments precede the first valid `--tag` option (e.g. `find Alice --tag friends`),
+  or the `find` command has no arguments.
 
-  * 3d1. sudoContact displays:
+    * 3d1. sudoContact displays an invalid command format error and the `find` usage instructions.
 
-    ```text
-    Invalid command format!
-    find: Finds all persons whose names contain any of the specified keywords (case-insensitive) and displays them as a list with index numbers.
-    Parameters: KEYWORD [MORE_KEYWORDS]...
-    Example: find alice bob charlie
-    Or find contacts matching any tag (case-sensitive): find --tag TAG [--tag TAG ...]
-    Example: find --tag client --tag important
-    ```
+      Use case ends.
 
-  Use case ends.
+* 4a. No contacts match the specified tag(s).
 
-* 4a. No contacts match the specified tags.
+    * 4a1. sudoContact displays `No contacts found with the specified tag(s).`
 
-  * 4a1. sudoContact displays an empty contact list and `No contacts found with the specified tag(s).`
-    This is a successful search with no results, not a validation error.
-
-  Use case ends.
+      Use case ends.
 
 * 4b. Multiple tags are specified and a contact matches more than one of them,
   or the same tag is specified more than once.
 
-  * 4b1. sudoContact includes each matching contact only once in the search results.
+    * 4b1. sudoContact displays the matching contact only once.
 
-  Use case resumes at step 5.
+      Use case resumes at step 5.
 
 
 **Use case: UC7 - View one contact's full details**
