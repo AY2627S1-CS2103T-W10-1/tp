@@ -89,6 +89,17 @@ sudoContact is a **desktop application for managing contacts, optimized for use 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </div>
 
+### Recalling command history
+
+While the command box is focused, press **Up** to recall the last submitted command, then older commands.
+Press **Down** to move toward newer commands. Moving past the newest command restores the draft
+that was in the box before you started browsing. History stops at either end without wrapping.
+
+You can edit a recalled command and press Enter to submit it again. Browsing does not execute commands.
+Navigating away from an edited history entry discards those edits; the original history entry stays unchanged.
+Successful and failed commands are remembered, including repeated submissions. Blank input is not stored.
+History lasts only until you close the application and is not saved to disk.
+
 ### Viewing help: `help`
 
 Opens a scrollable window listing every available command with a short description.
