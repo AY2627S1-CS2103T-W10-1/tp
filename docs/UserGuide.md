@@ -107,11 +107,13 @@ and restore it if minimized. Help preserves contacts, the active filter, display
 
 ### Adding a contact with partial information: `add`
 
-Adds a contact even if you only know their name. You can fill in other details later.
+Adds a contact with a name and at least one phone number or email address. You can fill in other details later.
 
 Format: `add --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMENT] [--address ADDRESS] [--tag TAG ...]`
 
-* Only `--name` is required. Names must be nonblank and contain letters, numbers or spaces.
+* `--name` and at least one of `--phone` or `--email` are required. Names must be nonblank and contain
+  letters, numbers or spaces. A name alone, even with an address, department or tags, is rejected with
+  `A phone number or email address must be provided.`
 * Options can appear in any order. Quotes around multiword values are optional:
   `--name "Alice Tan"` and `--name Alice Tan` are the same.
 * Phone numbers supplied to `add` must contain 7–15 digits, with no spaces or `+` sign.
@@ -123,9 +125,9 @@ Format: `add --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMEN
 * Omit an unknown field entirely. An option with an empty value is rejected.
 * Unknown options, unmatched quotes and repeated options other than `--tag` are rejected.
 * Omitted phone, email, address and department show `Not provided`; omitted tags show `None`.
-* Contacts with the same name are allowed when their phone or email differs. The same name, phone **and**
-  email is a duplicate, including when those optional fields are absent. Different departments or tags alone
-  do not distinguish duplicate contacts.
+* Contacts with the same name are duplicates if either their provided phone numbers **or** email addresses
+  match. Missing fields do not count as matches. Same-name contacts can coexist only when neither provided
+  contact field matches; a different address, department or tag does not distinguish duplicates.
 
 Short flags also work, and can be mixed with long ones:
 `add -n NAME [-p PHONE] [-e EMAIL] [-d DEPARTMENT] [-a ADDRESS] [-t TAG ...]`.
@@ -134,8 +136,8 @@ Examples:
 
 * `add --name "Alice Tan" --email alice@example.com`
 * `add --name "Bob Lee" --phone 91234567`
-* `add --name "Chen Wei" --department Engineering --tag intern new-client`
-* `add --name "Dana Lim"`
+* `add --name "Chen Wei" --phone 91234567 --department Engineering --tag intern new-client`
+* `add --name "Dana Lim" --email dana@example.com`
 * `add -n Betsy Crowe -t friend -e betsycrowe@example.com -a Newgate Prison -p 1234567 -t criminal`
 
 To complete a contact, find their name and use the displayed row number with the existing commands,
@@ -354,9 +356,9 @@ Format: `undo`
 * Run `undo` again to restore earlier deletions, most recent first.
 * Deletions are remembered only until you close the app.
 * The restored person is added to the end of the list, and the full list is shown.
-* If a person with the same name, phone **and** email already exists, `undo` fails and shows that person.
-  A matching name alone does not prevent restoration. To restore the deleted person, first change the
-  existing person's name, phone or email with `edit`, then run `undo` again.
+* If a person with the same name shares a provided phone number **or** email, `undo` fails and shows that person.
+  A matching name alone does not prevent restoration. Resolve every matching contact field or change the
+  existing person's name with `edit`, then run `undo` again. The deletion history is preserved on failure.
 * `undo` does not take any parameters. For example, `undo 2` shows an error.
 
 Examples:

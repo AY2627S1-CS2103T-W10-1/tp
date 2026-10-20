@@ -204,7 +204,9 @@ cover the export flow, including a filtered list and an existing destination.
 short and a long form (e.g. `-n`/`--name`), and both forms map to the same `ArgumentMultimap` key, so they can
 be mixed and repeats in either form are detected as duplicates. The tokenizer splits input into words, treats a
 quoted word as literal text (never a flag), rejects unknown `--` options, and stores each word after `-t`/`--tag`
-as a separate tag. Only name is required. Omitted phone, email and address use immutable `notProvided()` value objects whose
+as a separate tag. Name and at least one phone number or email address are required. Both the parser and
+`AddCommand` reject contacts without either means of contact. Omitted phone, email and address use immutable
+`notProvided()` value objects whose
 stored values are empty strings and whose display strings are `Not provided`. Their public constructors and
 parser validators still reject empty supplied values. Department uses the existing optional model from #71;
 its command and validation remain in the teammate's implementation.
@@ -217,10 +219,13 @@ valid short phone numbers and longer tags through `Tag.fromStoredValue`; normal 
 shared 1–30 character limit, including tag searches. This avoids a migration of old contact data.
 Tag search and matching reuse the teammate's implementation.
 
-`Person.isSamePerson` compares name, phone and email, including missing values. Address, Department and
-tags do not contribute to identity. The shared uniqueness check allows same-name contacts with different
-phone/email and rejects edit operations that would create a duplicate identity. Existing `edit` and `depart`
-commands can complete partial contacts while preserving their other fields.
+`Person.isSamePerson` requires the same name and at least one matching provided phone number or email
+address. Missing fields are not matches. Address, Department and tags do not contribute to identity.
+This duplicate relation is not transitive: a proposed edit can match its original contact by phone and another
+contact by email. Therefore both `EditCommand` and `UniquePersonList.setPerson` check every other contact,
+excluding the edited target, even when the original and edited versions match. Existing `edit` and `depart`
+commands can complete partial contacts while preserving their other fields. Editing a legacy contact without
+phone and email requires supplying at least one of them; storage loading retains compatibility with old missing fields.
 
 `AddCommand` returns full labelled feedback, sorted tags and missing-field placeholders. `PersonCard` shows
 those same placeholders for missing fields and `None` for no tags. `LogicManager` retains the existing save
@@ -705,11 +710,11 @@ be combined with tag search in the same command.
 
 **MSS**
 
-1. User enters `add --name NAME`, including any optional information they
-   know, such as a phone number, email address, department, or tags.
+1. User enters `add --name NAME` with at least a phone number or email address,
+   including any other information they know, such as department or tags.
 2. sudoContact validates the supplied information and checks for a contact
-   with the same name, phone number, and email address. A matching name
-   alone does not prevent the contact from being added.
+   with the same name and a matching provided phone number or email address. A matching name
+   alone does not prevent the contact from being added; omitted fields do not match.
 3. sudoContact saves the new contact with the supplied information, leaving
    omitted optional fields unprovided.
 4. sudoContact confirms that the contact was added and shows omitted fields
@@ -719,7 +724,7 @@ be combined with tag search in the same command.
 
 **Extensions**
 
-* 2a. The name is missing or empty.
+* 2a. The name is missing or empty, or both phone and email are omitted.
 
   * 2a1. sudoContact displays an error and does not add the contact.
 
@@ -839,7 +844,7 @@ be combined with tag search in the same command.
 * **Private contact detail**: A contact detail that is not meant to be shared with others
 * **Currently displayed list**: The contacts shown after any filtering or sorting. The `CONTACT_ID` used to view a contact refers to its one-based position in this list.
 * **Partial contact**: A contact with a name but without some optional details, such as a phone number, email address, department, or tags.
-* **Duplicate contact**: An existing contact with the same name as a contact being added, edited, or restored. Only names are compared, and the comparison is case-sensitive.
+* **Duplicate contact**: An existing contact with the same name and a matching provided phone number or email address as a contact being added, edited, or restored. Missing fields do not match. Comparisons are case-sensitive.
 * **CSV export**: A UTF-8 comma-separated values file containing a header row and one row for each stored contact.
 * **Tag**: An optional label attached to a contact to support categorisation and searching. Tag matching is case-sensitive.
 
@@ -895,19 +900,22 @@ testers are expected to do more *exploratory* testing.
 
 ### Adding and completing a partial contact
 
-1. Add `add --name "Dana Lim"` to an address book that has no Dana Lim contact.
-   Expected: successful addition, phone/email/address/department show `Not provided`, tags show `None`.
+1. Try `add --name "Dana Lim"` and `add --name "Dana Lim" --address Main Road`.
+   Expected: both fail with `A phone number or email address must be provided.`, without changing contacts or storage.
+1. Add `add --name "Dana Lim" --email dana@example.com` to an address book that has no Dana Lim contact.
+   Expected: successful addition, phone/address/department show `Not provided`, email is shown, tags show `None`.
 1. Restart the app. Expected: Dana Lim is still present with the same omitted fields.
 1. Run `find Dana`, `edit 1 -p 91234567 -e dana@example.com -a Main Road`, then `depart 1 --set Engineering`.
    Expected: the contact has the supplied details; restart preserves all fields.
-1. Add another `Dana Lim` with a different phone or email. Expected: the same name is accepted.
-   Repeat the exact name/phone/email with different tags or department. Expected: duplicate error, no new entry.
+1. Add another `Dana Lim` with both a different phone and a different email. Expected: the same name is accepted.
+   Reuse either contact's phone or email with the same name, even while changing the other field.
+   Expected: duplicate error, no new entry. Try the same collisions through `edit` and `undo` too.
 1. Try `add --name ""`, `add --name Alice --phone 123456`, `add --name Alice --email broken`,
    `add --name Alice --department !`, `add --name Alice --tag "two words"`, and
    `add --name Alice --unknown value`. Expected: errors; existing contacts and the saved file stay unchanged.
 1. Try an unmatched quote and repeated `--name`, `--phone`, `--email`, `--address` or `--department`.
    Expected: format or duplicate-option error. Multiple `--tag` flags are accepted.
-1. Run `add --name Chen --tag #intern new-client team_intern --tag intern`.
+1. Run `add --name Chen --phone 91234567 --tag #intern new-client team_intern --tag intern`.
    Expected: three distinct tags, displayed without the leading `#` and preserved after restart.
 1. Run the equivalent short-flag form, for example `add -n Bob Lee -p 91234567 -d Engineering`.
    Expected: equivalent partial-contact support; omitted fields remain unprovided.

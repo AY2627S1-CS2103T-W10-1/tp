@@ -21,7 +21,9 @@ import seedu.address.model.Model;
 import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.ReadOnlyUserPrefs;
 import seedu.address.model.SortField;
+import seedu.address.model.person.Email;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.Phone;
 import seedu.address.testutil.PersonBuilder;
 
 public class AddCommandTest {
@@ -51,6 +53,14 @@ public class AddCommandTest {
         ModelStub modelStub = new ModelStubWithPerson(validPerson);
 
         assertThrows(CommandException.class, AddCommand.MESSAGE_DUPLICATE_PERSON, () -> addCommand.execute(modelStub));
+    }
+
+    @Test
+    public void execute_noPhoneOrEmail_rejectsBeforeAccessingModel() {
+        Person nameOnly = new Person(ALICE.getName(), Phone.notProvided(), Email.notProvided(),
+                ALICE.getAddress(), ALICE.getTags());
+        assertThrows(CommandException.class, Person.MESSAGE_CONTACT_INFORMATION_REQUIRED, ()
+                -> new AddCommand(nameOnly).execute(new ModelStub()));
     }
 
     @Test

@@ -21,7 +21,7 @@ public class UndoCommand extends Command {
             "Usage: undo",
             "",
             "Accepts no parameters. Repeated calls restore earlier deletions, newest first.",
-            "Restoration fails if there is no deletion to undo or the same name, phone and email already exist.",
+            "Restoration fails if there is no deletion to undo or a same-name contact shares a phone or email.",
             "The restored contact is appended to the stored list; all contacts are shown in stored order.",
             "Only individual delete commands can be undone, not clear, add or edit.",
             "",

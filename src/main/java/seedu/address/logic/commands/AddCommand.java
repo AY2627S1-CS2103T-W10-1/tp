@@ -19,26 +19,27 @@ public class AddCommand extends Command {
 
     /** Detailed usage, supported options and examples for this command. */
     public static final HelpPage HELP_PAGE = new HelpPage(COMMAND_WORD, String.join("\n",
-            "Adds a contact; only the name is required.",
+            "Adds a contact with a name and at least one phone number or email address.",
             "Usage: add --name NAME [--phone PHONE] [--email EMAIL]",
             "       [--address ADDRESS] [--department DEPARTMENT] [--tag TAG ...]",
             "",
             "Options:",
             "  -n, --name        Required contact name.",
-            "  -p, --phone       Optional phone number (7-15 digits).",
-            "  -e, --email       Optional valid email address.",
+            "  -p, --phone       Phone number (7-15 digits); required if email is omitted.",
+            "  -e, --email       Valid email address; required if phone is omitted.",
             "  -a, --address     Optional postal address.",
             "  -d, --department  Optional department (2-50 characters).",
             "  -t, --tag         Optional tags; repeat the option or supply several tags.",
             "",
             "Quote values containing spaces. Single-valued options cannot be repeated.",
-            "Contacts may share a name; duplicate name, phone and email combinations are rejected.",
+            "Contacts with the same name must not share a provided phone number or email address.",
             "",
             "Examples:",
-            "  add --name \"Alice Tan\"",
+            "  add --name \"Alice Tan\" --phone 91234567",
             "  add -n \"Alice Tan\" -e alice@example.com -d Engineering -t client important"));
 
-    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Adds a contact; only the name is required.\n"
+    public static final String MESSAGE_USAGE = COMMAND_WORD
+            + ": Adds a contact with a name and at least one phone number or email address.\n"
             + "Parameters: --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMENT] "
             + "[--address ADDRESS] [--tag TAG ...]\n"
             + "Example: add --name \"Alice Tan\" --email alice@example.com\n"
@@ -63,6 +64,10 @@ public class AddCommand extends Command {
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
+
+        if (!toAdd.hasContactInformation()) {
+            throw new CommandException(Person.MESSAGE_CONTACT_INFORMATION_REQUIRED);
+        }
 
         if (model.hasPerson(toAdd)) {
             throw new CommandException(MESSAGE_DUPLICATE_PERSON);

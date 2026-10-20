@@ -5,12 +5,15 @@ import static seedu.address.testutil.Assert.assertThrows;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.commons.util.JsonUtil;
 import seedu.address.model.AddressBook;
+import seedu.address.model.person.Person;
+import seedu.address.testutil.PersonBuilder;
 import seedu.address.testutil.TypicalPersons;
 
 public class JsonSerializableAddressBookTest {
@@ -42,6 +45,18 @@ public class JsonSerializableAddressBookTest {
                 JsonSerializableAddressBook.class).get();
         assertThrows(IllegalValueException.class, JsonSerializableAddressBook.MESSAGE_DUPLICATE_PERSON,
                 dataFromFile::toModelType);
+    }
+
+    @Test
+    public void toModelType_sameNameAndEitherMatchingContactField_rejectsDuplicate() {
+        Person first = new PersonBuilder().build();
+        for (Person second : List.of(new PersonBuilder(first).withPhone("91234567").build(),
+                new PersonBuilder(first).withEmail("other@example.com").build())) {
+            JsonSerializableAddressBook data = new JsonSerializableAddressBook(
+                    List.of(new JsonAdaptedPerson(first), new JsonAdaptedPerson(second)));
+            assertThrows(IllegalValueException.class, JsonSerializableAddressBook.MESSAGE_DUPLICATE_PERSON,
+                    data::toModelType);
+        }
     }
 
 }
