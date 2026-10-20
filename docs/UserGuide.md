@@ -114,7 +114,7 @@ Format: `add --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMEN
 * Only `--name` is required. Names must be nonblank and contain letters, numbers or spaces.
 * Options can appear in any order. Quotes around multiword values are optional:
   `--name "Alice Tan"` and `--name Alice Tan` are the same.
-* Phone numbers supplied to `add` must contain 7–15 digits, with no spaces or `+` sign.
+* Phone numbers must contain 7–15 digits, with no spaces or `+` sign.
 * A supplied email must be valid, such as `alice@example.com`.
 * Department names use the `depart` rules: 2–50 letters, numbers, spaces, hyphens or `&`.
 * Addresses are optional and must be nonblank when supplied.
@@ -288,6 +288,8 @@ Format: `edit INDEX [-n NAME] [-p PHONE] [-e EMAIL] [-a ADDRESS] [-t TAG]…​`
 * Edits the person at the specified `INDEX`. The index refers to the index number shown in the displayed person list. The index **must be a positive integer** 1, 2, 3, …​
 * At least one of the optional fields must be provided.
 * Existing values will be updated to the input values.
+* New values follow the same rules as in `add`. For example, a phone number must contain 7–15 digits, and a
+  leading `#` or `/` is removed from each tag.
 * After a successful edit, the full list is shown in stored order.
 * When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
 * To remove all of a person's tags, enter `-t` without a tag after it.
