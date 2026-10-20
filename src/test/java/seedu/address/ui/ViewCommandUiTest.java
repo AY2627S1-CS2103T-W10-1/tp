@@ -66,7 +66,9 @@ public class ViewCommandUiTest {
             assertTrue(input.getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS));
             assertTrue(text.getText().contains("Name: Benson Meier\n"));
 
-            enter(input, "depart 1 --set R&D Engineering");
+            enter(input, "depart --add \"R&D Engineering\"");
+            enter(input, "edit 1 --department \"R&D Engineering\"");
+            enter(input, "find Benson");
             assertFalse(input.getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS));
             assertTrue(text.getText().contains("Department: Not provided\n"));
             enter(input, "view 1");

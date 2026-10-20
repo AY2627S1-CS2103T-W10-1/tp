@@ -61,7 +61,7 @@ sudoContact is a **desktop application for managing contacts, optimized for use 
   For example, `-p PHONE_NUMBER -n NAME` is also acceptable for `add`. For `sort`, the option must precede the field.
 
 * The field flags for `add` and `edit` each have a short and a long form:
-  `-n`/`--name`, `-p`/`--phone`, `-e`/`--email`, `-a`/`--address`, `-t`/`--tag`, and `-d`/`--department` for `add`.<br>
+  `-n`/`--name`, `-p`/`--phone`, `-e`/`--email`, `-a`/`--address`, `-t`/`--tag`, and `-d`/`--department` for `add` and `edit`.<br>
   Both forms can be used in the same command, for example `add --name John Doe -p 98765432`.
 
 * A flag must be a separate word, with a space before it and a space (or the end of the command) after it.<br>
@@ -116,7 +116,8 @@ Format: `add --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMEN
   `--name "Alice Tan"` and `--name Alice Tan` are the same.
 * Phone numbers must contain 7–15 digits, with no spaces or `+` sign.
 * A supplied email must be valid, such as `alice@example.com`.
-* Department names use the `depart` rules: 2–50 letters, numbers, spaces, hyphens or `&`.
+* Department names use the `depart` rules: 2-50 letters, numbers, spaces, hyphens or `&`.
+  Register the department first with `depart --add DEPARTMENT`; unknown names are rejected.
 * Addresses are optional and must be nonblank when supplied.
 * Tags contain 1–30 letters, numbers, hyphens or underscores. Leading `#` or `/` is removed.
   Repeat `--tag`, or put multiple tags after one flag. Identical tags are deduplicated; display preserves case.
@@ -134,12 +135,13 @@ Examples:
 
 * `add --name "Alice Tan" --email alice@example.com`
 * `add --name "Bob Lee" --phone 91234567`
-* `add --name "Chen Wei" --department Engineering --tag intern new-client`
+* `depart --add Engineering`, then `add --name "Chen Wei" --department Engineering --tag intern new-client`
 * `add --name "Dana Lim"`
 * `add -n Betsy Crowe -t friend -e betsycrowe@example.com -a Newgate Prison -p 1234567 -t criminal`
 
 To complete a contact, find their name and use the displayed row number with the existing commands,
-for example `find Dana`, `edit 1 -p 91234567 -e dana@example.com`, then `depart 1 --set Engineering`.
+for example, register Engineering with `depart --add Engineering`, then run `find Dana` followed by
+`edit 1 -p 91234567 -e dana@example.com --department Engineering`.
 Contacts are saved automatically and retain their supplied and omitted fields after restarting.
 
 ### Listing all contacts: `list` or `ls`
@@ -159,26 +161,62 @@ Examples:
 * `ls`
 * `find Betsy` followed by `ls` restores the full contact list.
 
-### Assigning a department: `depart`
+### Managing departments: `depart`
 
-Assigns or replaces the department of a contact in the currently displayed list.
+Manages the shared department catalogue. Choose one operation per command:
 
-Format: `depart CONTACT_ID --set DEPARTMENT`
+| Command | Result |
+| --- | --- |
+| `depart --list` | Lists every registered department, including unused departments. |
+| `depart --delete DEPARTMENT` | Removes a department and clears its assignments on all contacts, including hidden contacts. |
+| `depart --add DEPARTMENT` | Registers a new department without assigning contacts. |
+| `depart --edit OLD_NAME NEW_NAME` | Renames a department and updates every associated contact, including hidden contacts. |
 
-* `CONTACT_ID` is the positive index currently shown next to the contact, including after filtering or sorting.
-* `DEPARTMENT` must contain 2-50 characters using letters, numbers, spaces, `-`, or `&`.
-* Departments are optional. Newly added contacts have no department until you assign one.
-* A successful assignment is saved and replaces any existing department. Editing other fields preserves it.
-* Assigning a department resets display sorting but retains an active filter. Check the displayed indices again
-  before assigning another department, or run `list` first.
+* Names are case-sensitive and must contain 2-50 characters using letters, numbers, spaces, `-`, or `&`.
+  `depart`, `add`, and `edit` trim surrounding whitespace before validation and catalogue lookup.
+  Spaces inside quoted names are preserved. Existing saved names are normalized on loading.
+  Blank names are rejected. Quote names containing spaces, e.g. `depart --add "Customer Support"`.
+* Adding an existing name, renaming an unknown source, or renaming to another existing name fails without changes.
+  Renaming a department to its current name is allowed and leaves its name unchanged.
+* Names and assignments are saved across restarts. When loading older data, existing contact departments are
+  automatically registered. `clear` removes both contacts and the catalogue.
+* `depart --list` preserves contact filtering and sorting and does not write to storage.
+  Renaming preserves the filter and resets contact sorting to stored order.
+* Renaming also updates deleted contacts retained for `undo`, so restoring a contact uses the new department name.
 
-Examples:
+Deleting a department preserves all contacts and their other fields, but clears matching department
+assignments in both current contacts and contact deletion history. The deletion is added to the same
+session-only undo history as contact deletions. See [Undoing a deletion](#undoing-a-deletion-undo).
+`undo` restores the removed department and its original assignments where the contacts still have no department.
+Later edits to other contact fields are preserved; contacts explicitly assigned elsewhere are not reassigned.
+Deletion retains the current filter, resets sorting to stored order, and is saved across restarts.
 
-* `depart 1 --set Engineering`
-* `depart 2 --set R&D Engineering`
-* `sort --by tags` followed by `depart 1 --set Marketing` assigns Marketing to the first sorted contact.
+Use `depart --delete "Customer Support"` to remove a registered department. Success reports
+`Deleted department: Customer Support. Associated contacts now have no department.`
+An unknown name reports `Department does not exist: NAME. Use depart --list or depart --add DEPARTMENT.`
+Missing names, extra arguments, blank names and invalid names are rejected without changing contacts or history.
 
-Use `sort --by department` after assignments to group contacts by their stored department.
+For example, run `depart --add Engineering`, then `depart --edit Engineering "Research & Development"`.
+`depart --list` now includes `Research & Development` even if no contacts belong to it.
+
+### Assigning a contact's department: `edit --department`
+
+Format: `edit CONTACT_ID --department DEPARTMENT` (short form: `edit CONTACT_ID -d DEPARTMENT`).
+
+* `CONTACT_ID` is the positive row number in the currently displayed list, including after filtering or sorting.
+* The department must already exist in `depart --list`. An unknown name rejects the entire edit, including
+  other supplied fields. Register new names with `depart --add` first.
+* Assignment changes only the selected contact. Omitted departments remain unchanged; departments are optional.
+* A successful edit shows all contacts in stored order. Check the displayed indices before the next command.
+* The previous `depart CONTACT_ID --set DEPARTMENT` syntax is no longer supported.
+
+Examples (register the named departments first):
+
+* `edit 1 --department Engineering`
+* `edit 2 -d "Customer Support"`
+* `sort --by tags`, then `edit 1 -d Marketing`, assigns Marketing to the first sorted contact.
+
+Use `sort --by department` after assignments to group contacts by department.
 
 ### Sorting contacts by department or tags: `sort`
 
@@ -192,13 +230,14 @@ Format: `sort -b FIELD` or `sort --by FIELD`
   It does not group contacts by every tag they share; a contact appears once, using its smallest tag as the key.
 * Contacts without the selected field appear last. Equal sorting keys retain their current relative order,
   including case-only differences and when switching sorting fields; names are not a tie-breaker.
-* Department sorting uses the stored department assigned with `depart CONTACT_ID --set DEPARTMENT`.
+* Department sorting uses the stored department assigned with `edit CONTACT_ID --department DEPARTMENT`.
   Contacts without departments appear last.
 * Successful sorting reports the number of displayed contacts and the selected field in one line.
 * Only the display order changes. Contacts and their saved order remain unchanged, and sorting does not save the file.
-* Displayed indices are updated; `edit 1`, `delete 1`, `view 1`, and `depart 1 --set Engineering` target the first row.
+* Displayed indices are updated; `edit 1`, `delete 1`, and `view 1` target the first row.
 * Another sort uses the current displayed order as its starting point. `list`, `find`, and successful contact
-  mutations (`add`, `edit`, `delete`, `depart`, `clear`, or `undo`) reset sorting to stored order.
+  mutations (`add`, `edit`, `delete`, `depart --edit`, `depart --delete`, `clear`, or `undo`) reset sorting to stored order.
+  `depart --list` and `depart --add` preserve sorting.
   `view` and `help` preserve the display order. Sort order is not retained after restarting.
 * Options and field aliases are lowercase. Use ordinary hyphens, not Unicode dashes. Exactly one option and one
   field are required; quoted fields, `--by=tags`, combined options, extra arguments, and descending order are rejected.
@@ -276,20 +315,23 @@ Format: `view CONTACT_ID`
 Examples:
 
 * `list` followed by `view 2` shows the second contact in the full list.
-* `depart 1 --set Engineering` followed by `view 1` shows `Department: Engineering` for the first displayed contact.
+* After registering Engineering, use `edit CONTACT_ID --department Engineering` to assign it.
+  Since editing resets the displayed list, find the contact again and use its current row number with `view`.
 * `find Betsy` followed by `view 1` shows the first contact in the search results.
 
 ### Editing a person: `edit`
 
 Edits an existing person in the address book.
 
-Format: `edit INDEX [-n NAME] [-p PHONE] [-e EMAIL] [-a ADDRESS] [-t TAG]…​`
+Format: `edit INDEX [-n NAME] [-p PHONE] [-e EMAIL] [-a ADDRESS] [-d DEPARTMENT] [-t TAG]…​`
 
 * Edits the person at the specified `INDEX`. The index refers to the index number shown in the displayed person list. The index **must be a positive integer** 1, 2, 3, …​
 * At least one of the optional fields must be provided.
 * Existing values will be updated to the input values.
 * New values follow the same rules as in `add`. For example, a phone number must contain 7–15 digits, and a
   leading `#` or `/` is removed from each tag.
+* `-d`/`--department` accepts only a registered department; use `depart --list` to see available names.
+  If a supplied department is unknown, no fields are changed.
 * After a successful edit, the full list is shown in stored order.
 * When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
 * To remove all of a person's tags, enter `-t` without a tag after it.
@@ -348,22 +390,31 @@ Examples:
 
 ### Undoing a deletion: `undo`
 
-Restores the person most recently removed with `delete`.
+Restores the most recent contact deletion (`delete INDEX`) or department deletion (`depart --delete NAME`).
 
 Format: `undo`
 
-* Only reverts `delete`. It does not undo any other command, such as `add` or `edit`.
-* Run `undo` again to restore earlier deletions, most recent first.
-* Deletions are remembered only until you close the app.
-* The restored person is added to the end of the list, and the full list is shown.
-* If a person with the same name, phone **and** email already exists, `undo` fails and shows that person.
-  A matching name alone does not prevent restoration. To restore the deleted person, first change the
-  existing person's name, phone or email with `edit`, then run `undo` again.
-* `undo` does not take any parameters. For example, `undo 2` shows an error.
+* Both deletion types share one history. Repeated calls undo deletions in reverse chronological order.
+  `add`, `edit`, `depart --add`, `depart --edit`, and `clear` cannot be undone.
+* History is remembered only until you close the app. Successful undo is saved and shows all contacts in stored order.
+* Undoing a contact deletion appends the restored contact to the list. A duplicate name, phone and email prevents
+  restoration; the history entry is kept so you can resolve the conflict and retry.
+* Undoing a department deletion restores the catalogue entry and the original assignments on existing contacts
+  and contacts in deletion history. It preserves later edits to other fields and does not overwrite a department
+  assigned after the deletion. Contacts removed by `clear` are not recreated.
+* If the department name has been registered again, undo fails with
+  `Cannot restore the deleted department because it already exists: NAME`. No data or history is changed.
+  Rename the conflicting entry with `depart --edit` before retrying.
+* Department restoration reports `Restored deleted department: NAME`.
+* `undo` takes no parameters. With no history, it reports `There are no deletions to undo in this session.`
 
 Examples:
-* `delete 2` followed by `undo` restores the person who was 2nd in the list.
-* `delete 1`, `delete 1`, then `undo` twice restores both persons, the second one deleted first.
+
+* `depart --delete Engineering`, then `undo` restores Engineering and its eligible contact assignments.
+* `delete 1`, `depart --delete Engineering`, then `undo` restores Engineering first.
+  A second `undo` restores the deleted contact with its original Engineering assignment.
+* `depart --delete Engineering`, `delete 1`, then `undo` restores the contact without a department.
+  A second `undo` restores Engineering and the contact's original assignment.
 
 ### Clearing all entries: `clear`
 
@@ -455,12 +506,12 @@ Action | Format, Examples
 **Add** | `add --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMENT] [--address ADDRESS] [--tag TAG ...]`<br> or `add -n NAME [-p PHONE] [-e EMAIL] [-d DEPARTMENT] [-a ADDRESS] [-t TAG]…` <br> e.g., `add --name "James Ho" --email jamesho@example.com`
 **Clear** | `clear`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
-**Edit** | `edit INDEX [-n NAME] [-p PHONE_NUMBER] [-e EMAIL] [-a ADDRESS] [-t TAG]…​`<br> e.g., `edit 2 -n James Lee -e jameslee@example.com`
+**Edit** | `edit INDEX [-n NAME] [-p PHONE_NUMBER] [-e EMAIL] [-a ADDRESS] [-d DEPARTMENT] [-t TAG]…​`<br> e.g., `edit 2 -n James Lee -e jameslee@example.com`
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
 **Export** | `export -c|--csv [FILENAME]`<br> e.g., `export -c team.csv`
 **View** | `view CONTACT_ID`<br> e.g., `view 2`
 **List** | `list` or `ls`
-**Depart** | `depart CONTACT_ID --set DEPARTMENT`<br> e.g., `depart 1 --set Engineering`
+**Depart** | `depart --list`, `depart --add DEPARTMENT`, `depart --edit OLD_NAME NEW_NAME`, or `depart --delete DEPARTMENT`<br> e.g., `depart --edit Engineering "Research & Development"`
 **Sort** | `sort -b FIELD` or `sort --by FIELD`, where `FIELD` is `department`, `dept`, `tag`, or `tags`
 **Undo** | `undo`
 **Help** | `help [COMMAND]` or `? [COMMAND]`

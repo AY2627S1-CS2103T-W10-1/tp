@@ -28,7 +28,7 @@ public class AddCommand extends Command {
             "  -p, --phone       Optional phone number (7-15 digits).",
             "  -e, --email       Optional valid email address.",
             "  -a, --address     Optional postal address.",
-            "  -d, --department  Optional department (2-50 characters).",
+            "  -d, --department  Optional registered department (2-50 characters).",
             "  -t, --tag         Optional tags; repeat the option or supply several tags.",
             "",
             "Quote values containing spaces. Single-valued options cannot be repeated.",
@@ -66,6 +66,9 @@ public class AddCommand extends Command {
             throw new CommandException(MESSAGE_DUPLICATE_PERSON);
         }
 
+        if (toAdd.getDepartment().isPresent() && !model.hasDepartment(toAdd.getDepartment().get())) {
+            throw new CommandException(String.format(DepartCommand.MESSAGE_UNKNOWN, toAdd.getDepartment().get()));
+        }
         model.addPerson(toAdd);
         String tags = toAdd.getTags().stream().map(tag -> tag.tagName).sorted().collect(Collectors.joining(", "));
         String details = toAdd.getName() + " | Phone: " + toAdd.getPhone() + " | Email: " + toAdd.getEmail()

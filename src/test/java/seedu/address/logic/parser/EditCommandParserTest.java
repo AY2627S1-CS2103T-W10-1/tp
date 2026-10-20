@@ -173,7 +173,7 @@ public class EditCommandParserTest {
 
     @Test
     public void parse_unknownOptionOrUnmatchedQuote_failure() {
-        assertParseFailure(parser, "1 --department Sales", MESSAGE_INVALID_FORMAT);
+        assertParseFailure(parser, "1 --unknown Sales", MESSAGE_INVALID_FORMAT);
         assertParseFailure(parser, "1 -a \"Main Road", MESSAGE_INVALID_FORMAT);
     }
 
