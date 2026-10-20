@@ -100,6 +100,18 @@ public class AddressBookTest {
     }
 
     @Test
+    public void deleteDepartment_unknownOrNull_preservesCatalogueAndContacts() {
+        addressBook.addPerson(new PersonBuilder(ALICE).withDepartment("Engineering").build());
+        AddressBook before = new AddressBook(addressBook);
+
+        assertThrows(IllegalArgumentException.class, "Unknown department: Unknown", () ->
+                addressBook.deleteDepartment(new Department("Unknown")));
+        assertEquals(before, addressBook);
+        assertThrows(NullPointerException.class, () -> addressBook.deleteDepartment(null));
+        assertEquals(before, addressBook);
+    }
+
+    @Test
     public void renameDepartment_invalidSourceOrDuplicateTarget_preservesCatalogueAndContacts() {
         Department engineering = new Department("Engineering");
         Department sales = new Department("Sales");

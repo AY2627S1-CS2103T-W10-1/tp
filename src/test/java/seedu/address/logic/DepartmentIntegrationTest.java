@@ -279,6 +279,25 @@ class DepartmentIntegrationTest {
         assertThrows(CommandException.class, () -> logic.execute("undo"));
     }
 
+    @Test
+    void undoDepartment_preservesUnrelatedEditsWithContactDeletionHistory() throws Exception {
+        logic.execute("depart --add abc");
+        logic.execute("add --name Alice --department abc");
+        logic.execute("add --name Bob");
+        logic.execute("add --name Carol");
+        logic.execute("delete 3");
+        logic.execute("depart --delete abc");
+        logic.execute("edit 2 --phone 91234567");
+        logic.execute("undo");
+        assertEquals("91234567", model.getAddressBook().getPersonList().get(1).getPhone().value);
+        assertTrue(model.getAddressBook().getPersonList().get(1).getDepartment().isEmpty());
+        assertEquals(new Department("abc"),
+                model.getAddressBook().getPersonList().getFirst().getDepartment().orElseThrow());
+        logic.execute("undo");
+        assertEquals("Carol", model.getAddressBook().getPersonList().getLast().getName().fullName);
+        assertEquals(model.getAddressBook(), storage.readAddressBook().orElseThrow());
+    }
+
     private LogicManager logicFor(ModelManager target) {
         return new LogicManager(target, new StorageManager(storage,
                 new JsonUserPrefsStorage(folder.resolve("preferences.json"))));

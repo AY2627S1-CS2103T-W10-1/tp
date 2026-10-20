@@ -95,6 +95,16 @@ public class AddCommandTest {
         }
 
         @Override
+        public Department getLastDeletedDepartment() {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public void restoreLastDeletedDepartment() {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
         public void deleteDepartment(Department department) {
             throw new AssertionError("This method should not be called.");
         }
