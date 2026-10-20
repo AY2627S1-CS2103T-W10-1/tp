@@ -14,6 +14,7 @@ import static seedu.address.logic.commands.CommandTestUtil.VALID_TAG_HUSBAND;
 import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
+import seedu.address.model.person.Department;
 import seedu.address.testutil.EditPersonDescriptorBuilder;
 
 public class EditPersonDescriptorTest {
@@ -58,6 +59,21 @@ public class EditPersonDescriptorTest {
     }
 
     @Test
+    public void departmentOnlyEdit_copyPreservesValueAndDistinguishesAssignments() {
+        EditPersonDescriptor descriptor = new EditPersonDescriptor();
+        descriptor.setDepartment(new Department("Engineering"));
+        assertTrue(descriptor.isAnyFieldEdited());
+        EditPersonDescriptor copy = new EditPersonDescriptor(descriptor);
+        assertEquals(descriptor, copy);
+        assertEquals(new Department("Engineering"), copy.getDepartment().orElseThrow());
+
+        descriptor.setDepartment(new Department("Sales"));
+        assertFalse(descriptor.equals(copy));
+        assertEquals(new Department("Engineering"), copy.getDepartment().orElseThrow());
+        assertFalse(copy.equals(new EditPersonDescriptor()));
+    }
+
+    @Test
     public void toStringMethod() {
         EditPersonDescriptor editPersonDescriptor = new EditPersonDescriptor();
         String expected = EditPersonDescriptor.class.getCanonicalName() + "{name="
@@ -65,7 +81,8 @@ public class EditPersonDescriptorTest {
                 + editPersonDescriptor.getPhone().orElse(null) + ", email="
                 + editPersonDescriptor.getEmail().orElse(null) + ", address="
                 + editPersonDescriptor.getAddress().orElse(null) + ", tags="
-                + editPersonDescriptor.getTags().orElse(null) + "}";
+                + editPersonDescriptor.getTags().orElse(null) + ", department="
+                + editPersonDescriptor.getDepartment().orElse(null) + "}";
         assertEquals(expected, editPersonDescriptor.toString());
     }
 }

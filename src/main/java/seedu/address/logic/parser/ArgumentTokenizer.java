@@ -84,7 +84,7 @@ public class ArgumentTokenizer {
      * quote and must be followed by whitespace or the end of {@code argsString}. Quotes inside an unquoted
      * word are kept as ordinary characters, e.g. {@code O'Brien}.
      */
-    private static List<Word> splitWords(String argsString) throws ParseException {
+    static List<Word> splitWords(String argsString) throws ParseException {
         List<Word> words = new ArrayList<>();
         int position = 0;
         while (position < argsString.length()) {
@@ -120,7 +120,7 @@ public class ArgumentTokenizer {
     /**
      * Represents a word in an arguments string, and whether it was written in quotes.
      */
-    private record Word(String text, boolean isQuoted) {
+    record Word(String text, boolean isQuoted) {
     }
 
 }

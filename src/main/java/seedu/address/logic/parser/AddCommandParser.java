@@ -61,11 +61,7 @@ public class AddCommandParser implements Parser<AddCommand> {
                 ? ParserUtil.parseAddress(arguments.getValue(PREFIX_ADDRESS).orElseThrow()) : Address.notProvided();
         Department department = null;
         if (arguments.getValue(PREFIX_DEPARTMENT).isPresent()) {
-            String value = arguments.getValue(PREFIX_DEPARTMENT).orElseThrow().trim();
-            if (!Department.isValidDepartment(value)) {
-                throw new ParseException(Department.MESSAGE_CONSTRAINTS);
-            }
-            department = new Department(value);
+            department = ParserUtil.parseDepartment(arguments.getValue(PREFIX_DEPARTMENT).orElseThrow());
         }
         Set<Tag> tags = new HashSet<>();
         for (String value : arguments.getAllValues(PREFIX_TAG)) {

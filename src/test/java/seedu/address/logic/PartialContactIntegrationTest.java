@@ -83,6 +83,7 @@ public class PartialContactIntegrationTest {
 
     @Test
     public void editAndDepart_afterReload_completePartialContactWithoutLosingDepartment() throws Exception {
+        logic.execute("depart --add Engineering");
         logic.execute("add --name Chen Wei --phone 91234567 --department Engineering --tag intern new-client");
         ModelManager reloaded = new ModelManager(addressBookStorage.readAddressBook().orElseThrow(), new UserPrefs());
         LogicManager resumed = logicFor(reloaded, addressBookStorage);
@@ -93,7 +94,8 @@ public class PartialContactIntegrationTest {
         assertEquals("chen@example.com", completed.getEmail().value);
         assertEquals("Main Road", completed.getAddress().value);
         assertEquals(2, completed.getTags().size());
-        resumed.execute("depart 1 --set R&D Engineering");
+        resumed.execute("depart --add \"R&D Engineering\"");
+        resumed.execute("edit 1 --department \"R&D Engineering\"");
         assertEquals("R&D Engineering",
                 reloaded.getFilteredPersonList().getFirst().getDepartment().orElseThrow().value);
         assertEquals(reloaded.getAddressBook(), addressBookStorage.readAddressBook().orElseThrow());

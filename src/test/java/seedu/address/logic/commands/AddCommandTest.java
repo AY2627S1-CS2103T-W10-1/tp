@@ -21,6 +21,7 @@ import seedu.address.model.Model;
 import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.ReadOnlyUserPrefs;
 import seedu.address.model.SortField;
+import seedu.address.model.person.Department;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
@@ -98,6 +99,31 @@ public class AddCommandTest {
      * A default model stub that has all of the methods failing.
      */
     private class ModelStub implements Model {
+        @Override
+        public void addDepartment(Department department) {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public Department getLastDeletedDepartment() {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public void restoreLastDeletedDepartment() {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public void deleteDepartment(Department department) {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public void renameDepartment(Department oldDepartment, Department newDepartment) {
+            throw new AssertionError("This method should not be called.");
+        }
+
         @Override
         public void sortFilteredPersonList(SortField field) {
             throw new AssertionError("This method should not be called.");

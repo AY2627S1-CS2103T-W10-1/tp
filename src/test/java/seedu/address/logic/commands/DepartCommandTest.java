@@ -1,55 +1,95 @@
 package seedu.address.logic.commands;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
-import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
-import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
-import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
+
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import seedu.address.commons.core.index.Index;
-import seedu.address.logic.Messages;
 import seedu.address.model.AddressBook;
-import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
-import seedu.address.model.UserPrefs;
+import seedu.address.model.SortField;
 import seedu.address.model.person.Department;
 import seedu.address.model.person.Person;
+import seedu.address.testutil.PersonBuilder;
 
 class DepartCommandTest {
-    private final Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
+    private final ModelManager model = new ModelManager();
+    private final Department engineering = new Department("Engineering");
+    private final Department sales = new Department("Sales");
 
     @Test
-    void execute_validIndex_replacesDepartment() {
-        Department department = new Department("Engineering");
-        DepartCommand command = new DepartCommand(INDEX_FIRST_PERSON, "1", department);
-        Person original = model.getFilteredPersonList().get(0);
-        Person updated = new Person(original.getName(), original.getPhone(), original.getEmail(),
-                original.getAddress(), original.getTags(), department);
-        Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
-        expectedModel.setPerson(original, updated);
-
-        assertCommandSuccess(command, model, String.format(DepartCommand.MESSAGE_SUCCESS, Messages.format(updated)),
-                expectedModel);
+    void execute_listIncludesUnusedDepartments_preservesDisplay() throws Exception {
+        assertEquals(DepartCommand.MESSAGE_EMPTY, DepartCommand.list().execute(model).getFeedbackToUser());
+        Person first = new PersonBuilder().withName("Alice").withDepartment("Sales").build();
+        Person second = new PersonBuilder().withName("Bob").withDepartment("Engineering").build();
+        model.addPerson(first);
+        model.addPerson(second);
+        model.addDepartment(new Department("Unused"));
+        model.sortFilteredPersonList(SortField.DEPARTMENT);
+        List<Person> display = List.copyOf(model.getFilteredPersonList());
+        AddressBook before = new AddressBook(model.getAddressBook());
+        assertEquals("Departments:\nSales\nEngineering\nUnused",
+                DepartCommand.list().execute(model).getFeedbackToUser());
+        assertEquals(display, model.getFilteredPersonList());
+        model.updateFilteredPersonList(person -> person.equals(first));
+        assertTrue(DepartCommand.list().execute(model).getFeedbackToUser().contains("Engineering"));
+        assertEquals(List.of(first), model.getFilteredPersonList());
+        assertEquals(before, model.getAddressBook());
+        assertFalse(DepartCommand.list().requiresStorageSave());
     }
 
     @Test
-    void execute_invalidIndex_throwsCommandException() {
-        Index missingIndex = Index.fromOneBased(model.getFilteredPersonList().size() + 1);
-        DepartCommand command = new DepartCommand(missingIndex, "99", new Department("Engineering"));
-        assertCommandFailure(command, model, String.format(DepartCommand.MESSAGE_CONTACT_NOT_FOUND, "99"));
+    void execute_addAndRename_updatesHiddenContactsAndUndoHistory() throws Exception {
+        DepartCommand.add(engineering).execute(model);
+        Person alice = new PersonBuilder().withName("Alice").withDepartment("Engineering").build();
+        Person bob = new PersonBuilder().withName("Bob").withDepartment("Engineering").build();
+        Person chen = new PersonBuilder().withName("Chen").withDepartment("Engineering").build();
+        model.addPerson(alice);
+        model.addPerson(bob);
+        model.addPerson(chen);
+        model.deletePerson(chen);
+        model.updateFilteredPersonList(person -> person.getName().fullName.equals("Alice"));
+        DepartCommand.rename(engineering, sales).execute(model);
+        assertEquals(List.of(sales), model.getAddressBook().getDepartmentList());
+        assertEquals(List.of(new PersonBuilder(alice).withDepartment("Sales").build(),
+                new PersonBuilder(bob).withDepartment("Sales").build()), model.getAddressBook().getPersonList());
+        assertEquals(1, model.getFilteredPersonList().size());
+        model.restoreLastDeletedPerson();
+        assertEquals(new PersonBuilder(chen).withDepartment("Sales").build(),
+                model.getAddressBook().getPersonList().getLast());
+        assertFalse(model.hasDepartment(engineering));
     }
 
     @Test
-    void equals() {
-        DepartCommand command = new DepartCommand(INDEX_FIRST_PERSON, "1", new Department("Engineering"));
-        assertTrue(command.equals(command));
-        assertTrue(command.equals(new DepartCommand(INDEX_FIRST_PERSON, "1", new Department("Engineering"))));
-        assertFalse(command.equals(null));
-        assertFalse(command.equals(new ClearCommand()));
-        assertFalse(command.equals(new DepartCommand(Index.fromOneBased(2), "2", new Department("Engineering"))));
-        assertFalse(command.equals(new DepartCommand(INDEX_FIRST_PERSON, "1", new Department("Sales"))));
+    void execute_invalidCatalogueChanges_leaveModelUnchanged() throws Exception {
+        DepartCommand.add(engineering).execute(model);
+        DepartCommand.add(sales).execute(model);
+        assertCommandFailure(DepartCommand.add(engineering), model,
+                String.format(DepartCommand.MESSAGE_DUPLICATE, engineering));
+        assertCommandFailure(DepartCommand.rename(engineering, sales), model,
+                String.format(DepartCommand.MESSAGE_DUPLICATE, sales));
+        Department unknown = new Department("Unknown");
+        assertCommandFailure(DepartCommand.rename(unknown, sales), model,
+                String.format(DepartCommand.MESSAGE_UNKNOWN, unknown));
+        DepartCommand.rename(engineering, engineering).execute(model);
+        assertEquals(List.of(engineering, sales), model.getAddressBook().getDepartmentList());
+    }
+
+    @Test
+    void equals_comparesOperationAndBothNames() {
+        assertEquals(DepartCommand.list(), DepartCommand.list());
+        assertEquals(DepartCommand.add(engineering), DepartCommand.add(engineering));
+        assertEquals(DepartCommand.rename(engineering, sales), DepartCommand.rename(engineering, sales));
+        assertNotEquals(DepartCommand.list(), DepartCommand.add(engineering));
+        assertNotEquals(DepartCommand.add(sales), DepartCommand.add(engineering));
+        assertNotEquals(DepartCommand.rename(sales, engineering), DepartCommand.rename(engineering, sales));
+        assertNotEquals(DepartCommand.rename(engineering, sales), DepartCommand.rename(engineering, engineering));
+        assertNotEquals(null, DepartCommand.list());
+        assertTrue(DepartCommand.add(engineering).requiresStorageSave());
     }
 }

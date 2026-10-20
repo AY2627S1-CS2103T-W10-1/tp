@@ -3,9 +3,12 @@ package seedu.address.model;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
+import java.util.Objects;
 
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import seedu.address.commons.util.ToStringBuilder;
+import seedu.address.model.person.Department;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.UniquePersonList;
 
@@ -16,6 +19,7 @@ import seedu.address.model.person.UniquePersonList;
 public class AddressBook implements ReadOnlyAddressBook {
 
     private final UniquePersonList persons = new UniquePersonList();
+    private final ObservableList<Department> departments = FXCollections.observableArrayList();
 
     public AddressBook() {}
 
@@ -35,6 +39,7 @@ public class AddressBook implements ReadOnlyAddressBook {
      */
     public void setPersons(List<Person> persons) {
         this.persons.setPersons(persons);
+        persons.forEach(this::registerDepartment);
     }
 
     /**
@@ -43,7 +48,10 @@ public class AddressBook implements ReadOnlyAddressBook {
     public void resetData(ReadOnlyAddressBook newData) {
         requireNonNull(newData);
 
-        setPersons(newData.getPersonList());
+        List<Person> replacementPersons = List.copyOf(newData.getPersonList());
+        List<Department> replacementDepartments = List.copyOf(newData.getDepartmentList());
+        departments.setAll(replacementDepartments);
+        setPersons(replacementPersons);
     }
 
     //// person-level operations
@@ -62,6 +70,7 @@ public class AddressBook implements ReadOnlyAddressBook {
      */
     public void addPerson(Person p) {
         persons.add(p);
+        registerDepartment(p);
     }
 
     /**
@@ -73,6 +82,7 @@ public class AddressBook implements ReadOnlyAddressBook {
         requireNonNull(editedPerson);
 
         persons.setPerson(target, editedPerson);
+        registerDepartment(editedPerson);
     }
 
     /**
@@ -81,6 +91,50 @@ public class AddressBook implements ReadOnlyAddressBook {
      */
     public void removePerson(Person key) {
         persons.remove(key);
+    }
+
+    private void registerDepartment(Person person) {
+        person.getDepartment().filter(department -> !departments.contains(department)).ifPresent(departments::add);
+    }
+
+    /** Adds a unique department to the catalogue. */
+    public void addDepartment(Department department) {
+        requireNonNull(department);
+        if (departments.contains(department)) {
+            throw new IllegalArgumentException("Department already exists: " + department);
+        }
+        departments.add(department);
+    }
+
+    /** Renames a catalogue entry and all assignments after validating both names. */
+    public void renameDepartment(Department oldDepartment, Department newDepartment) {
+        requireNonNull(oldDepartment);
+        requireNonNull(newDepartment);
+        int index = departments.indexOf(oldDepartment);
+        if (index < 0 || (!oldDepartment.equals(newDepartment) && departments.contains(newDepartment))) {
+            throw new IllegalArgumentException("Unknown source or duplicate target department.");
+        }
+        List<Person> replacements = persons.asUnmodifiableObservableList().stream()
+                .map(person -> person.withRenamedDepartment(oldDepartment, newDepartment)).toList();
+        departments.set(index, newDepartment);
+        persons.setPersons(replacements);
+    }
+
+    /** Removes a registered department and clears all matching contact assignments. */
+    public void deleteDepartment(Department department) {
+        requireNonNull(department);
+        if (!departments.contains(department)) {
+            throw new IllegalArgumentException("Unknown department: " + department);
+        }
+        List<Person> replacements = persons.asUnmodifiableObservableList().stream()
+                .map(person -> person.withoutDepartment(department)).toList();
+        departments.remove(department);
+        persons.setPersons(replacements);
+    }
+
+    @Override
+    public ObservableList<Department> getDepartmentList() {
+        return FXCollections.unmodifiableObservableList(departments);
     }
 
     //// util methods
@@ -108,11 +162,11 @@ public class AddressBook implements ReadOnlyAddressBook {
             return false;
         }
 
-        return persons.equals(otherAddressBook.persons);
+        return persons.equals(otherAddressBook.persons) && departments.equals(otherAddressBook.departments);
     }
 
     @Override
     public int hashCode() {
-        return persons.hashCode();
+        return Objects.hash(persons, departments);
     }
 }
