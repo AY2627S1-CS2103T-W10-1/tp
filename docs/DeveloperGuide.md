@@ -235,6 +235,7 @@ The catalogue includes departments with no assigned contacts and is independent 
 
 | Command | Behaviour |
 | --- | --- |
+| `depart --delete DEPARTMENT` | Remove a catalogue entry and clear matching assignments in contacts and deletion history. |
 | `depart --list` | List all departments in the catalogue, including unused departments. Report an empty catalogue when none exist. |
 | `depart --add DEPARTMENT` | Add a new department to the catalogue without assigning it to any contact. |
 | `depart --edit OLD_DEPARTMENT NEW_DEPARTMENT` | Rename an existing catalogue entry and update every contact assigned to it, including contacts hidden by a filter. |
@@ -242,7 +243,7 @@ The catalogue includes departments with no assigned contacts and is independent 
 
 Examples: `depart --add Engineering`, `depart --list`, `depart --edit Engineering "Research & Development"`,
 and `edit 1 --department "Research & Development"`. Quote names containing spaces to distinguish the two
-arguments of `depart --edit`. The command word is `depart` for all three catalogue operations.
+arguments of `depart --edit`. The command word is `depart` for all four catalogue operations.
 The previous `depart CONTACT_ID --set DEPARTMENT` form is replaced by `edit CONTACT_ID --department DEPARTMENT`.
 
 Department names are case-sensitive and must contain 2-50 characters using only letters, numbers, spaces, `-`, or `&`.
@@ -271,7 +272,7 @@ as the catalogue entry.
 
 `AddressBookParser` routes `depart` to `DepartCommandParser`. The parser uses the shared quote-aware word
 lexer to enforce one operation and its exact argument count, validates names with `Department`, and creates
-`DepartCommand.list()`, `DepartCommand.add(...)`, or `DepartCommand.rename(...)`.
+`DepartCommand.list()`, `DepartCommand.add(...)`, `DepartCommand.delete(...)`, or `DepartCommand.rename(...)`.
 `DepartCommand.execute` checks catalogue membership through `Model.hasDepartment` before a mutation.
 Additions delegate to `ModelManager.addDepartment`; renames delegate to `ModelManager.renameDepartment`.
 `AddressBook.renameDepartment` replaces matching contacts with copies produced by
@@ -283,6 +284,14 @@ preserves contact filtering and sorting. `EditCommandParser` stores `-d`/`--depa
 any fields. A successful contact edit displays all contacts in stored order.
 `ModelManager.renameDepartment` updates both stored contacts and deletion history, so `undo` cannot restore
 an obsolete department name. A rename retains the active filter and resets display sorting.
+`DepartCommand.delete(...)` validates catalogue membership before calling `ModelManager.deleteDepartment`.
+`AddressBook.deleteDepartment` removes the entry and uses `Person.withoutDepartment` to clear matching
+assignments, including hidden contacts, while preserving all other fields. `ModelManager` also updates matching
+contacts in deletion history without removing or reordering history entries. The active filter is retained and
+sorting resets to stored order. `undo` restores deleted contacts without the removed department; it does not
+reverse catalogue deletion. Re-adding the name does not reassign contacts. Successful deletion uses the normal
+storage save flow; validation failures preserve contacts, catalogue, and undo history.
+
 Renaming an entry to its own name is allowed. `clear` resets the catalogue together with contacts.
 
 `JsonSerializableAddressBook` persists names in a `departments` array, including unused entries.
@@ -290,7 +299,7 @@ Legacy files with an absent or null `departments` array derive the catalogue fro
 catalogue reject exact duplicate or invalid names and contact assignments absent from the catalogue.
 Legacy catalogue entries differing only in surrounding whitespace are merged in first-occurrence order;
 contact assignments are normalized to the same names. Normalized data is persisted on the next successful save.
-`LogicManager` saves successful catalogue additions, renames, and contact assignments through the normal
+`LogicManager` saves successful catalogue additions, renames, deletions, and contact assignments through the normal
 storage flow. A save failure is reported instead of success; the in-memory change is not rolled back.
 `DepartmentIntegrationTest` covers persistence, rejected edits, listing without writes, and rename followed by undo.
 `DepartCommandParserTest`, `DepartCommandTest`, `AddressBookTest`, and `JsonSerializableAddressBookTest`
@@ -302,6 +311,7 @@ cover invalid input, catalogue constraints, unaffected contacts, and legacy-data
 | --- | --- | --- |
 | List | `depart --list` | None |
 | Add | `depart --add DEPARTMENT` | Exactly one |
+| Delete | `depart --delete DEPARTMENT` | Exactly one |
 | Rename | `depart --edit OLD_NAME NEW_NAME` | Exactly two, source first |
 
 The command word `depart` is case-insensitive. Options are lowercase, case-sensitive, unquoted,
@@ -319,7 +329,8 @@ Renaming to the source's exact current name is allowed; renaming to another exis
 
 **Validation order:** Command structure (including quotes, option and argument count) is checked first.
 Names are then validated left to right, checking blank values before character and length constraints.
-Only after all names are valid does the system check whether an addition is a duplicate, or, for a rename,
+Only after all names are valid does the system check whether a deletion target exists, an addition is a duplicate,
+or, for a rename,
 whether the source exists followed by whether the target belongs to another entry. The first failure is reported;
 no catalogue or contact changes occur on validation failure. For example, `depart --edit Unknown !`
 reports the invalid target name before checking whether Unknown exists.
@@ -336,6 +347,8 @@ characters. Code blocks show actual line breaks.
 | Supplied name is empty or whitespace-only, e.g. `depart --add ""` | `Department name cannot be empty.` |
 | Nonblank name violates character or length constraints | `Invalid Department: Must be 2-50 characters using only letters, numbers, spaces, '-', or '&'.` |
 | Addition duplicates an existing entry | `Department already exists: [NAME]` |
+| Delete target does not exist | `Department does not exist: [NAME]. Use depart --list or depart --add DEPARTMENT.` |
+| Delete a department | `Deleted department: [NAME]. Associated contacts now have no department.` |
 | Rename source does not exist | `Department does not exist: [OLD_NAME]. Use depart --list or depart --add DEPARTMENT.` |
 | Rename target belongs to another entry | `Department already exists: [NEW_NAME]` |
 | Catalogue is empty | `No departments have been registered.` |
@@ -346,7 +359,7 @@ unquoted names beginning with `--`. The exact feedback is:
 
 ```text
 Invalid command format!
-depart --list | depart --add DEPARTMENT | depart --edit OLD_NAME NEW_NAME
+depart --list | depart --add DEPARTMENT | depart --edit OLD_NAME NEW_NAME | depart --delete DEPARTMENT
 ```
 
 ### Searching contacts by tags (UC6)
@@ -739,11 +752,11 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **MSS**
 
-1. User requests to list, add, or rename a department in the shared catalogue.
+1. User requests to list, add, rename, or delete a department in the shared catalogue.
 2. sudoContact validates the request and any supplied department names.
-3. sudoContact retrieves the catalogue, adds the department, or renames it and updates
-   all associated contacts, according to the requested operation.
-4. sudoContact displays the catalogue or confirms the addition or rename.
+3. sudoContact retrieves the catalogue, adds the department, renames it and updates associated contacts,
+   or deletes it and clears its assignments from contacts and deletion history.
+4. sudoContact displays the catalogue or confirms the addition, rename, or deletion.
 
    Use case ends.
 
@@ -767,7 +780,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case ends.
 
-* 2d. The department to be renamed does not exist.
+* 2d. The department to be renamed or deleted does not exist.
 
   * 2d1. sudoContact informs the user that the department does not exist and suggests listing
     or adding departments.
@@ -1011,7 +1024,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * **Contact**: A stored record for a person or organisation, containing a name and any available contact details, department, and tags.
 * **Contact ID**: A positive one-based position in the currently displayed list, used by `view`, `edit`, and `delete`. Filtering or sorting can change which contact occupies a position.
 * **Department**: An optional organisational unit associated with a contact. Under this specification, assignments must use a name from the shared department catalogue; renaming an entry updates all associated contacts.
-* **Department catalogue**: The complete set of registered department names, including unused entries, managed with `depart --list`, `depart --add`, and `depart --edit`.
+* **Department catalogue**: The complete set of registered department names, including unused entries, managed with `depart --list`, `depart --add`, `depart --edit`, and `depart --delete`.
 * **Mainstream OS**: Windows, Linux, Unix, or macOS
 * **Matching contact**: For a tag search, a contact that has at least one of the tags specified in the command (OR matching). A matching contact is displayed once even when it has more than one specified tag.
 * **Private contact detail**: A contact detail that is not meant to be shared with others
@@ -1072,6 +1085,12 @@ testers are expected to do more *exploratory* testing.
 1. _{ more test cases …​ }_
 
 ### Department catalogue and assignments
+
+Deletion check: assign a department to two contacts and delete one contact. Filter out the other contact,
+then run `depart --delete DEPARTMENT`. Verify the entry disappears and the hidden contact has no department.
+Run `undo`: the deleted contact should return without a department. Other fields and unrelated departments
+must remain unchanged. Restart and confirm the deletion persists. Unknown names and malformed delete commands
+must leave the catalogue, contacts, saved file and undo history unchanged.
 
 For the department assignment examples below, register the required names first with `depart --add`
 (Engineering, "R&D Engineering", Sales, and Support as applicable).

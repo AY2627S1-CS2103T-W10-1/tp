@@ -84,6 +84,9 @@ public interface Model {
     /** Renames an existing department and its assignments, including deletion history. */
     void renameDepartment(Department oldDepartment, Department newDepartment);
 
+    /** Removes a department and clears assignments, preserving the contact undo history. */
+    void deleteDepartment(Department department);
+
     /** Returns whether a department is registered. */
     default boolean hasDepartment(Department department) {
         return getAddressBook().getDepartmentList().contains(department);

@@ -16,6 +16,8 @@ class DepartCommandParserTest {
 
     @Test
     void parse_validOperations_success() throws Exception {
+        assertEquals(DepartCommand.delete(new Department("Customer Support")),
+                parser.parse(" --delete \" Customer Support \""));
         assertEquals(DepartCommand.list(), parser.parse(" --list "));
         assertEquals(DepartCommand.add(new Department("Engineering")), parser.parse(" --add Engineering"));
         assertEquals(DepartCommand.add(new Department("R&D Engineering")),

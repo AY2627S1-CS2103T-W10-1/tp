@@ -132,6 +132,12 @@ public class ModelManager implements Model {
         deletedPersons.replaceAll(person -> person.withRenamedDepartment(oldDepartment, newDepartment));
     }
 
+    @Override
+    public void deleteDepartment(Department department) {
+        addressBook.deleteDepartment(department);
+        deletedPersons.replaceAll(person -> person.withoutDepartment(department));
+    }
+
     //=========== Filtered Person List Accessors =============================================================
 
     /**

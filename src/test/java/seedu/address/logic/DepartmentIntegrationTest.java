@@ -180,6 +180,63 @@ class DepartmentIntegrationTest {
         assertEquals(model.getAddressBook(), storage.readAddressBook().orElseThrow());
     }
 
+    @Test
+    void deleteDepartment_clearsHiddenAssignmentsAndPreservesUndoHistory() throws Exception {
+        logic.execute("depart --add abc");
+        logic.execute("depart --add Other");
+        logic.execute("add --name Alice --department abc --tag friend");
+        logic.execute("add --name Bob --department abc");
+        logic.execute("add --name Carol --department Other");
+        logic.execute("add --name Dana --department abc");
+        logic.execute("add --name Eve --department Other");
+        logic.execute("delete 5");
+        logic.execute("delete 4");
+        List<Person> before = List.copyOf(model.getAddressBook().getPersonList());
+        logic.execute("find Alice");
+        assertEquals("Deleted department: abc. Associated contacts now have no department.",
+                logic.execute("depart --delete \" abc \"").getFeedbackToUser());
+        assertEquals(1, model.getFilteredPersonList().size());
+        assertFalse(model.hasDepartment(new Department("abc")));
+        assertEquals(before.stream().map(person -> person.withoutDepartment(new Department("abc"))).toList(),
+                model.getAddressBook().getPersonList());
+        assertEquals(model.getAddressBook(), storage.readAddressBook().orElseThrow());
+        // Re-registering the name must not restore cleared assignments in the undo history.
+        logic.execute("depart --add abc");
+        logic.execute("undo");
+        assertEquals("Dana", model.getAddressBook().getPersonList().getLast().getName().fullName);
+        assertTrue(model.getAddressBook().getPersonList().getLast().getDepartment().isEmpty());
+        logic.execute("undo");
+        assertEquals("Eve", model.getAddressBook().getPersonList().getLast().getName().fullName);
+        assertEquals(new Department("Other"),
+                model.getAddressBook().getPersonList().getLast().getDepartment().orElseThrow());
+        logic.execute("depart --delete abc");
+        assertFalse(model.hasDepartment(new Department("abc")));
+        assertEquals(model.getAddressBook(), storage.readAddressBook().orElseThrow());
+    }
+
+    @Test
+    void deleteDepartment_invalidRequestsPreserveDataAndUndo() throws Exception {
+        logic.execute("depart --add abc");
+        logic.execute("add --name Alice --department abc");
+        logic.execute("delete 1");
+        AddressBook before = new AddressBook(model.getAddressBook());
+        String bytes = Files.readString(storage.getAddressBookFilePath());
+        for (String command : List.of("depart --delete", "depart --delete abc extra",
+                "depart --delete !", "depart --delete \" \"", "depart --delete abc --list")) {
+            assertThrows(ParseException.class, () -> logic.execute(command));
+            assertEquals(before, model.getAddressBook());
+            assertEquals(bytes, Files.readString(storage.getAddressBookFilePath()));
+        }
+        CommandException failure = assertThrows(CommandException.class, () ->
+                logic.execute("depart --delete ABC"));
+        assertEquals("Department does not exist: ABC. Use depart --list or depart --add DEPARTMENT.",
+                failure.getMessage());
+        assertEquals(before, model.getAddressBook());
+        assertEquals(bytes, Files.readString(storage.getAddressBookFilePath()));
+        logic.execute("undo");
+        assertEquals(new Department("abc"), model.getFilteredPersonList().getFirst().getDepartment().orElseThrow());
+    }
+
     private LogicManager logicFor(ModelManager target) {
         return new LogicManager(target, new StorageManager(storage,
                 new JsonUserPrefsStorage(folder.resolve("preferences.json"))));

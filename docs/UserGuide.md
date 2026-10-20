@@ -168,6 +168,7 @@ Manages the shared department catalogue. Choose one operation per command:
 | Command | Result |
 | --- | --- |
 | `depart --list` | Lists every registered department, including unused departments. |
+| `depart --delete DEPARTMENT` | Removes a department and clears its assignments on all contacts, including hidden contacts. |
 | `depart --add DEPARTMENT` | Registers a new department without assigning contacts. |
 | `depart --edit OLD_NAME NEW_NAME` | Renames a department and updates every associated contact, including hidden contacts. |
 
@@ -182,6 +183,16 @@ Manages the shared department catalogue. Choose one operation per command:
 * `depart --list` preserves contact filtering and sorting and does not write to storage.
   Renaming preserves the filter and resets contact sorting to stored order.
 * Renaming also updates deleted contacts retained for `undo`, so restoring a contact uses the new department name.
+
+Deleting a department preserves all contacts and their other fields. Deleted contacts remain in the `undo`
+history, but their matching department is cleared too. `undo` continues to restore deleted contacts; it does
+not undo department deletion. Re-adding the same department does not restore cleared assignments.
+Deletion retains the current filter, resets sorting to stored order, and is saved across restarts.
+
+Use `depart --delete "Customer Support"` to remove a registered department. Success reports
+`Deleted department: Customer Support. Associated contacts now have no department.`
+An unknown name reports `Department does not exist: NAME. Use depart --list or depart --add DEPARTMENT.`
+Missing names, extra arguments, blank names and invalid names are rejected without changing contacts or history.
 
 For example, run `depart --add Engineering`, then `depart --edit Engineering "Research & Development"`.
 `depart --list` now includes `Research & Development` even if no contacts belong to it.
@@ -223,7 +234,7 @@ Format: `sort -b FIELD` or `sort --by FIELD`
 * Only the display order changes. Contacts and their saved order remain unchanged, and sorting does not save the file.
 * Displayed indices are updated; `edit 1`, `delete 1`, and `view 1` target the first row.
 * Another sort uses the current displayed order as its starting point. `list`, `find`, and successful contact
-  mutations (`add`, `edit`, `delete`, `depart --edit`, `clear`, or `undo`) reset sorting to stored order.
+  mutations (`add`, `edit`, `delete`, `depart --edit`, `depart --delete`, `clear`, or `undo`) reset sorting to stored order.
   `depart --list` and `depart --add` preserve sorting.
   `view` and `help` preserve the display order. Sort order is not retained after restarting.
 * Options and field aliases are lowercase. Use ordinary hyphens, not Unicode dashes. Exactly one option and one
@@ -487,7 +498,7 @@ Action | Format, Examples
 **Export** | `export -c|--csv [FILENAME]`<br> e.g., `export -c team.csv`
 **View** | `view CONTACT_ID`<br> e.g., `view 2`
 **List** | `list` or `ls`
-**Depart** | `depart --list`, `depart --add DEPARTMENT`, or `depart --edit OLD_NAME NEW_NAME`<br> e.g., `depart --edit Engineering "Research & Development"`
+**Depart** | `depart --list`, `depart --add DEPARTMENT`, `depart --edit OLD_NAME NEW_NAME`, or `depart --delete DEPARTMENT`<br> e.g., `depart --edit Engineering "Research & Development"`
 **Sort** | `sort -b FIELD` or `sort --by FIELD`, where `FIELD` is `department`, `dept`, `tag`, or `tags`
 **Undo** | `undo`
 **Help** | `help [COMMAND]` or `? [COMMAND]`

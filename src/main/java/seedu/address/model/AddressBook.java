@@ -120,6 +120,18 @@ public class AddressBook implements ReadOnlyAddressBook {
         persons.setPersons(replacements);
     }
 
+    /** Removes a registered department and clears all matching contact assignments. */
+    public void deleteDepartment(Department department) {
+        requireNonNull(department);
+        if (!departments.contains(department)) {
+            throw new IllegalArgumentException("Unknown department: " + department);
+        }
+        List<Person> replacements = persons.asUnmodifiableObservableList().stream()
+                .map(person -> person.withoutDepartment(department)).toList();
+        departments.remove(department);
+        persons.setPersons(replacements);
+    }
+
     @Override
     public ObservableList<Department> getDepartmentList() {
         return FXCollections.unmodifiableObservableList(departments);

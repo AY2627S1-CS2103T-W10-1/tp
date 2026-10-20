@@ -28,7 +28,7 @@ public class DepartCommandParser implements Parser<DepartCommand> {
         String operation = words.getFirst().text();
         int expectedSize = switch (operation) {
             case "--list" -> 1;
-            case "--add" -> 2;
+            case "--add", "--delete" -> 2;
             case "--edit" -> 3;
             default -> 0;
         };
@@ -39,6 +39,7 @@ public class DepartCommandParser implements Parser<DepartCommand> {
         return switch (operation) {
             case "--list" -> DepartCommand.list();
             case "--add" -> DepartCommand.add(parseDepartment(words.get(1).text()));
+            case "--delete" -> DepartCommand.delete(parseDepartment(words.get(1).text()));
             default -> DepartCommand.rename(parseDepartment(words.get(1).text()), parseDepartment(words.get(2).text()));
         };
     }

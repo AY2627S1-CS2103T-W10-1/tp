@@ -95,6 +95,11 @@ public class AddCommandTest {
         }
 
         @Override
+        public void deleteDepartment(Department department) {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
         public void renameDepartment(Department oldDepartment, Department newDepartment) {
             throw new AssertionError("This method should not be called.");
         }
