@@ -3,6 +3,8 @@ package seedu.address.logic.parser;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.parser.ParserUtil.MESSAGE_INVALID_INDEX;
+import static seedu.address.logic.parser.ParserUtil.MESSAGE_INVALID_PHONE;
+import static seedu.address.logic.parser.ParserUtil.MESSAGE_INVALID_TAG;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 
@@ -23,10 +25,10 @@ public class ParserUtilTest {
     private static final String INVALID_PHONE = "+651234";
     private static final String INVALID_ADDRESS = " ";
     private static final String INVALID_EMAIL = "example.com";
-    private static final String INVALID_TAG = "#friend";
+    private static final String INVALID_TAG = "hubby*";
 
     private static final String VALID_NAME = "Rachel Walker";
-    private static final String VALID_PHONE = "123456";
+    private static final String VALID_PHONE = "91234567";
     private static final String VALID_ADDRESS = "123 Main Street #0505";
     private static final String VALID_EMAIL = "rachel@example.com";
     private static final String VALID_TAG_1 = "friend";
@@ -85,6 +87,21 @@ public class ParserUtilTest {
     @Test
     public void parsePhone_invalidValue_throwsParseException() {
         assertThrows(ParseException.class, () -> ParserUtil.parsePhone(INVALID_PHONE));
+    }
+
+    @Test
+    public void parsePhone_notSevenToFifteenDigits_throwsParseException() {
+        // "123" and "123456" are still valid Phone values for older data files, but not valid user input
+        for (String phone : List.of("123", "123456", "1234567890123456")) {
+            assertThrows(ParseException.class, MESSAGE_INVALID_PHONE, () -> ParserUtil.parsePhone(phone));
+        }
+    }
+
+    @Test
+    public void parsePhone_sevenOrFifteenDigits_returnsPhone() throws Exception {
+        for (String phone : List.of("1234567", "123456789012345")) {
+            assertEquals(new Phone(phone), ParserUtil.parsePhone(phone));
+        }
     }
 
     @Test
@@ -167,6 +184,20 @@ public class ParserUtilTest {
         String tagWithWhitespace = WHITESPACE + VALID_TAG_1 + WHITESPACE;
         Tag expectedTag = new Tag(VALID_TAG_1);
         assertEquals(expectedTag, ParserUtil.parseTag(tagWithWhitespace));
+    }
+
+    @Test
+    public void parseTag_leadingHashOrSlash_returnsTagWithoutThem() throws Exception {
+        Tag expectedTag = new Tag(VALID_TAG_1);
+        for (String tag : List.of("#" + VALID_TAG_1, "/" + VALID_TAG_1, "#/" + VALID_TAG_1,
+                WHITESPACE + "#" + VALID_TAG_1)) {
+            assertEquals(expectedTag, ParserUtil.parseTag(tag));
+        }
+    }
+
+    @Test
+    public void parseTag_moreThanThirtyCharacters_throwsParseException() {
+        assertThrows(ParseException.class, MESSAGE_INVALID_TAG, () -> ParserUtil.parseTag("A".repeat(31)));
     }
 
     @Test
