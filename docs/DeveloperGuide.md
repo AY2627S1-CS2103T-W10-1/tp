@@ -285,12 +285,18 @@ any fields. A successful contact edit displays all contacts in stored order.
 `ModelManager.renameDepartment` updates both stored contacts and deletion history, so `undo` cannot restore
 an obsolete department name. A rename retains the active filter and resets display sorting.
 `DepartCommand.delete(...)` validates catalogue membership before calling `ModelManager.deleteDepartment`.
-`AddressBook.deleteDepartment` removes the entry and uses `Person.withoutDepartment` to clear matching
-assignments, including hidden contacts, while preserving all other fields. `ModelManager` also updates matching
-contacts in deletion history without removing or reordering history entries. The active filter is retained and
-sorting resets to stored order. `undo` restores deleted contacts without the removed department; it does not
-reverse catalogue deletion. Re-adding the name does not reassign contacts. Successful deletion uses the normal
-storage save flow; validation failures preserve contacts, catalogue, and undo history.
+`AddressBook.deleteDepartment` removes the entry and clears matching assignments, including hidden contacts.
+`ModelManager` records the department and affected contact objects in a deletion entry, alongside markers for
+contact deletions in a shared chronological history. Matching assignments in contact deletion history are
+cleared too. The active filter is retained and sorting resets to stored order.
+`UndoCommand` checks the latest deletion type. For a department deletion, it rejects an existing catalogue name
+before changing state; otherwise it restores the department and assignments on tracked contacts still without
+a department, including contacts awaiting restoration. `setPerson` updates tracked references so subsequent
+name or phone edits survive undo. Explicit reassignment to another department is preserved. Missing contacts
+are not recreated. The history entry is consumed only on success, and all contacts are displayed in stored order.
+Department restoration reports `Restored deleted department: [NAME]`; a name conflict reports
+`Cannot restore the deleted department because it already exists: [NAME]` and preserves data and history.
+History is session-only. Successful deletion and restoration use the normal storage-save flow.
 
 Renaming an entry to its own name is allowed. `clear` resets the catalogue together with contacts.
 
@@ -1088,9 +1094,10 @@ testers are expected to do more *exploratory* testing.
 
 Deletion check: assign a department to two contacts and delete one contact. Filter out the other contact,
 then run `depart --delete DEPARTMENT`. Verify the entry disappears and the hidden contact has no department.
-Run `undo`: the deleted contact should return without a department. Other fields and unrelated departments
-must remain unchanged. Restart and confirm the deletion persists. Unknown names and malformed delete commands
-must leave the catalogue, contacts, saved file and undo history unchanged.
+The first `undo` restores the department and its assignments; the second restores the deleted contact with its
+department. Check the reverse operation order too. Verify later name/phone edits survive restoration, explicit
+reassignment is preserved, and a re-registered department blocks undo without consuming history.
+Restart after successful restoration and verify saved contacts and catalogue. History itself does not survive restart.
 
 For the department assignment examples below, register the required names first with `depart --add`
 (Engineering, "R&D Engineering", Sales, and Support as applicable).

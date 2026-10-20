@@ -184,9 +184,11 @@ Manages the shared department catalogue. Choose one operation per command:
   Renaming preserves the filter and resets contact sorting to stored order.
 * Renaming also updates deleted contacts retained for `undo`, so restoring a contact uses the new department name.
 
-Deleting a department preserves all contacts and their other fields. Deleted contacts remain in the `undo`
-history, but their matching department is cleared too. `undo` continues to restore deleted contacts; it does
-not undo department deletion. Re-adding the same department does not restore cleared assignments.
+Deleting a department preserves all contacts and their other fields, but clears matching department
+assignments in both current contacts and contact deletion history. The deletion is added to the same
+session-only undo history as contact deletions. See [Undoing a deletion](#undoing-a-deletion-undo).
+`undo` restores the removed department and its original assignments where the contacts still have no department.
+Later edits to other contact fields are preserved; contacts explicitly assigned elsewhere are not reassigned.
 Deletion retains the current filter, resets sorting to stored order, and is saved across restarts.
 
 Use `depart --delete "Customer Support"` to remove a registered department. Success reports
@@ -386,22 +388,31 @@ Examples:
 
 ### Undoing a deletion: `undo`
 
-Restores the person most recently removed with `delete`.
+Restores the most recent contact deletion (`delete INDEX`) or department deletion (`depart --delete NAME`).
 
 Format: `undo`
 
-* Only reverts `delete`. It does not undo any other command, such as `add` or `edit`.
-* Run `undo` again to restore earlier deletions, most recent first.
-* Deletions are remembered only until you close the app.
-* The restored person is added to the end of the list, and the full list is shown.
-* If a person with the same name, phone **and** email already exists, `undo` fails and shows that person.
-  A matching name alone does not prevent restoration. To restore the deleted person, first change the
-  existing person's name, phone or email with `edit`, then run `undo` again.
-* `undo` does not take any parameters. For example, `undo 2` shows an error.
+* Both deletion types share one history. Repeated calls undo deletions in reverse chronological order.
+  `add`, `edit`, `depart --add`, `depart --edit`, and `clear` cannot be undone.
+* History is remembered only until you close the app. Successful undo is saved and shows all contacts in stored order.
+* Undoing a contact deletion appends the restored contact to the list. A duplicate name, phone and email prevents
+  restoration; the history entry is kept so you can resolve the conflict and retry.
+* Undoing a department deletion restores the catalogue entry and the original assignments on existing contacts
+  and contacts in deletion history. It preserves later edits to other fields and does not overwrite a department
+  assigned after the deletion. Contacts removed by `clear` are not recreated.
+* If the department name has been registered again, undo fails with
+  `Cannot restore the deleted department because it already exists: NAME`. No data or history is changed.
+  Rename the conflicting entry with `depart --edit` before retrying.
+* Department restoration reports `Restored deleted department: NAME`.
+* `undo` takes no parameters. With no history, it reports `There are no deletions to undo in this session.`
 
 Examples:
-* `delete 2` followed by `undo` restores the person who was 2nd in the list.
-* `delete 1`, `delete 1`, then `undo` twice restores both persons, the second one deleted first.
+
+* `depart --delete Engineering`, then `undo` restores Engineering and its eligible contact assignments.
+* `delete 1`, `depart --delete Engineering`, then `undo` restores Engineering first.
+  A second `undo` restores the deleted contact with its original Engineering assignment.
+* `depart --delete Engineering`, `delete 1`, then `undo` restores the contact without a department.
+  A second `undo` restores Engineering and the contact's original assignment.
 
 ### Clearing all entries: `clear`
 

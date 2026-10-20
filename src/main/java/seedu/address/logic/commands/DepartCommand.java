@@ -38,6 +38,7 @@ public class DepartCommand extends Command {
             "",
             "Names are case-sensitive and contain 2-50 letters, numbers, spaces, hyphens or ampersands.",
             "Quote names containing spaces. Duplicate names are rejected.",
+            "Use undo to restore the latest contact or department deletion in this session.",
             "Use edit INDEX --department DEPARTMENT to assign a registered department to a contact.",
             "",
             "Examples:",

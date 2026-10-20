@@ -200,17 +200,16 @@ class DepartmentIntegrationTest {
         assertEquals(before.stream().map(person -> person.withoutDepartment(new Department("abc"))).toList(),
                 model.getAddressBook().getPersonList());
         assertEquals(model.getAddressBook(), storage.readAddressBook().orElseThrow());
-        // Re-registering the name must not restore cleared assignments in the undo history.
-        logic.execute("depart --add abc");
+        assertEquals("Restored deleted department: abc", logic.execute("undo").getFeedbackToUser());
+        assertEquals(before, model.getAddressBook().getPersonList());
         logic.execute("undo");
         assertEquals("Dana", model.getAddressBook().getPersonList().getLast().getName().fullName);
-        assertTrue(model.getAddressBook().getPersonList().getLast().getDepartment().isEmpty());
+        assertEquals(new Department("abc"),
+                model.getAddressBook().getPersonList().getLast().getDepartment().orElseThrow());
         logic.execute("undo");
         assertEquals("Eve", model.getAddressBook().getPersonList().getLast().getName().fullName);
         assertEquals(new Department("Other"),
                 model.getAddressBook().getPersonList().getLast().getDepartment().orElseThrow());
-        logic.execute("depart --delete abc");
-        assertFalse(model.hasDepartment(new Department("abc")));
         assertEquals(model.getAddressBook(), storage.readAddressBook().orElseThrow());
     }
 
@@ -235,6 +234,49 @@ class DepartmentIntegrationTest {
         assertEquals(bytes, Files.readString(storage.getAddressBookFilePath()));
         logic.execute("undo");
         assertEquals(new Department("abc"), model.getFilteredPersonList().getFirst().getDepartment().orElseThrow());
+    }
+
+    @Test
+    void undoDepartment_keepsLaterEditsAndRejectsCatalogueConflict() throws Exception {
+        logic.execute("depart --add abc");
+        logic.execute("depart --add Other");
+        logic.execute("add --name Alice --department abc");
+        logic.execute("add --name Bob --department abc");
+        logic.execute("depart --delete abc");
+        logic.execute("edit 1 --name Alicia --phone 91234567");
+        logic.execute("edit 2 --department Other");
+        logic.execute("depart --add abc");
+        AddressBook before = new AddressBook(model.getAddressBook());
+        assertThrows(CommandException.class, () -> logic.execute("undo"));
+        assertEquals(before, model.getAddressBook());
+        // Rename the conflicting entry without adding another deletion to the undo stack.
+        logic.execute("depart --edit abc Spare");
+        logic.execute("undo");
+        Person alice = model.getAddressBook().getPersonList().getFirst();
+        assertEquals("Alicia", alice.getName().fullName);
+        assertEquals("91234567", alice.getPhone().value);
+        assertEquals(new Department("abc"), alice.getDepartment().orElseThrow());
+        assertEquals(new Department("Other"),
+                model.getAddressBook().getPersonList().get(1).getDepartment().orElseThrow());
+        assertEquals(model.getAddressBook(), storage.readAddressBook().orElseThrow());
+    }
+
+    @Test
+    void undoDepartment_interleavedDeletionsAndUnusedDepartment() throws Exception {
+        logic.execute("depart --add abc");
+        logic.execute("add --name Alice --department abc");
+        logic.execute("depart --delete abc");
+        logic.execute("delete 1");
+        logic.execute("undo");
+        assertTrue(model.getAddressBook().getPersonList().getFirst().getDepartment().isEmpty());
+        logic.execute("undo");
+        assertEquals(new Department("abc"),
+                model.getAddressBook().getPersonList().getFirst().getDepartment().orElseThrow());
+        logic.execute("depart --add Unused");
+        logic.execute("depart --delete Unused");
+        logic.execute("undo");
+        assertTrue(model.hasDepartment(new Department("Unused")));
+        assertThrows(CommandException.class, () -> logic.execute("undo"));
     }
 
     private LogicManager logicFor(ModelManager target) {

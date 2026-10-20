@@ -4,8 +4,10 @@ import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 
@@ -29,6 +31,11 @@ public class ModelManager implements Model {
     private final ObservableList<Person> displayPersons;
     private final FilteredList<Person> filteredPersons;
     private final List<Person> deletedPersons = new ArrayList<>();
+    private final List<DepartmentDeletion> deletionOrder = new ArrayList<>();
+
+    /** A null entry in deletionOrder represents a contact deletion. */
+    private record DepartmentDeletion(Department department, Map<Person, Boolean> assignments) { }
+
 
     /**
      * Initializes a ModelManager with the given addressBook and userPrefs.
@@ -90,6 +97,7 @@ public class ModelManager implements Model {
     public void deletePerson(Person target) {
         addressBook.removePerson(target);
         deletedPersons.add(target);
+        deletionOrder.add(null);
     }
 
     @Override
@@ -106,6 +114,7 @@ public class ModelManager implements Model {
     public void restoreLastDeletedPerson() {
         addPerson(deletedPersons.getLast());
         deletedPersons.removeLast();
+        deletionOrder.removeLast();
     }
 
     @Override
@@ -119,6 +128,11 @@ public class ModelManager implements Model {
         requireAllNonNull(target, editedPerson);
 
         addressBook.setPerson(target, editedPerson);
+        for (DepartmentDeletion deletion : deletionOrder) {
+            if (deletion != null && deletion.assignments().remove(target) != null) {
+                deletion.assignments().put(editedPerson, true);
+            }
+        }
     }
 
     @Override
@@ -134,8 +148,57 @@ public class ModelManager implements Model {
 
     @Override
     public void deleteDepartment(Department department) {
+        Map<Person, Boolean> assignments = new IdentityHashMap<>();
+        addressBook.getPersonList().stream()
+                .filter(person -> person.getDepartment().filter(department::equals).isPresent())
+                .forEach(person -> assignments.put(person, true));
+        deletedPersons.stream().filter(person -> person.getDepartment().filter(department::equals).isPresent())
+                .forEach(person -> assignments.put(person, true));
+        // Keep the exact replacement objects so later contact edits can be tracked without matching by name.
+        List<Person> before = List.copyOf(addressBook.getPersonList());
         addressBook.deleteDepartment(department);
-        deletedPersons.replaceAll(person -> person.withoutDepartment(department));
+        Map<Person, Boolean> cleared = new IdentityHashMap<>();
+        for (int i = 0; i < before.size(); i++) {
+            if (assignments.containsKey(before.get(i))) {
+                cleared.put(addressBook.getPersonList().get(i), true);
+            }
+        }
+        deletedPersons.replaceAll(person -> {
+            Person replacement = person.withoutDepartment(department);
+            if (assignments.containsKey(person)) {
+                cleared.put(replacement, true);
+            }
+            return replacement;
+        });
+        deletionOrder.add(new DepartmentDeletion(department, cleared));
+    }
+
+    @Override
+    public Department getLastDeletedDepartment() {
+        if (deletionOrder.isEmpty() || deletionOrder.getLast() == null) {
+            return null;
+        }
+        return deletionOrder.getLast().department();
+    }
+
+    @Override
+    public void restoreLastDeletedDepartment() {
+        DepartmentDeletion deletion = deletionOrder.getLast();
+        addressBook.addDepartment(deletion.department());
+        for (Person person : List.copyOf(addressBook.getPersonList())) {
+            if (deletion.assignments().containsKey(person) && person.getDepartment().isEmpty()) {
+                setPerson(person, withDepartment(person, deletion.department()));
+            }
+        }
+        deletedPersons.replaceAll(person -> deletion.assignments().containsKey(person)
+                && person.getDepartment().isEmpty() ? withDepartment(person, deletion.department()) : person);
+        deletionOrder.removeLast();
+        updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
+    }
+
+    private Person withDepartment(Person person, Department department) {
+        return new Person(person.getName(), person.getPhone(), person.getEmail(), person.getAddress(),
+                person.getTags(), department);
     }
 
     //=========== Filtered Person List Accessors =============================================================

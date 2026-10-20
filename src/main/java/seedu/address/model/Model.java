@@ -78,6 +78,16 @@ public interface Model {
      */
     void setPerson(Person target, Person editedPerson);
 
+    /** Returns the department in the latest deletion, or null if it was a contact deletion. */
+    default Department getLastDeletedDepartment() {
+        return null;
+    }
+
+    /** Restores the latest department deletion and its still-unassigned contacts. */
+    default void restoreLastDeletedDepartment() {
+        throw new UnsupportedOperationException();
+    }
+
     /** Registers a new department. The name must not already exist. */
     void addDepartment(Department department);
 

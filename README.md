@@ -60,6 +60,7 @@ The following command formats describe sudoContact's product interface. Replace 
 `INDEX` refers to the one-based position in the contact list currently displayed. This makes it possible to find or filter a group first and then act on a specific result.
 
 Register a department with `depart --add` before assigning it through `add` or `edit`.
+Use `undo` to reverse the latest contact or department deletion in the current session.
 Quote department names containing spaces in `depart` commands. Renaming updates all associated contacts.
 
 Use a single hyphen for short options and a double hyphen for long options. For example, `sort -b department` and `sort --by department` are equivalent. Command options and their values are shown above wherever applicable.
