@@ -45,8 +45,6 @@ public class AddCommand extends Command {
             + "Short flags: add -n NAME [-p PHONE] [-e EMAIL] [-d DEPARTMENT] [-a ADDRESS] [-t TAG]...";
 
     public static final String MESSAGE_NAME_REQUIRED = "Name cannot be empty.";
-    public static final String MESSAGE_INVALID_PHONE = "Invalid phone number: Must contain 7-15 digits.";
-    public static final String MESSAGE_INVALID_TAG = "Invalid tag: Must contain 1-30 characters.";
     public static final String MESSAGE_SUCCESS = "Contact added successfully: %1$s";
     public static final String MESSAGE_DUPLICATE_PERSON = "This person already exists in the address book.";
 

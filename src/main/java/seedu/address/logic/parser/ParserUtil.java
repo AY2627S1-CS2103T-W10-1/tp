@@ -21,6 +21,12 @@ import seedu.address.model.tag.Tag;
 public class ParserUtil {
 
     public static final String MESSAGE_INVALID_INDEX = "Index must be a positive integer.";
+    public static final String MESSAGE_INVALID_PHONE = "Invalid phone number: Must contain 7-15 digits.";
+    public static final String MESSAGE_INVALID_TAG = "Invalid tag: Must contain 1-30 characters.";
+
+    /** Stricter than {@link Phone#VALIDATION_REGEX}, which still accepts the shorter numbers of older data files. */
+    private static final String PHONE_INPUT_REGEX = "[0-9]{7,15}";
+    private static final int TAG_MAX_LENGTH = 30;
 
     /**
      * Parses {@code oneBasedIndex} into an {@code Index} and returns it. Leading and trailing whitespaces will be
@@ -54,13 +60,13 @@ public class ParserUtil {
      * Parses a {@code String phone} into a {@code Phone}.
      * Leading and trailing whitespaces will be trimmed.
      *
-     * @throws ParseException if the given {@code phone} is invalid.
+     * @throws ParseException if the given {@code phone} is not 7-15 digits.
      */
     public static Phone parsePhone(String phone) throws ParseException {
         requireNonNull(phone);
         String trimmedPhone = phone.trim();
-        if (!Phone.isValidPhone(trimmedPhone)) {
-            throw new ParseException(Phone.MESSAGE_CONSTRAINTS);
+        if (!trimmedPhone.matches(PHONE_INPUT_REGEX)) {
+            throw new ParseException(MESSAGE_INVALID_PHONE);
         }
         return new Phone(trimmedPhone);
     }
@@ -97,17 +103,20 @@ public class ParserUtil {
 
     /**
      * Parses a {@code String tag} into a {@code Tag}.
-     * Leading and trailing whitespaces will be trimmed.
+     * Leading and trailing whitespaces will be trimmed, then any leading {@code #} or {@code /} is removed.
      *
      * @throws ParseException if the given {@code tag} is invalid.
      */
     public static Tag parseTag(String tag) throws ParseException {
         requireNonNull(tag);
-        String trimmedTag = tag.trim();
-        if (!Tag.isValidTagName(trimmedTag)) {
+        String normalizedTag = tag.trim().replaceFirst("^[#/]+", "");
+        if (normalizedTag.length() > TAG_MAX_LENGTH) {
+            throw new ParseException(MESSAGE_INVALID_TAG);
+        }
+        if (!Tag.isValidTagName(normalizedTag)) {
             throw new ParseException(Tag.MESSAGE_CONSTRAINTS);
         }
-        return new Tag(trimmedTag);
+        return new Tag(normalizedTag);
     }
 
     /**

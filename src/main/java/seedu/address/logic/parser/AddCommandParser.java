@@ -8,7 +8,6 @@ import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
 
-import java.util.HashSet;
 import java.util.Set;
 
 import seedu.address.logic.commands.AddCommand;
@@ -47,14 +46,8 @@ public class AddCommandParser implements Parser<AddCommand> {
             throw new ParseException(AddCommand.MESSAGE_NAME_REQUIRED);
         }
         Name name = ParserUtil.parseName(nameValue);
-        Phone phone = Phone.notProvided();
-        if (arguments.getValue(PREFIX_PHONE).isPresent()) {
-            String value = arguments.getValue(PREFIX_PHONE).orElseThrow().trim();
-            if (!value.matches("[0-9]{7,15}")) {
-                throw new ParseException(AddCommand.MESSAGE_INVALID_PHONE);
-            }
-            phone = ParserUtil.parsePhone(value);
-        }
+        Phone phone = arguments.getValue(PREFIX_PHONE).isPresent()
+                ? ParserUtil.parsePhone(arguments.getValue(PREFIX_PHONE).orElseThrow()) : Phone.notProvided();
         Email email = arguments.getValue(PREFIX_EMAIL).isPresent()
                 ? ParserUtil.parseEmail(arguments.getValue(PREFIX_EMAIL).orElseThrow()) : Email.notProvided();
         Address address = arguments.getValue(PREFIX_ADDRESS).isPresent()
@@ -67,15 +60,7 @@ public class AddCommandParser implements Parser<AddCommand> {
             }
             department = new Department(value);
         }
-        Set<Tag> tags = new HashSet<>();
-        for (String value : arguments.getAllValues(PREFIX_TAG)) {
-            String normalized = value.trim().replaceFirst("^[#/]+", "");
-            if (normalized.length() > 30) {
-                throw new ParseException(AddCommand.MESSAGE_INVALID_TAG);
-            }
-            Tag tag = ParserUtil.parseTag(normalized);
-            tags.add(tag);
-        }
+        Set<Tag> tags = ParserUtil.parseTags(arguments.getAllValues(PREFIX_TAG));
         return new AddCommand(new Person(name, phone, email, address, tags, department));
     }
 }
