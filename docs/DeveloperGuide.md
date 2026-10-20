@@ -245,7 +245,7 @@ and `edit 1 --department "Research & Development"`. Quote names containing space
 arguments of `depart --edit`. The command word is `depart` for all three catalogue operations.
 The previous `depart CONTACT_ID --set DEPARTMENT` form is replaced by `edit CONTACT_ID --department DEPARTMENT`.
 
-Department names are case-sensitive and must contain 2–50 characters using only letters, numbers, spaces, `-`, or `&`.
+Department names are case-sensitive and must contain 2-50 characters using only letters, numbers, spaces, `-`, or `&`.
 Reject empty or invalid names, duplicate catalogue additions, an unknown rename source, and a rename target
 that already belongs to another catalogue entry. Reject missing arguments, extra arguments, and combined
 catalogue operations without modifying the catalogue or contacts.

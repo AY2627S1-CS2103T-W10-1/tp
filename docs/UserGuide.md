@@ -116,7 +116,7 @@ Format: `add --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMEN
   `--name "Alice Tan"` and `--name Alice Tan` are the same.
 * Phone numbers supplied to `add` must contain 7–15 digits, with no spaces or `+` sign.
 * A supplied email must be valid, such as `alice@example.com`.
-* Department names use the `depart` rules: 2–50 letters, numbers, spaces, hyphens or `&`.
+* Department names use the `depart` rules: 2-50 letters, numbers, spaces, hyphens or `&`.
   Register the department first with `depart --add DEPARTMENT`; unknown names are rejected.
 * Addresses are optional and must be nonblank when supplied.
 * Tags contain 1–30 letters, numbers, hyphens or underscores. Leading `#` or `/` is removed.
@@ -171,7 +171,7 @@ Manages the shared department catalogue. Choose one operation per command:
 | `depart --add DEPARTMENT` | Registers a new department without assigning contacts. |
 | `depart --edit OLD_NAME NEW_NAME` | Renames a department and updates every associated contact, including hidden contacts. |
 
-* Names are case-sensitive and must contain 2�50 characters using letters, numbers, spaces, `-`, or `&`.
+* Names are case-sensitive and must contain 2-50 characters using letters, numbers, spaces, `-`, or `&`.
   Blank names are rejected. Quote names containing spaces, e.g. `depart --add "Customer Support"`.
 * Adding an existing name, renaming an unknown source, or renaming to another existing name fails without changes.
   Renaming a department to its current name is allowed and leaves its name unchanged.
