@@ -79,4 +79,29 @@ public class JsonSerializableAddressBookTest {
         assertEquals(restored, JsonUtil.fromJsonString(saved, JsonSerializableAddressBook.class).toModelType());
     }
 
+    @Test
+    public void toModelType_paddedLegacyNames_normalizesAndMergesWithoutLosingContacts() throws Exception {
+        String json = """
+                {
+                  "departments": [" abc ", "abc", " Customer  Support ", "ABC"],
+                  "persons": [
+                    {"name": "Alice", "department": " abc "},
+                    {"name": "Bob", "department": "abc"}
+                  ]
+                }
+                """;
+        AddressBook restored = JsonUtil.fromJsonString(json, JsonSerializableAddressBook.class).toModelType();
+        assertEquals(List.of(new Department("abc"), new Department("Customer  Support"), new Department("ABC")),
+                restored.getDepartmentList());
+        assertEquals(2, restored.getPersonList().size());
+        restored.getPersonList().forEach(person ->
+                assertEquals("abc", person.getDepartment().orElseThrow().value));
+        String saved = JsonUtil.toJsonString(new JsonSerializableAddressBook(restored));
+        assertEquals(restored, JsonUtil.fromJsonString(saved, JsonSerializableAddressBook.class).toModelType());
+        String legacy = "{\"persons\": [{\"name\": \"Alice\", \"department\": \" abc \"}]}";
+        AddressBook imported = JsonUtil.fromJsonString(legacy, JsonSerializableAddressBook.class).toModelType();
+        assertEquals(List.of(new Department("abc")), imported.getDepartmentList());
+        assertEquals("abc", imported.getPersonList().getFirst().getDepartment().orElseThrow().value);
+    }
+
 }

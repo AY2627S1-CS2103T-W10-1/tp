@@ -80,7 +80,8 @@ class DepartmentIntegrationTest {
         }
         for (String command : List.of("edit 1 --department", "edit 1 -d Engineering --department Sales",
                 "edit 1 -d !", "depart --list extra", "depart --add Sales --list", "depart 1 --set Sales")) {
-            assertThrows(ParseException.class, () -> logic.execute(command), command);
+            assertThrows(ParseException.class, () ->
+                            logic.execute(command), command);
             assertEquals(before, model.getAddressBook());
             assertEquals(bytes, Files.readString(storage.getAddressBookFilePath()));
         }
@@ -114,6 +115,68 @@ class DepartmentIntegrationTest {
         assertEquals(model.getAddressBook(), storage.readAddressBook().orElseThrow());
         logic.execute("clear");
         assertTrue(model.getAddressBook().getDepartmentList().isEmpty());
+        assertEquals(model.getAddressBook(), storage.readAddressBook().orElseThrow());
+    }
+
+    @Test
+    void addAndEdit_normalizeDepartmentBeforeCatalogueLookup() throws Exception {
+        for (String name : List.of("abc", "Customer  Support", "a".repeat(50))) {
+            logic.execute("depart --add \"" + name + "\"");
+            for (String option : List.of("--department", "-d")) {
+                for (String input : List.of("\"" + name + "\"", "\"  " + name + "  \"")) {
+                    logic.execute("add --name Alice " + option + " " + input);
+                    assertEquals(name, model.getFilteredPersonList().getFirst()
+                            .getDepartment().orElseThrow().value);
+                    logic.execute("add --name Bob");
+                    logic.execute("edit 2 " + option + " " + input);
+                    assertEquals(name, model.getFilteredPersonList().get(1)
+                            .getDepartment().orElseThrow().value);
+                    assertEquals(model.getAddressBook(), storage.readAddressBook().orElseThrow());
+                    logic.execute("delete 2");
+                    logic.execute("delete 1");
+                }
+            }
+        }
+    }
+
+    @Test
+    void addAndEdit_invalidNormalizedDepartment_preserveState() throws Exception {
+        logic.execute("depart --add abc");
+        logic.execute("add --name Alice --department abc");
+        AddressBook before = new AddressBook(model.getAddressBook());
+        String bytes = Files.readString(storage.getAddressBookFilePath());
+        for (String option : List.of("--department", "-d")) {
+            for (String prefix : List.of("add --name Bob ", "edit 1 --phone 91234567 ")) {
+                for (String input : List.of("   ", " a ", " ! ", " " + "a".repeat(51) + " ")) {
+                    ParseException exception = assertThrows(ParseException.class, () ->
+                            logic.execute(prefix + option + " \"" + input + "\""));
+                    assertEquals(Department.MESSAGE_CONSTRAINTS, exception.getMessage());
+                    assertEquals(before, model.getAddressBook());
+                    assertEquals(bytes, Files.readString(storage.getAddressBookFilePath()));
+                }
+                CommandException exception = assertThrows(CommandException.class, () ->
+                        logic.execute(prefix + option + " \" Unknown \""));
+                assertTrue(exception.getMessage().contains("Unknown"));
+                assertEquals(before, model.getAddressBook());
+                assertEquals(bytes, Files.readString(storage.getAddressBookFilePath()));
+            }
+        }
+    }
+
+    @Test
+    void paddedCatalogueNames_supportAddEditRenameAndUndo() throws Exception {
+        logic.execute("depart --add \" abc \"");
+        assertEquals(List.of(new Department("abc")), model.getAddressBook().getDepartmentList());
+        assertThrows(CommandException.class, () -> logic.execute("depart --add abc"));
+        logic.execute("add --name Alice --department \" abc \"");
+        logic.execute("add --name Bob");
+        logic.execute("edit 2 --department \" abc \"");
+        logic.execute("delete 2");
+        logic.execute("depart --edit \" abc \" \" Customer  Support \"");
+        logic.execute("undo");
+        for (Person person : model.getAddressBook().getPersonList()) {
+            assertEquals("Customer  Support", person.getDepartment().orElseThrow().value);
+        }
         assertEquals(model.getAddressBook(), storage.readAddressBook().orElseThrow());
     }
 

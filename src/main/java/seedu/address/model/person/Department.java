@@ -14,18 +14,18 @@ public class Department {
     public final String value;
 
     /**
-     * Creates a department with a valid name.
+     * Creates a department with a valid name, trimming surrounding whitespace.
      */
     public Department(String department) {
         requireNonNull(department);
         if (!isValidDepartment(department)) {
             throw new IllegalArgumentException(MESSAGE_CONSTRAINTS);
         }
-        value = department;
+        value = department.trim();
     }
 
     public static boolean isValidDepartment(String test) {
-        return test != null && !test.isBlank() && test.matches(VALIDATION_REGEX);
+        return test != null && !test.isBlank() && test.trim().matches(VALIDATION_REGEX);
     }
 
     @Override

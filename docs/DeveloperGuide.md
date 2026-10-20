@@ -246,6 +246,8 @@ arguments of `depart --edit`. The command word is `depart` for all three catalog
 The previous `depart CONTACT_ID --set DEPARTMENT` form is replaced by `edit CONTACT_ID --department DEPARTMENT`.
 
 Department names are case-sensitive and must contain 2-50 characters using only letters, numbers, spaces, `-`, or `&`.
+All department inputs are trimmed before format validation and catalogue lookup; spaces inside quoted names
+are preserved. `Department` stores the trimmed name, including when loading existing catalogue and contact data.
 Reject empty or invalid names, duplicate catalogue additions, an unknown rename source, and a rename target
 that already belongs to another catalogue entry. Reject missing arguments, extra arguments, and combined
 catalogue operations without modifying the catalogue or contacts.
@@ -285,7 +287,9 @@ Renaming an entry to its own name is allowed. `clear` resets the catalogue toget
 
 `JsonSerializableAddressBook` persists names in a `departments` array, including unused entries.
 Legacy files with an absent or null `departments` array derive the catalogue from their contact assignments. Files containing an explicit
-catalogue reject duplicate or invalid names and contact assignments absent from the catalogue.
+catalogue reject exact duplicate or invalid names and contact assignments absent from the catalogue.
+Legacy catalogue entries differing only in surrounding whitespace are merged in first-occurrence order;
+contact assignments are normalized to the same names. Normalized data is persisted on the next successful save.
 `LogicManager` saves successful catalogue additions, renames, and contact assignments through the normal
 storage flow. A save failure is reported instead of success; the in-memory change is not rolled back.
 `DepartmentIntegrationTest` covers persistence, rejected edits, listing without writes, and rename followed by undo.

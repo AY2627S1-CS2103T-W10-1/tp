@@ -172,6 +172,8 @@ Manages the shared department catalogue. Choose one operation per command:
 | `depart --edit OLD_NAME NEW_NAME` | Renames a department and updates every associated contact, including hidden contacts. |
 
 * Names are case-sensitive and must contain 2-50 characters using letters, numbers, spaces, `-`, or `&`.
+  `depart`, `add`, and `edit` trim surrounding whitespace before validation and catalogue lookup.
+  Spaces inside quoted names are preserved. Existing saved names are normalized on loading.
   Blank names are rejected. Quote names containing spaces, e.g. `depart --add "Customer Support"`.
 * Adding an existing name, renaming an unknown source, or renaming to another existing name fails without changes.
   Renaming a department to its current name is allowed and leaves its name unchanged.

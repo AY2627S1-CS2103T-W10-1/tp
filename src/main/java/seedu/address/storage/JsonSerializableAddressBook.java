@@ -1,7 +1,9 @@
 package seedu.address.storage;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -56,15 +58,19 @@ class JsonSerializableAddressBook {
     public AddressBook toModelType() throws IllegalValueException {
         AddressBook addressBook = new AddressBook();
         if (departments != null) {
+            Set<String> originalNames = new HashSet<>();
             for (String name : departments) {
                 if (!Department.isValidDepartment(name)) {
                     throw new IllegalValueException(Department.MESSAGE_CONSTRAINTS);
                 }
                 Department department = new Department(name);
-                if (addressBook.getDepartmentList().contains(department)) {
+                if (!originalNames.add(name)) {
                     throw new IllegalValueException("Department catalogue contains duplicates.");
                 }
-                addressBook.addDepartment(department);
+                // Legacy names differing only in surrounding whitespace share one canonical entry.
+                if (!addressBook.getDepartmentList().contains(department)) {
+                    addressBook.addDepartment(department);
+                }
             }
         }
         for (JsonAdaptedPerson jsonAdaptedPerson : persons) {

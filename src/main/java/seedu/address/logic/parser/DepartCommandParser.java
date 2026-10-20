@@ -47,10 +47,7 @@ public class DepartCommandParser implements Parser<DepartCommand> {
         if (value.isBlank()) {
             throw new ParseException(MESSAGE_EMPTY_DEPARTMENT);
         }
-        if (!Department.isValidDepartment(value)) {
-            throw new ParseException(Department.MESSAGE_CONSTRAINTS);
-        }
-        return new Department(value);
+        return ParserUtil.parseDepartment(value);
     }
 
     private ParseException invalidFormat() {
