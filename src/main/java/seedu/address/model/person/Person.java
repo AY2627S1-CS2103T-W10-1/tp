@@ -69,6 +69,19 @@ public class Person {
         return Collections.unmodifiableSet(tags);
     }
 
+    /** Returns a copy with a renamed department, or this person if the assignment is unaffected. */
+    public Person withRenamedDepartment(Department oldDepartment, Department newDepartment) {
+        if (!getDepartment().filter(oldDepartment::equals).isPresent()) {
+            return this;
+        }
+        return new Person(name, phone, email, address, tags, newDepartment);
+    }
+
+    /** Clears the matching department, preserving all other contact details. */
+    public Person withoutDepartment(Department removedDepartment) {
+        return withRenamedDepartment(removedDepartment, null);
+    }
+
     /** Returns this person's department, if one has been assigned. */
     public Optional<Department> getDepartment() {
         return Optional.ofNullable(department);
