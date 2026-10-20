@@ -211,8 +211,9 @@ cover the export flow, including a filtered list and an existing destination.
 
 ### Adding contacts with partial information
 
-The sequence below shows the successful addition of a name-only contact. Parsing creates missing-value
-objects for omitted fields; the command checks for duplicates, adds the contact, and follows the normal JSON save.
+The sequence below shows the successful addition of a partial contact with a name and phone number.
+Parsing creates missing-value objects for omitted email and address fields; the command checks for duplicates,
+adds the contact, and follows the normal JSON save.
 
 ![Successful partial-contact addition sequence](images/AddPartialContactSequenceDiagram.png)
 

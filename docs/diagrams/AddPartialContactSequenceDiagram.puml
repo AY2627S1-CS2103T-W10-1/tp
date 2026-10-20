@@ -8,15 +8,15 @@ participant ":AddCommand" as AddCommand LOGIC_COLOR
 participant ":Model" as Model MODEL_COLOR
 participant ":Storage" as Storage STORAGE_COLOR
 
-[-> LogicManager : execute("add --name Alice")
+[-> LogicManager : execute("add -n Alice -p 91234567")
 activate LogicManager
 ref over LogicManager, AddCommand
 AddressBookParser and AddCommandParser
 validate input and create AddCommand(p).
 end ref
 note over AddCommand
-p has the required name.
-Omitted phone, email and address use notProvided().
+p has a name and a supplied phone number.
+Omitted email and address use notProvided().
 Department is absent and the tag set is empty.
 end note
 
@@ -49,7 +49,7 @@ LogicManager -> Storage : saveAddressBook(addressBook)
 activate Storage
 note over Storage
 JsonAdaptedPerson serializes missing
-phone, email and address as empty strings.
+email and address as empty strings.
 end note
 Storage --> LogicManager : saved successfully
 deactivate Storage
