@@ -14,7 +14,7 @@ import seedu.address.model.person.UniquePersonList;
 
 /**
  * Wraps all data at the address-book level.
- * Duplicates are not allowed (by .isSamePerson comparison).
+ * New additions and edits reject duplicates by .isSamePerson comparison; restored legacy records are preserved.
  */
 public class AddressBook implements ReadOnlyAddressBook {
 
@@ -35,7 +35,8 @@ public class AddressBook implements ReadOnlyAddressBook {
 
     /**
      * Replaces the contents of the person list with {@code persons}.
-     * {@code persons} must not contain duplicate persons.
+     * Preserves legacy contacts with distinct name/phone/email combinations. New additions and edits still use
+     * the stricter duplicate rule.
      */
     public void setPersons(List<Person> persons) {
         this.persons.setPersons(persons);

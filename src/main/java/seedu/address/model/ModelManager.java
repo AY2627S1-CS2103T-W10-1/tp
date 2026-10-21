@@ -128,6 +128,10 @@ public class ModelManager implements Model {
         requireAllNonNull(target, editedPerson);
 
         addressBook.setPerson(target, editedPerson);
+        trackPersonReplacement(target, editedPerson);
+    }
+
+    private void trackPersonReplacement(Person target, Person editedPerson) {
         for (DepartmentDeletion deletion : deletionOrder) {
             if (deletion != null && deletion.assignments().remove(target) != null) {
                 deletion.assignments().put(editedPerson, true);
@@ -185,10 +189,13 @@ public class ModelManager implements Model {
     public void restoreLastDeletedDepartment() {
         DepartmentDeletion deletion = deletionOrder.getLast();
         addressBook.addDepartment(deletion.department());
-        for (Person person : List.copyOf(addressBook.getPersonList())) {
-            if (deletion.assignments().containsKey(person) && person.getDepartment().isEmpty()) {
-                setPerson(person, withDepartment(person, deletion.department()));
-            }
+        List<Person> before = List.copyOf(addressBook.getPersonList());
+        List<Person> restored = before.stream().map(person -> deletion.assignments().containsKey(person)
+                && person.getDepartment().isEmpty() ? withDepartment(person, deletion.department()) : person).toList();
+        // Department restoration leaves identities unchanged, including conflicts already present in legacy data.
+        addressBook.setPersons(restored);
+        for (int i = 0; i < before.size(); i++) {
+            trackPersonReplacement(before.get(i), restored.get(i));
         }
         deletedPersons.replaceAll(person -> deletion.assignments().containsKey(person)
                 && person.getDepartment().isEmpty() ? withDepartment(person, deletion.department()) : person);

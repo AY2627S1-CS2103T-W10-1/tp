@@ -129,6 +129,10 @@ Format: `add --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMEN
 * Contacts with the same name are duplicates if either their provided phone numbers **or** email addresses
   match. Missing fields do not count as matches. Same-name contacts can coexist only when neither provided
   contact field matches; a different address, department or tag does not distinguish duplicates.
+* Contacts saved under the previous rule remain in their original order, even if the same name and phone
+  or email now conflict. Loading, saving and restarting do not merge or remove these records. New additions,
+  edits and contact restoration with `undo` still use the stricter rule. To edit a conflicting old contact,
+  change its name or contact details so the result does not conflict with any other contact.
 
 Short flags also work, and can be mixed with long ones:
 `add -n NAME [-p PHONE] [-e EMAIL] [-d DEPARTMENT] [-a ADDRESS] [-t TAG ...]`.
@@ -400,6 +404,9 @@ Format: `undo`
 * Undoing a contact deletion appends the restored contact to the list. A same-name contact sharing a provided phone number
   or email prevents restoration. Missing fields do not match. The history entry is kept so you can resolve
   every matching contact field or change the existing contact's name and retry.
+* A restored contact must have a phone number or email address. If a deleted legacy contact has neither,
+  `undo` reports `A phone number or email address must be provided.` and leaves data and history unchanged.
+  You can recreate that contact using `add` with the required contact information.
 * Undoing a department deletion restores the catalogue entry and the original assignments on existing contacts
   and contacts in deletion history. It preserves later edits to other fields and does not overwrite a department
   assigned after the deletion. Contacts removed by `clear` are not recreated.

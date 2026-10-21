@@ -106,14 +106,13 @@ public class JsonSerializableAddressBookTest {
     }
 
     @Test
-    public void toModelType_sameNameAndEitherMatchingContactField_rejectsDuplicate() {
+    public void toModelType_sameNameAndEitherMatchingContactField_preservesLegacyContacts() throws Exception {
         Person first = new PersonBuilder().build();
         for (Person second : List.of(new PersonBuilder(first).withPhone("91234567").build(),
                 new PersonBuilder(first).withEmail("other@example.com").build())) {
             JsonSerializableAddressBook data = new JsonSerializableAddressBook(
                     List.of(new JsonAdaptedPerson(first), new JsonAdaptedPerson(second)), null);
-            assertThrows(IllegalValueException.class, JsonSerializableAddressBook.MESSAGE_DUPLICATE_PERSON,
-                    data::toModelType);
+            assertEquals(List.of(first, second), data.toModelType().getPersonList());
         }
     }
 

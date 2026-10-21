@@ -12,11 +12,10 @@ import seedu.address.model.person.exceptions.DuplicatePersonException;
 import seedu.address.model.person.exceptions.PersonNotFoundException;
 
 /**
- * A list of persons that enforces uniqueness between its elements and does not allow nulls.
- * A person is considered unique by comparing using {@code Person#isSamePerson(Person)}. As such, adding and updating of
- * persons uses Person#isSamePerson(Person) for equality so as to ensure that the person being added or updated is
- * unique in terms of identity in the UniquePersonList. However, the removal of a person uses Person#equals(Object) so
- * as to ensure that the person with exactly the same fields will be removed.
+ * A list of non-null persons. New additions and edits use {@code Person#isSamePerson(Person)} to reject duplicates.
+ * Bulk restoration preserves previously valid contacts with distinct name/phone/email combinations, even when
+ * they conflict under the stricter interactive rule. Removal uses {@code Person#equals(Object)} so that the
+ * person with exactly the same fields is removed.
  *
  * Supports a minimal set of list operations.
  *
@@ -86,11 +85,12 @@ public class UniquePersonList implements Iterable<Person> {
 
     /**
      * Replaces the contents of this list with {@code persons}.
-     * {@code persons} must not contain duplicate persons.
+     * Preserves legacy conflicts, but rejects repeated name/phone/email combinations as the old storage rule did.
+     * Used when restoring saved data, copying models and updating departments without changing contact identity.
      */
     public void setPersons(List<Person> persons) {
         requireAllNonNull(persons);
-        if (!personsAreUnique(persons)) {
+        if (!personsHaveDistinctStoredIdentities(persons)) {
             throw new DuplicatePersonException();
         }
 
@@ -134,12 +134,15 @@ public class UniquePersonList implements Iterable<Person> {
     }
 
     /**
-     * Returns true if {@code persons} contains only unique persons.
+     * Returns true if {@code persons} contains distinct identities under the previous storage rule.
      */
-    private boolean personsAreUnique(List<Person> persons) {
+    private boolean personsHaveDistinctStoredIdentities(List<Person> persons) {
         for (int i = 0; i < persons.size() - 1; i++) {
             for (int j = i + 1; j < persons.size(); j++) {
-                if (persons.get(i).isSamePerson(persons.get(j))) {
+                Person first = persons.get(i);
+                Person second = persons.get(j);
+                if (first.getName().equals(second.getName()) && first.getPhone().equals(second.getPhone())
+                        && first.getEmail().equals(second.getEmail())) {
                     return false;
                 }
             }

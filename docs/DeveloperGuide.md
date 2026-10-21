@@ -19,6 +19,7 @@ This project is based on the AddressBook-Level3 project created by the [SE-EDU i
 
 OpenAI Codex assisted He Qianyi with the Feature 11 CSV export implementation, tests and documentation.
 He Qianyi is responsible for reviewing and understanding these changes.
+He Qianyi used OpenAI Codex to assist with updating and verifying the UI class diagram and the UML sequence diagrams for contact viewing, partial-contact addition and CSV export.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -82,6 +83,11 @@ The **API** of this component is specified in [`Ui.java`](https://github.com/se-
 ![Structure of the UI Component](images/UiClassDiagram.png)
 
 The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
+
+`MainWindow` also creates and retains one `ContactDetailsWindow`, which extends `UiPart<Stage>`.
+A successful `view` command supplies a details snapshot through `CommandResult`; `MainWindow` passes it to
+`ContactDetailsWindow.showDetails(String)`, reusing the same window for subsequent views. The details window
+is owned by the main stage and is hidden when the application exits.
 
 The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/ui/MainWindow.java).
 
@@ -168,6 +174,11 @@ This section describes some noteworthy details on how certain features are imple
 
 ### CSV export (Feature 11 / UC9)
 
+The sequence below shows a successful CSV export. Parsing is summarized in a reference frame; the command
+reads all stored contacts, writes the CSV through `CsvContactExporter`, and skips the normal JSON save.
+
+![Successful CSV export sequence](images/ExportCsvSequenceDiagram.png)
+
 `AddressBookParser` dispatches `export` to `ExportCommandParser`. The parser requires `-c` or `--csv`, accepts
 one optional basename (with matching quotes for spaces), and defaults to `contacts.csv`.
 `CsvContactExporter.isValidFileName` rejects paths, invalid characters and reserved Windows device names
@@ -200,6 +211,12 @@ cover the export flow, including a filtered list and an existing destination.
 
 ### Adding contacts with partial information
 
+The sequence below shows the successful addition of a partial contact with a name and phone number.
+Parsing creates missing-value objects for omitted email and address fields; the command checks for duplicates,
+adds the contact, and follows the normal JSON save.
+
+![Successful partial-contact addition sequence](images/AddPartialContactSequenceDiagram.png)
+
 `AddCommandParser` and `EditCommandParser` share `ArgumentTokenizer`. Each `Prefix` in `CliSyntax` has a
 short and a long form (e.g. `-n`/`--name`), and both forms map to the same `ArgumentMultimap` key, so they can
 be mixed and repeats in either form are detected as duplicates. The tokenizer splits input into words, treats a
@@ -227,6 +244,24 @@ excluding the edited target, even when the original and edited versions match. `
 contacts while preserving their other fields. Assigned departments must already exist in the department catalogue.
 Editing a legacy contact without phone and email requires supplying at least one of them; storage loading
 retains compatibility with old missing fields.
+
+Loading is restoration rather than a new addition. `JsonSerializableAddressBook` validates all supplied
+fields and department references, then restores the complete ordered list through `AddressBook.setPersons`.
+Bulk restoration rejects only repeated name/phone/email combinations, as the previous storage rule did.
+It therefore preserves every previously valid contact, including same-name contacts sharing either phone or
+email, instead of rejecting the file and starting with empty data. The same path preserves these records when
+`ModelManager` copies the address book and department operations replace contact objects without changing
+their identities. Department undo also restores assignments in bulk and updates history references.
+`addPerson`, interactive `setPerson` and contact undo continue to enforce `Person.isSamePerson` strictly;
+there is no global switch that disables duplicate checks. Existing unresolved conflicts are retained on disk,
+and a contact edit must produce an identity that does not conflict with another record. Contact undo also
+requires a phone number or email address; attempting to restore a legacy name-only contact leaves both the
+file and deletion history unchanged and reports the missing-information error.
+
+`LegacyContactCompatibilityTest` loads previously valid JSON through the real `MainApp` startup path, with
+and without a department catalogue. It verifies every contact field and ordering after a saving command,
+an unrelated addition and repeated restarts, plus strict add/edit/contact-undo rejection and department
+rename/delete/undo on the restored data. Rejected operations retain stored bytes and contact undo history.
 
 `AddCommand` returns full labelled feedback, sorted tags and missing-field placeholders. `PersonCard` shows
 those same placeholders for missing fields and `None` for no tags. `LogicManager` retains the existing save
@@ -479,6 +514,11 @@ Run `./gradlew check coverage` (Windows: `.\gradlew.bat check coverage`) with Ja
 
 ### Viewing contact details
 
+The sequence below shows a successful `view 1` request for a nonempty displayed list. It resolves the
+displayed index and completes the normal JSON save before returning the snapshot to the reusable details window.
+
+![Successful contact-details sequence](images/ViewContactSequenceDiagram.png)
+
 `AddressBookParser` routes `view CONTACT_ID` to `ViewCommandParser`, which validates the contact ID using
 `ParserUtil.parseIndex`. `ViewCommand` resolves that contact ID against `Model.getFilteredPersonList()` so that
 filtering and sorting determine the selected row. `CONTACT_ID` is the same one-based displayed-list
@@ -501,89 +541,84 @@ The optional value is shown in full, or as `Department: Not provided` when absen
 the same displayed-list position as `edit`, so setting a department and then viewing that contact remains
 consistent after filtering.
 
-### \[Proposed\] Undo/redo feature
+### Undoing a deletion
 
-#### Proposed Implementation
+`undo` restores the contact most recently removed with `delete` in the current session. Only `delete` is recorded,
+so `undo` does not revert `add`, `edit`, `clear` or any other command, and there is no `redo`.
 
-The proposed undo/redo mechanism is facilitated by `VersionedAddressBook`. It extends `AddressBook` with an undo/redo history, stored internally as an `addressBookStateList` and `currentStatePointer`. Additionally, it implements the following operations:
+`ModelManager` keeps the deletion history in a `deletedPersons` list, used as a stack. The history is held in memory
+only. It is not written to the data file, so it is empty every time the app starts. `Model` exposes it through these
+operations:
 
-* `VersionedAddressBook#commit()` — Saves the current address book state in its history.
-* `VersionedAddressBook#undo()` — Restores the previous address book state from its history.
-* `VersionedAddressBook#redo()` — Restores a previously undone address book state from its history.
+* `Model#deletePerson(Person)` — Removes the person and pushes it onto the history.
+* `Model#hasDeletedPerson()` — Returns true if the history is not empty.
+* `Model#getLastDeletedPerson()` — Returns the most recent deletion without removing it from the history.
+* `Model#restoreLastDeletedPerson()` — Adds the most recent deletion back and pops it from the history.
 
-These operations are exposed in the `Model` interface as `Model#commitAddressBook()`, `Model#undoAddressBook()` and `Model#redoAddressBook()` respectively.
+`DeleteCommand` is the only caller of `deletePerson`, so it records deletions without any extra code. Its success
+message ends with `Use 'undo' to restore.`
 
-Given below is an example usage scenario and how the undo/redo mechanism behaves at each step.
+Given below is an example usage scenario.
 
-Step 1. The user launches the application for the first time. The `VersionedAddressBook` will be initialized with the initial address book state, and the `currentStatePointer` pointing to that single address book state.
+Step 1. The user executes `delete 2`. `ModelManager` removes that contact and pushes it onto `deletedPersons`.
 
-![UndoRedoState0](images/UndoRedoState0.png)
+Step 2. The user executes `delete 1`. That contact is pushed on top of the contact deleted in step 1.
 
-Step 2. The user executes `delete 5` command to delete the 5th person in the address book. The `delete` command calls `Model#commitAddressBook()`, causing the modified state of the address book after the `delete 5` command executes to be saved in the `addressBookStateList`, and the `currentStatePointer` is shifted to the newly inserted address book state.
+Step 3. The user executes `undo`, which restores the contact deleted in step 2 and pops it. A second `undo` restores
+the contact deleted in step 1. A third `undo` fails with `There are no deletions to undo in this session.`
 
-![UndoRedoState1](images/UndoRedoState1.png)
+The following sequence diagram shows how `undo` goes through the `Logic` and `Model` components:
 
-Step 3. The user executes `add -n David …​` to add a new person. The `add` command also calls `Model#commitAddressBook()`, causing another modified address book state to be saved into the `addressBookStateList`.
+![Interactions Inside the Logic and Model Components for the `undo` Command](images/UndoDeleteSequenceDiagram.png)
 
-![UndoRedoState2](images/UndoRedoState2.png)
-
-<div markdown="span" class="alert alert-info">:information_source: **Note:** If a command fails its execution, it will not call `Model#commitAddressBook()`, so the address book state will not be saved into the `addressBookStateList`.
-
+<div markdown="span" class="alert alert-info">:information_source: **Note:** The lifeline for `UndoCommandParser` should end at the destroy marker (X), but due to a limitation of PlantUML, it continues to the end of the diagram.
 </div>
 
-Step 4. The user now decides that adding the person was a mistake, and decides to undo that action by executing the `undo` command. The `undo` command will call `Model#undoAddressBook()`, which will shift the `currentStatePointer` once to the left, pointing it to the previous address book state, and restores the address book to that state.
+How `undo` works:
 
-![UndoRedoState3](images/UndoRedoState3.png)
+1. `AddressBookParser` passes the rest of the input to `UndoCommandParser`. If there is any argument (e.g. `undo 2`),
+   the parser throws a `ParseException` with the usage message.
+1. `UndoCommand#execute` checks `Model#hasDeletedPerson()`. If the history is empty, it throws a `CommandException`
+   saying there is nothing to undo.
+1. It reads the most recent deletion with `Model#getLastDeletedPerson()` and checks `Model#hasPerson(...)`. A contact
+   with the same name, phone and email (`Person#isSamePerson`) may have been added since the deletion. If so, it
+   throws a `CommandException` that names the existing contact. The deletion stays in the history, so the user can
+   `edit` or `delete` that contact and run `undo` again.
+1. Otherwise, `Model#restoreLastDeletedPerson()` calls `Model#addPerson`. This appends the same `Person` object to the
+   end of the stored list, so its department, tags and other fields are unchanged. `addPerson` also shows the full
+   list, which clears any `find` filter and `sort` order. The deletion is popped only after the add succeeds, so a
+   failed add does not lose it.
+1. `LogicManager` saves the address book, as it does after other commands that change it.
 
-<div markdown="span" class="alert alert-info">:information_source: **Note:** If the `currentStatePointer` is at index 0, pointing to the initial AddressBook state, then there are no previous AddressBook states to restore. The `undo` command uses `Model#canUndoAddressBook()` to check if this is the case. If so, it will return an error to the user rather
-than attempting to perform the undo.
-
-</div>
-
-The following sequence diagram shows how an undo operation goes through the `Logic` component:
-
-![UndoSequenceDiagram](images/UndoSequenceDiagram-Logic.png)
-
-<div markdown="span" class="alert alert-info">:information_source: **Note:** The lifeline for `UndoCommand` should end at the destroy marker (X), but due to a limitation of PlantUML, it continues to the end of the diagram.
-
-</div>
-
-Similarly, how an undo operation goes through the `Model` component is shown below:
-
-![UndoSequenceDiagram](images/UndoSequenceDiagram-Model.png)
-
-The `redo` command does the opposite — it calls `Model#redoAddressBook()`, which shifts the `currentStatePointer` once to the right, pointing to the previously undone state, and restores the address book to that state.
-
-<div markdown="span" class="alert alert-info">:information_source: **Note:** If the `currentStatePointer` is at index `addressBookStateList.size() - 1`, pointing to the latest address book state, then there are no undone AddressBook states to restore. The `redo` command uses `Model#canRedoAddressBook()` to check if this is the case. If so, it will return an error to the user rather than attempting to perform the redo.
-
-</div>
-
-Step 5. The user then decides to execute the command `list`. Commands that do not modify the address book, such as `list`, will usually not call `Model#commitAddressBook()`, `Model#undoAddressBook()` or `Model#redoAddressBook()`. Thus, the `addressBookStateList` remains unchanged.
-
-![UndoRedoState4](images/UndoRedoState4.png)
-
-Step 6. The user executes `clear`, which calls `Model#commitAddressBook()`. Since the `currentStatePointer` is not pointing at the end of the `addressBookStateList`, all address book states after the `currentStatePointer` will be purged. Reason: It no longer makes sense to redo the `add -n David …​` command. This is the behavior that most modern desktop applications follow.
-
-![UndoRedoState5](images/UndoRedoState5.png)
-
-The following activity diagram summarizes what happens when a user executes a new command:
-
-<img src="images/CommitActivityDiagram.png" width="250" />
+`clear` replaces the address book through `Model#setAddressBook`, which does not touch `deletedPersons`. After `clear`,
+`undo` can still restore contacts that were deleted individually before it, but not the contacts that `clear` removed.
 
 #### Design considerations:
 
-**Aspect: How undo & redo execute:**
+**Aspect: What `undo` records:**
 
-* **Alternative 1 (current choice):** Saves the entire address book.
-  * Pros: Easy to implement.
-  * Cons: May have performance issues in terms of memory usage.
+* **Alternative 1 (current choice):** Only the person removed by each `delete`.
+  * Pros: Uses little memory. `undo` always brings back a deleted contact, even if other commands ran after the
+    deletion.
+  * Cons: Only `delete` can be undone. Each command that should become undoable needs its own reverse logic.
 
-* **Alternative 2:** Individual command knows how to undo/redo by
-  itself.
-  * Pros: Will use less memory (e.g. for `delete`, just save the person being deleted).
-  * Cons: We must ensure that the implementation of each individual command is correct.
+* **Alternative 2:** A copy of the entire address book after every command that changes it, as in AB3's proposed
+  `VersionedAddressBook`.
+  * Pros: Any command can be undone, and `redo` is straightforward to add.
+  * Cons: Uses more memory. `undo` reverts the most recent change, which may be an `add` or `edit` rather than the
+    deletion the user wants back.
 
-_{more aspects and alternatives to be added}_
+**Aspect: Where the deletion history is kept:**
+
+* **Alternative 1 (current choice):** In `ModelManager`.
+  * Pros: Each `Model` has its own history, so tests do not share state. `ModelManager#equals` compares the history,
+    so `CommandTestUtil.assertCommandSuccess` checks it too.
+  * Cons: `Model` gains three methods, which every `Model` stub in the tests must implement.
+
+* **Alternative 2:** In a static field of `DeleteCommand` or `UndoCommand`.
+  * Pros: `Model` does not change.
+  * Cons: A new command object is created for every input, so the history would have to be static. It would then be
+    shared by every `Model`, including those in different tests.
 
 ### \[Proposed\] Data archiving
 

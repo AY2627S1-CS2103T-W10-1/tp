@@ -77,6 +77,7 @@ The Help menu and `F1` show the overview. Press `q` in the Help window to close 
 - Department names are 2–50 characters and may contain letters, numbers, spaces, hyphens, and ampersands.
 - Tags are 1–30 characters and may contain letters, numbers, hyphens, and underscores. Tag matching is case-sensitive.
 - Contacts with the same name are duplicates if either their provided phone numbers or email addresses match. Missing fields do not match.
+- Previously valid saved contacts remain intact, including conflicts under the stricter rule; new add, edit and contact undo operations still reject duplicates.
 - Sorting is ascending and case-insensitive; contacts without the selected sorting field appear last.
 - CSV exports use UTF-8, include a header row, and preserve each stored contact as a separate row.
 

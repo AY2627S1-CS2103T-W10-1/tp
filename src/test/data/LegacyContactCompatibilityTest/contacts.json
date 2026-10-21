@@ -1,0 +1,40 @@
+{
+  "departments": ["Engineering", "Sales", "Unused"],
+  "persons": [
+    {
+      "name": "Alice",
+      "phone": "91234567",
+      "email": "one@example.com",
+      "address": "First Road",
+      "department": "Engineering",
+      "tags": ["friend"]
+    },
+    {
+      "name": "Alice",
+      "phone": "91234567",
+      "email": "two@example.com",
+      "address": "Second Road",
+      "department": "Engineering",
+      "tags": ["client"]
+    },
+    {
+      "name": "Alice",
+      "phone": "87654321",
+      "email": "two@example.com",
+      "address": "Third Road",
+      "department": "Sales",
+      "tags": ["work"]
+    },
+    {
+      "name": "Bob",
+      "phone": "93333333",
+      "email": "bob@example.com",
+      "address": "Other Road",
+      "tags": []
+    },
+    {
+      "name": "Archive",
+      "tags": []
+    }
+  ]
+}
