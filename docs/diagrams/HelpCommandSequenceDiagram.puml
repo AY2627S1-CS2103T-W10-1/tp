@@ -1,0 +1,85 @@
+@startuml
+' Notation: https://nus-cs2103-ay2627-s1.github.io/website/admin/uml-reference-sheet.html
+!include style.puml
+skinparam ArrowFontStyle plain
+title Showing command help: successful help list request
+
+participant ":MainWindow" as MainWindow UI_COLOR
+participant ":LogicManager" as LogicManager LOGIC_COLOR
+participant ":AddressBookParser" as AddressBookParser LOGIC_COLOR
+participant ":HelpCommandParser" as HelpCommandParser LOGIC_COLOR
+participant "command:HelpCommand" as HelpCommand LOGIC_COLOR
+participant ":HelpWindow" as HelpWindow UI_COLOR
+
+[-> MainWindow : executeCommand("help list")
+activate MainWindow
+MainWindow -> LogicManager : execute("help list")
+activate LogicManager
+LogicManager -> AddressBookParser : parseCommand("help list")
+activate AddressBookParser
+
+create HelpCommandParser
+AddressBookParser -> HelpCommandParser : HelpCommandParser()
+AddressBookParser -> HelpCommandParser : parse(" list")
+activate HelpCommandParser
+note over HelpCommandParser
+Trim and validate the single topic.
+HelpCatalog.findPage("list") resolves page.
+Static lookup details are omitted.
+end note
+create HelpCommand
+HelpCommandParser -> HelpCommand : HelpCommand(page)
+activate HelpCommand
+HelpCommand --> HelpCommandParser
+deactivate HelpCommand
+HelpCommandParser --> AddressBookParser : command
+deactivate HelpCommandParser
+AddressBookParser --> LogicManager : command
+deactivate AddressBookParser
+
+LogicManager -> HelpCommand : execute(model)
+activate HelpCommand
+note over HelpCommand
+CommandResult.forHelp(feedback, page)
+creates result with showHelp = true.
+end note
+HelpCommand --> LogicManager : result
+deactivate HelpCommand
+LogicManager -> HelpCommand : requiresStorageSave()
+activate HelpCommand
+HelpCommand --> LogicManager : false
+deactivate HelpCommand
+note over LogicManager
+Return without saving the address book.
+end note
+LogicManager --> MainWindow : result
+deactivate LogicManager
+
+note over MainWindow
+Display result feedback in ResultDisplay.
+Read the help page from result.
+Feedback and result-accessor calls are omitted.
+end note
+MainWindow -> HelpWindow : showPage(page)
+activate HelpWindow
+HelpWindow -> HelpWindow : setPage(page)
+activate HelpWindow
+note right of HelpWindow
+Update heading and manual text;
+reset caret and scrolling.
+end note
+HelpWindow --> HelpWindow
+deactivate HelpWindow
+HelpWindow -> HelpWindow : show()
+activate HelpWindow
+note right of HelpWindow
+Show or restore the existing window
+and focus its help text.
+end note
+HelpWindow --> HelpWindow
+deactivate HelpWindow
+HelpWindow --> MainWindow
+deactivate HelpWindow
+[<-- MainWindow : result
+deactivate MainWindow
+@enduml
