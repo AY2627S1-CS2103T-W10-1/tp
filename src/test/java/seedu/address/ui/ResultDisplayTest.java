@@ -1,0 +1,39 @@
+package seedu.address.ui;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import javafx.scene.control.TextArea;
+
+public class ResultDisplayTest {
+    @BeforeAll
+    public static void setUpToolkit() throws Exception {
+        FxTestUtil.initialize();
+    }
+
+    @Test
+    public void setFeedback_wrapsReadOnlyTextAndResetsSelectionAndScrolling() throws Exception {
+        FxTestUtil.run(() -> {
+            ResultDisplay display = new ResultDisplay();
+            TextArea text = (TextArea) display.getRoot().lookup("#resultDisplay");
+            display.setFeedbackToUser("Long feedback\n".repeat(30));
+            text.positionCaret(text.getLength());
+            text.setScrollTop(100);
+            text.setScrollLeft(100);
+            display.setFeedbackToUser("Error\n\nExamples:\n  help");
+            assertEquals("Error\n\nExamples:\n  help", text.getText());
+            assertEquals(0, text.getCaretPosition());
+            assertEquals(0, text.getScrollTop());
+            assertEquals(0, text.getScrollLeft());
+            assertTrue(text.isWrapText());
+            assertFalse(text.isEditable());
+            assertThrows(NullPointerException.class, () -> display.setFeedbackToUser(null));
+            assertEquals("Error\n\nExamples:\n  help", text.getText());
+        });
+    }
+}

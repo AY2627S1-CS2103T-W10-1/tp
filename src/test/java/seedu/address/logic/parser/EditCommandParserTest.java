@@ -32,6 +32,8 @@ import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_THIRD_PERSON;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.core.index.Index;
@@ -41,7 +43,6 @@ import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
 import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.Name;
-import seedu.address.model.person.Phone;
 import seedu.address.model.tag.Tag;
 import seedu.address.testutil.EditPersonDescriptorBuilder;
 
@@ -84,13 +85,13 @@ public class EditCommandParserTest {
     @Test
     public void parse_invalidValue_failure() {
         assertParseFailure(parser, "1" + INVALID_NAME_DESC, Name.MESSAGE_CONSTRAINTS); // invalid name
-        assertParseFailure(parser, "1" + INVALID_PHONE_DESC, Phone.MESSAGE_CONSTRAINTS); // invalid phone
+        assertParseFailure(parser, "1" + INVALID_PHONE_DESC, ParserUtil.MESSAGE_INVALID_PHONE); // invalid phone
         assertParseFailure(parser, "1" + INVALID_EMAIL_DESC, Email.MESSAGE_CONSTRAINTS); // invalid email
         assertParseFailure(parser, "1" + INVALID_ADDRESS_DESC, Address.MESSAGE_CONSTRAINTS); // invalid address
         assertParseFailure(parser, "1" + INVALID_TAG_DESC, Tag.MESSAGE_CONSTRAINTS); // invalid tag
 
         // invalid phone followed by valid email
-        assertParseFailure(parser, "1" + INVALID_PHONE_DESC + EMAIL_DESC_AMY, Phone.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, "1" + INVALID_PHONE_DESC + EMAIL_DESC_AMY, ParserUtil.MESSAGE_INVALID_PHONE);
 
         // while parsing {@code PREFIX_TAG} alone will reset the tags of the {@code Person} being edited,
         // parsing it together with a valid tag results in error
@@ -101,6 +102,32 @@ public class EditCommandParserTest {
         // multiple invalid values, but only the first invalid value is captured
         assertParseFailure(parser, "1" + INVALID_NAME_DESC + INVALID_EMAIL_DESC + VALID_ADDRESS_AMY + VALID_PHONE_AMY,
                 Name.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
+    public void parse_phoneBoundaries_successOrFailure() {
+        // edit applies the same 7-15 digit rule as add
+        for (String phone : List.of("1234567", "123456789012345")) {
+            EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withPhone(phone).build();
+            assertParseSuccess(parser, "1 -p " + phone, new EditCommand(INDEX_FIRST_PERSON, descriptor));
+        }
+        for (String phone : List.of("123", "123456", "1234567890123456", "1234567890123456789012345")) {
+            assertParseFailure(parser, "1 -p " + phone, ParserUtil.MESSAGE_INVALID_PHONE);
+        }
+    }
+
+    @Test
+    public void parse_tagsWithLeadingHashOrSlash_success() {
+        // edit normalizes tags the same way as add
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
+                .withTags(VALID_TAG_FRIEND, VALID_TAG_HUSBAND).build();
+        assertParseSuccess(parser, "1 -t #" + VALID_TAG_FRIEND + " /" + VALID_TAG_HUSBAND,
+                new EditCommand(INDEX_FIRST_PERSON, descriptor));
+    }
+
+    @Test
+    public void parse_tagMoreThanThirtyCharacters_failure() {
+        assertParseFailure(parser, "1 -t " + "A".repeat(31), ParserUtil.MESSAGE_INVALID_TAG);
     }
 
     @Test
@@ -146,7 +173,7 @@ public class EditCommandParserTest {
 
     @Test
     public void parse_unknownOptionOrUnmatchedQuote_failure() {
-        assertParseFailure(parser, "1 --department Sales", MESSAGE_INVALID_FORMAT);
+        assertParseFailure(parser, "1 --unknown Sales", MESSAGE_INVALID_FORMAT);
         assertParseFailure(parser, "1 -a \"Main Road", MESSAGE_INVALID_FORMAT);
     }
 

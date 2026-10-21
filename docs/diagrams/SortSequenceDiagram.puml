@@ -1,0 +1,66 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as LogicManager LOGIC_COLOR
+participant ":AddressBookParser" as AddressBookParser LOGIC_COLOR
+participant ":SortCommandParser" as SortCommandParser LOGIC_COLOR
+participant "s:SortCommand" as SortCommand LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant "m:Model" as Model MODEL_COLOR
+end box
+
+note over LogicManager, Model
+Successful sort with a nonempty displayed list.
+Routine list reads and result construction are omitted.
+end note
+
+[-> LogicManager : execute("sort --by tags")
+activate LogicManager
+
+LogicManager -> AddressBookParser : parseCommand("sort --by tags")
+activate AddressBookParser
+
+create SortCommandParser
+AddressBookParser -> SortCommandParser : new SortCommandParser()
+AddressBookParser -> SortCommandParser : parse("--by tags")
+activate SortCommandParser
+
+note right of SortCommandParser
+Validates the option and field;
+normalizes tags to SortField.TAGS.
+end note
+
+create SortCommand
+SortCommandParser -> SortCommand : new SortCommand(TAGS)
+
+SortCommandParser --> AddressBookParser : s
+deactivate SortCommandParser
+AddressBookParser --> LogicManager : s
+deactivate AddressBookParser
+
+LogicManager -> SortCommand : execute(m)
+activate SortCommand
+SortCommand -> Model : sortFilteredPersonList(TAGS)
+activate Model
+
+note right of Model
+Preserves the active filter
+and canonical contact order.
+end note
+
+Model --> SortCommand
+deactivate Model
+SortCommand --> LogicManager : result: CommandResult
+deactivate SortCommand
+
+note over LogicManager
+Returns without saving to storage.
+end note
+
+[<-- LogicManager : result
+deactivate LogicManager
+@enduml

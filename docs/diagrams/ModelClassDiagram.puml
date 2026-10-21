@@ -1,5 +1,31 @@
 @startuml
-!include style.puml
+' Local class-diagram styles avoid unrelated sequence-diagram settings.
+!define MODEL_COLOR #9D0012
+
+skinparam Package {
+    BackgroundColor #FFFFFF
+    BorderThickness 1
+    FontSize 16
+}
+
+skinparam Class {
+    FontColor #FFFFFF
+    FontSize 15
+    BorderThickness 1
+    BorderColor #FFFFFF
+    StereotypeFontColor #FFFFFF
+    FontName Arial
+}
+
+skinparam ArrowFontStyle bold
+skinparam MinClassWidth 50
+skinparam Shadowing false
+skinparam DefaultTextAlignment center
+skinparam packageStyle Rectangle
+
+hide members
+hide circle
+
 skinparam arrowThickness 1.1
 skinparam arrowColor MODEL_COLOR
 skinparam classBackgroundColor MODEL_COLOR
@@ -19,6 +45,7 @@ Class Email
 Class Name
 Class Phone
 Class Tag
+Class Department
 
 Class I #FFFFFF
 }
@@ -36,12 +63,15 @@ ModelManager -right-> "1" UserPrefs
 UserPrefs .up.|> ReadOnlyUserPrefs
 
 AddressBook *--> "1" UniquePersonList
+AddressBook --> "0..*" Department : registered departments
 UniquePersonList --> "~* all" Person
+
 Person *--> Name
 Person *--> Phone
 Person *--> Email
 Person *--> Address
 Person *--> "*" Tag
+Person --> "0..1" Department : assigned department
 
 Person -[hidden]up--> I
 UniquePersonList -[hidden]right-> I

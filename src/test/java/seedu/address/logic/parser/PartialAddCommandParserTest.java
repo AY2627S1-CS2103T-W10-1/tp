@@ -28,7 +28,7 @@ public class PartialAddCommandParserTest {
     private final AddCommandParser parser = new AddCommandParser();
 
     @Test
-    public void parse_allOptionalFieldCombinations_success() {
+    public void parse_allOptionalFieldCombinations_requirePhoneOrEmail() {
         for (int mask = 0; mask < 32; mask++) {
             boolean phone = (mask & 1) != 0;
             boolean email = (mask & 2) != 0;
@@ -45,8 +45,13 @@ public class PartialAddCommandParserTest {
             String shortArgs = " -n Alice Tan" + (phone ? " -p 91234567" : "")
                     + (email ? " -e alice@example.com" : "") + (address ? " -a Main Road" : "")
                     + (department ? " -d R&D" : "") + (tags ? " -t intern" : "");
-            assertParseSuccess(parser, longArgs, new AddCommand(expected));
-            assertParseSuccess(parser, shortArgs, new AddCommand(expected));
+            if (phone || email) {
+                assertParseSuccess(parser, longArgs, new AddCommand(expected));
+                assertParseSuccess(parser, shortArgs, new AddCommand(expected));
+            } else {
+                assertParseFailure(parser, longArgs, Person.MESSAGE_CONTACT_INFORMATION_REQUIRED);
+                assertParseFailure(parser, shortArgs, Person.MESSAGE_CONTACT_INFORMATION_REQUIRED);
+            }
         }
     }
 
@@ -71,7 +76,7 @@ public class PartialAddCommandParserTest {
                     new AddCommand(partial("Alice", new Phone(phone), Email.notProvided())));
         }
         for (String phone : new String[]{"", "123456", "1234567890123456", "+6591234567", "123abc4", "１２３４５６７"}) {
-            assertParseFailure(parser, " --name Alice --phone " + phone, AddCommand.MESSAGE_INVALID_PHONE);
+            assertParseFailure(parser, " --name Alice --phone " + phone, ParserUtil.MESSAGE_INVALID_PHONE);
         }
     }
 
@@ -86,23 +91,25 @@ public class PartialAddCommandParserTest {
         assertParseFailure(parser, " --name Alice --tag", Tag.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, " --name Alice --tag \"two words\"", Tag.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, " --name Alice --tag comma,tag", Tag.MESSAGE_CONSTRAINTS);
-        assertParseFailure(parser, " --name Alice --tag " + "A".repeat(31), AddCommand.MESSAGE_INVALID_TAG);
+        assertParseFailure(parser, " --name Alice --tag " + "A".repeat(31), ParserUtil.MESSAGE_INVALID_TAG);
     }
 
     @Test
     public void parse_tagsNormalizedDeduplicatedAndCasePreserved_success() {
-        Person expected = new Person(new Name("Alice"), Phone.notProvided(), Email.notProvided(),
+        Person expected = new Person(new Name("Alice"), new Phone("91234567"), Email.notProvided(),
                 Address.notProvided(), Set.of(new Tag("Important"), new Tag("team_intern"), new Tag("new-client"),
                         new Tag("A".repeat(30))), null);
-        assertParseSuccess(parser, " --name Alice --tag #Important team_intern /new-client --tag Important "
+        assertParseSuccess(parser, " --name Alice --phone 91234567"
+                + " --tag #Important team_intern /new-client --tag Important "
                 + "A".repeat(30), new AddCommand(expected));
     }
 
     @Test
     public void parse_quotedOptionLikeAddress_success() {
-        Person expected = new Person(new Name("Alice"), Phone.notProvided(), Email.notProvided(),
+        Person expected = new Person(new Name("Alice"), new Phone("91234567"), Email.notProvided(),
                 new Address("Apartment --tag 12"), Set.of());
-        assertParseSuccess(parser, " --name Alice --address \"Apartment --tag 12\"", new AddCommand(expected));
+        assertParseSuccess(parser, " --name Alice --phone 91234567 --address \"Apartment --tag 12\"",
+                new AddCommand(expected));
     }
 
     @Test
@@ -120,23 +127,25 @@ public class PartialAddCommandParserTest {
     @Test
     public void parse_flagLikeWordsInLongOptionValues_success() {
         // only a flag on its own counts as a short flag, as in the short-flag syntax
-        Person expected = new Person(new Name("Alice"), Phone.notProvided(), Email.notProvided(),
+        Person expected = new Person(new Name("Alice"), new Phone("91234567"), Email.notProvided(),
                 new Address("Blk 5 -apt 3 -p91234567"), Set.of());
-        assertParseSuccess(parser, " --name Alice --address Blk 5 -apt 3 -p91234567", new AddCommand(expected));
+        assertParseSuccess(parser, " --name Alice --phone 91234567 --address Blk 5 -apt 3 -p91234567",
+                new AddCommand(expected));
     }
 
     @Test
     public void parse_quotedShortFlagsAndNormalizedTags_success() {
         for (String quote : List.of("\"", "'")) {
-            Person expected = new Person(new Name("Alice"), Phone.notProvided(), Email.notProvided(),
+            Person expected = new Person(new Name("Alice"), new Phone("91234567"), Email.notProvided(),
                     new Address("Main Road -n Alice -p 91234567 -e alice@example.com -a Block -d Sales -t client"),
                     Set.of(new Tag("client"), new Tag("intern")));
-            assertParseSuccess(parser, " --name Alice --address " + quote + expected.getAddress().value + quote
+            assertParseSuccess(parser, " --name Alice --phone 91234567 --address " + quote
+                    + expected.getAddress().value + quote
                     + " --tag /client #intern", new AddCommand(expected));
 
-            Person quotedWord = new Person(new Name("Alice"), Phone.notProvided(), Email.notProvided(),
+            Person quotedWord = new Person(new Name("Alice"), new Phone("91234567"), Email.notProvided(),
                     new Address("Main Road -p"), Set.of());
-            assertParseSuccess(parser, " --name Alice --address Main Road " + quote + "-p" + quote,
+            assertParseSuccess(parser, " --name Alice --phone 91234567 --address Main Road " + quote + "-p" + quote,
                     new AddCommand(quotedWord));
         }
     }

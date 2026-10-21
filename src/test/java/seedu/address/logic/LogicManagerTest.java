@@ -168,8 +168,8 @@ public class LogicManagerTest {
 
     @Test
     public void execute_exportPartialContacts_preservesMissingFieldsAndFilter() throws Exception {
-        logic.execute("add --name Alice");
-        logic.execute("add --name Bob --tag /client");
+        logic.execute("add --name Alice --email alice@example.com");
+        logic.execute("add --name Bob --phone 91234567 --tag /client");
         logic.execute("find --tag client");
         List<Person> storedBefore = List.copyOf(model.getAddressBook().getPersonList());
         List<Person> displayedBefore = List.copyOf(model.getFilteredPersonList());
@@ -182,7 +182,8 @@ public class LogicManagerTest {
         try {
             CommandResult result = logic.execute("EXPORT -c " + fileName);
             assertEquals("Exported 2 contacts to " + fileName + ".", result.getFeedbackToUser());
-            assertEquals("Name,Phone,Email,Department,Address,Tags\r\nAlice,,,,,\r\nBob,,,,,client\r\n",
+            assertEquals("Name,Phone,Email,Department,Address,Tags\r\n"
+                    + "Alice,,alice@example.com,,,\r\nBob,91234567,,,,client\r\n",
                     Files.readString(csvPath));
             assertEquals(storedBefore, model.getAddressBook().getPersonList());
             assertEquals(displayedBefore, model.getFilteredPersonList());

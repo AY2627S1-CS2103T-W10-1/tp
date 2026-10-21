@@ -2,6 +2,7 @@ package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_ADDRESS;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_DEPARTMENT;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_EMAIL;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
@@ -41,18 +42,19 @@ public class EditCommand extends Command {
     public static final HelpPage HELP_PAGE = new HelpPage(COMMAND_WORD, String.join("\n",
             "Changes details of a contact in the displayed list.",
             "Usage: edit INDEX [--name NAME] [--phone PHONE] [--email EMAIL]",
-            "       [--address ADDRESS] [--tag TAG ...]",
+            "       [--address ADDRESS] [--department DEPARTMENT] [--tag TAG ...]",
             "",
             "Options:",
             "  -n, --name     Replacement name.",
-            "  -p, --phone    Replacement phone number.",
+            "  -p, --phone    Replacement phone number (7-15 digits).",
             "  -e, --email    Replacement email address.",
             "  -a, --address  Replacement postal address.",
+            "  -d, --department  Replacement department; must already be registered.",
             "  -t, --tag      Replacement tags; an empty tag option clears all tags.",
             "",
             "INDEX is a positive, one-based position in the currently displayed list.",
             "Provide at least one field. Omitted fields remain unchanged.",
-            "Tags replace the existing set. Use depart to change the department.",
+            "Tags replace the existing set. Use depart --list to see available departments.",
             "After a successful edit, all contacts are shown in stored order.",
             "",
             "Examples:",
@@ -67,6 +69,7 @@ public class EditCommand extends Command {
             + "[" + PREFIX_PHONE + " PHONE] "
             + "[" + PREFIX_EMAIL + " EMAIL] "
             + "[" + PREFIX_ADDRESS + " ADDRESS] "
+            + "[" + PREFIX_DEPARTMENT + " DEPARTMENT] "
             + "[" + PREFIX_TAG + " TAG]...\n"
             + "Example: " + COMMAND_WORD + " 1 "
             + PREFIX_PHONE + " 91234567 "
@@ -100,10 +103,19 @@ public class EditCommand extends Command {
             throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
         }
 
+        if (editPersonDescriptor.getDepartment().isPresent()
+                && !model.hasDepartment(editPersonDescriptor.getDepartment().get())) {
+            throw new CommandException(String.format(DepartCommand.MESSAGE_UNKNOWN,
+                    editPersonDescriptor.getDepartment().get()));
+        }
         Person personToEdit = lastShownList.get(index.getZeroBased());
         Person editedPerson = createEditedPerson(personToEdit, editPersonDescriptor);
 
-        if (!personToEdit.isSamePerson(editedPerson) && model.hasPerson(editedPerson)) {
+        if (!editedPerson.hasContactInformation()) {
+            throw new CommandException(Person.MESSAGE_CONTACT_INFORMATION_REQUIRED);
+        }
+        if (model.getAddressBook().getPersonList().stream()
+                .anyMatch(person -> !person.equals(personToEdit) && person.isSamePerson(editedPerson))) {
             throw new CommandException(MESSAGE_DUPLICATE_PERSON);
         }
 
@@ -124,7 +136,8 @@ public class EditCommand extends Command {
         Email updatedEmail = editPersonDescriptor.getEmail().orElse(personToEdit.getEmail());
         Address updatedAddress = editPersonDescriptor.getAddress().orElse(personToEdit.getAddress());
         Set<Tag> updatedTags = editPersonDescriptor.getTags().orElse(personToEdit.getTags());
-        Department updatedDepartment = personToEdit.getDepartment().orElse(null);
+        Department updatedDepartment = editPersonDescriptor.getDepartment()
+                .orElse(personToEdit.getDepartment().orElse(null));
 
         return new Person(updatedName, updatedPhone, updatedEmail, updatedAddress, updatedTags, updatedDepartment);
     }
@@ -161,6 +174,7 @@ public class EditCommand extends Command {
         private Phone phone;
         private Email email;
         private Address address;
+        private Department department;
         private Set<Tag> tags;
 
         public EditPersonDescriptor() {}
@@ -174,6 +188,7 @@ public class EditCommand extends Command {
             setPhone(toCopy.phone);
             setEmail(toCopy.email);
             setAddress(toCopy.address);
+            setDepartment(toCopy.department);
             setTags(toCopy.tags);
         }
 
@@ -181,7 +196,15 @@ public class EditCommand extends Command {
          * Returns true if at least one field is edited.
          */
         public boolean isAnyFieldEdited() {
-            return CollectionUtil.isAnyNonNull(name, phone, email, address, tags);
+            return CollectionUtil.isAnyNonNull(name, phone, email, address, tags, department);
+        }
+
+        public void setDepartment(Department department) {
+            this.department = department;
+        }
+
+        public Optional<Department> getDepartment() {
+            return Optional.ofNullable(department);
         }
 
         public void setName(Name name) {
@@ -248,7 +271,8 @@ public class EditCommand extends Command {
                     && Objects.equals(phone, otherEditPersonDescriptor.phone)
                     && Objects.equals(email, otherEditPersonDescriptor.email)
                     && Objects.equals(address, otherEditPersonDescriptor.address)
-                    && Objects.equals(tags, otherEditPersonDescriptor.tags);
+                    && Objects.equals(tags, otherEditPersonDescriptor.tags)
+                    && Objects.equals(department, otherEditPersonDescriptor.department);
         }
 
         @Override
@@ -259,6 +283,7 @@ public class EditCommand extends Command {
                     .add("email", email)
                     .add("address", address)
                     .add("tags", tags)
+                    .add("department", department)
                     .toString();
         }
     }

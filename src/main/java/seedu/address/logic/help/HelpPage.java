@@ -2,6 +2,8 @@ package seedu.address.logic.help;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.List;
+
 /**
  * Immutable heading and formatted content for a command manual or the help overview.
  *
@@ -18,4 +20,19 @@ public record HelpPage(String title, String text) {
         requireNonNull(title);
         requireNonNull(text);
     }
+
+    /**
+     * Returns the commands in the manual's {@code Examples:} section as an immutable list.
+     * Leading indentation is removed, and the section ends at the next blank line.
+     * Returns an empty list when the page has no examples section.
+     */
+    public List<String> examples() {
+        return text.lines()
+                .dropWhile(line -> !line.strip().equals("Examples:"))
+                .skip(1)
+                .takeWhile(line -> !line.isBlank())
+                .map(String::strip)
+                .toList();
+    }
+
 }
