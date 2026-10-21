@@ -228,10 +228,12 @@ catalogue and assignment rules are specified below under Department management.
 
 `JsonAdaptedPerson` maps null, omitted or empty phone/email/address fields to the missing value objects;
 nonempty invalid data still causes a loading error. Existing fully populated data retains its fields.
-New `add` input validates phone numbers as 7–15 digits and tags as 1–30 characters with the team-specified
-hyphen/underscore support and leading `#`/`/` normalization. Storage retains compatibility with previously
-valid short phone numbers and longer tags through `Tag.fromStoredValue`; normal tag validation uses the
-shared 1–30 character limit, including tag searches. This avoids a migration of old contact data.
+`add` and `edit` both parse user input through `ParserUtil`, which validates phone numbers as 7–15 digits and
+tags as 1–30 characters with the team-specified hyphen/underscore support and leading `#`/`/` normalization.
+Keeping these rules in `ParserUtil`, rather than in one command's parser, keeps the two commands consistent.
+Storage retains compatibility with previously valid short phone numbers (`Phone.isValidPhone` still accepts
+3 or more digits) and longer tags through `Tag.fromStoredValue`; normal tag validation uses the shared 1–30
+character limit, including tag searches. This avoids a migration of old contact data.
 Tag search and matching reuse the teammate's implementation.
 
 `Person.isSamePerson` compares name, phone and email, including missing values. Address, Department and
@@ -1156,6 +1158,9 @@ For the department assignment examples below, register the required names first 
 1. Restart the app. Expected: Dana Lim is still present with the same omitted fields.
 1. Run `find Dana`, then `edit 1 -p 91234567 -e dana@example.com -a Main Road --department Engineering`.
    Expected: the contact has the supplied details; restart preserves all fields.
+1. Run `find Dana`, then `edit 1 -p 123`, `edit 1 -p 1234567890123456` and `edit 1 -t #intern`.
+   Expected: both phone edits are rejected with `Invalid phone number: Must contain 7-15 digits.`, as in `add`;
+   the tag edit gives Dana Lim the tag `intern`, without the `#`.
 1. Add another `Dana Lim` with a different phone or email. Expected: the same name is accepted.
    Repeat the exact name/phone/email with different tags or department. Expected: duplicate error, no new entry.
 1. Try `add --name ""`, `add --name Alice --phone 123456`, `add --name Alice --email broken`,
