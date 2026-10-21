@@ -29,6 +29,9 @@ import seedu.address.storage.StorageManager;
  * Exercises CSV export through the real command box, feedback display and storage.
  */
 public class ExportCommandUiTest {
+    private static final String EXPORT_EXAMPLES =
+            "\n\nExamples:\n  export --csv\n  export -c \"email list.csv\"";
+
     @TempDir
     public Path testFolder;
 
@@ -63,7 +66,7 @@ public class ExportCommandUiTest {
                     assertEquals(original, new AddressBook(saved.readAddressBook().orElseThrow()));
                     enter(input, "export --csv " + fileName);
                     assertEquals("CSV file already exists: " + fileName
-                            + ". Please choose a different filename.", feedback.getText());
+                            + ". Please choose a different filename." + EXPORT_EXAMPLES, feedback.getText());
                     assertTrue(input.getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS));
                     assertEquals(csv, Files.readString(csvPath));
                 } catch (Exception e) {
@@ -85,7 +88,7 @@ public class ExportCommandUiTest {
                 TextField input = (TextField) stage.getScene().lookup("#commandTextField");
                 enter(input, "export --csv " + fileName);
                 TextArea feedback = (TextArea) stage.getScene().lookup("#resultDisplay");
-                assertEquals("No contacts found to export.", feedback.getText());
+                assertEquals("No contacts found to export." + EXPORT_EXAMPLES, feedback.getText());
                 assertTrue(input.getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS));
                 assertFalse(Files.exists(csvPath));
             });

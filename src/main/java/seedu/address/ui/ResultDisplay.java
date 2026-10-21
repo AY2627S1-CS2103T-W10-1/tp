@@ -20,9 +20,18 @@ public class ResultDisplay extends UiPart<Region> {
         super(FXML);
     }
 
+    /**
+     * Displays feedback from its beginning so the original error precedes any command examples.
+     *
+     * @param feedbackToUser Feedback to show in the result box.
+     * @throws NullPointerException If {@code feedbackToUser} is null.
+     */
     public void setFeedbackToUser(String feedbackToUser) {
         requireNonNull(feedbackToUser);
         resultDisplay.setText(feedbackToUser);
+        resultDisplay.positionCaret(0);
+        resultDisplay.setScrollTop(0);
+        resultDisplay.setScrollLeft(0);
     }
 
 }
