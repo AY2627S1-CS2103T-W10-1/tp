@@ -22,7 +22,8 @@ public class UndoCommand extends Command {
             "Usage: undo",
             "",
             "Accepts no parameters. Repeated calls restore earlier deletions, newest first.",
-            "Restoration fails if there is no deletion to undo or the same name, phone and email already exist.",
+            "Restoration fails if there is no deletion to undo or a same-name contact shares a phone or email.",
+            "A restored contact must have a phone number or email address.",
             "The restored contact is appended to the stored list; all contacts are shown in stored order.",
             "Undoes delete and depart --delete in reverse order, not clear, add or edit.",
             "",
@@ -58,6 +59,9 @@ public class UndoCommand extends Command {
         }
 
         Person personToRestore = model.getLastDeletedPerson();
+        if (!personToRestore.hasContactInformation()) {
+            throw new CommandException(Person.MESSAGE_CONTACT_INFORMATION_REQUIRED);
+        }
         if (model.hasPerson(personToRestore)) {
             Person existingPerson = model.getAddressBook().getPersonList().stream()
                     .filter(personToRestore::isSamePerson)

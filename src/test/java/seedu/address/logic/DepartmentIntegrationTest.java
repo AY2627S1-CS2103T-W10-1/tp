@@ -42,8 +42,8 @@ class DepartmentIntegrationTest {
     void catalogueAndAssignments_roundTripIncludingUnusedNames() throws Exception {
         logic.execute("depart --add Engineering");
         logic.execute("depart --add \"Customer Support\"");
-        logic.execute("add --name Alice --department Engineering");
-        logic.execute("add --name Bob --department Engineering");
+        logic.execute("add --name Alice --phone 95555555 --department Engineering");
+        logic.execute("add --name Bob --phone 95555555 --department Engineering");
         logic.execute("find Alice");
         logic.execute("depart --edit Engineering \"Research & Development\"");
         assertEquals(1, model.getFilteredPersonList().size());
@@ -68,11 +68,11 @@ class DepartmentIntegrationTest {
     void invalidCommands_preserveAllFieldsCatalogueAndStoredBytes() throws Exception {
         logic.execute("depart --add Engineering");
         logic.execute("depart --add Sales");
-        logic.execute("add --name Alice --department Engineering");
+        logic.execute("add --phone 95555555 --name Alice --department Engineering");
         AddressBook before = new AddressBook(model.getAddressBook());
         String bytes = Files.readString(storage.getAddressBookFilePath());
         for (String command : List.of("edit 1 --department Unknown --phone 91234567",
-                "edit 1 --department engineering", "add --name Bob --department Unknown",
+                "edit 1 --department engineering", "add --phone 95555555 --name Bob --department Unknown",
                 "depart --add Engineering", "depart --edit Unknown Sales", "depart --edit Engineering Sales")) {
             assertThrows(CommandException.class, () -> logic.execute(command), command);
             assertEquals(before, model.getAddressBook());
@@ -93,7 +93,7 @@ class DepartmentIntegrationTest {
         assertFalse(Files.exists(storage.getAddressBookFilePath()));
         logic.execute("depart --add Engineering");
         logic.execute("depart --add Unused");
-        logic.execute("add --name Alice --department Engineering");
+        logic.execute("add --phone 95555555 --name Alice --department Engineering");
         logic.execute("find Nobody");
         String bytes = Files.readString(storage.getAddressBookFilePath());
         var modified = Files.getLastModifiedTime(storage.getAddressBookFilePath());
@@ -106,7 +106,7 @@ class DepartmentIntegrationTest {
     @Test
     void renameThenUndo_doesNotRestoreObsoleteDepartment() throws Exception {
         logic.execute("depart --add Engineering");
-        logic.execute("add --name Alice --department Engineering");
+        logic.execute("add --phone 95555555 --name Alice --department Engineering");
         logic.execute("delete 1");
         logic.execute("depart --edit Engineering Sales");
         logic.execute("undo");
@@ -124,10 +124,10 @@ class DepartmentIntegrationTest {
             logic.execute("depart --add \"" + name + "\"");
             for (String option : List.of("--department", "-d")) {
                 for (String input : List.of("\"" + name + "\"", "\"  " + name + "  \"")) {
-                    logic.execute("add --name Alice " + option + " " + input);
+                    logic.execute("add --phone 95555555 --name Alice " + option + " " + input);
                     assertEquals(name, model.getFilteredPersonList().getFirst()
                             .getDepartment().orElseThrow().value);
-                    logic.execute("add --name Bob");
+                    logic.execute("add --phone 95555555 --name Bob");
                     logic.execute("edit 2 " + option + " " + input);
                     assertEquals(name, model.getFilteredPersonList().get(1)
                             .getDepartment().orElseThrow().value);
@@ -142,11 +142,11 @@ class DepartmentIntegrationTest {
     @Test
     void addAndEdit_invalidNormalizedDepartment_preserveState() throws Exception {
         logic.execute("depart --add abc");
-        logic.execute("add --name Alice --department abc");
+        logic.execute("add --phone 95555555 --name Alice --department abc");
         AddressBook before = new AddressBook(model.getAddressBook());
         String bytes = Files.readString(storage.getAddressBookFilePath());
         for (String option : List.of("--department", "-d")) {
-            for (String prefix : List.of("add --name Bob ", "edit 1 --phone 91234567 ")) {
+            for (String prefix : List.of("add --phone 95555555 --name Bob ", "edit 1 --phone 91234567 ")) {
                 for (String input : List.of("   ", " a ", " ! ", " " + "a".repeat(51) + " ")) {
                     ParseException exception = assertThrows(ParseException.class, () ->
                             logic.execute(prefix + option + " \"" + input + "\""));
@@ -168,8 +168,8 @@ class DepartmentIntegrationTest {
         logic.execute("depart --add \" abc \"");
         assertEquals(List.of(new Department("abc")), model.getAddressBook().getDepartmentList());
         assertThrows(CommandException.class, () -> logic.execute("depart --add abc"));
-        logic.execute("add --name Alice --department \" abc \"");
-        logic.execute("add --name Bob");
+        logic.execute("add --phone 95555555 --name Alice --department \" abc \"");
+        logic.execute("add --phone 95555555 --name Bob");
         logic.execute("edit 2 --department \" abc \"");
         logic.execute("delete 2");
         logic.execute("depart --edit \" abc \" \" Customer  Support \"");
@@ -184,11 +184,11 @@ class DepartmentIntegrationTest {
     void deleteDepartment_clearsHiddenAssignmentsAndPreservesUndoHistory() throws Exception {
         logic.execute("depart --add abc");
         logic.execute("depart --add Other");
-        logic.execute("add --name Alice --department abc --tag friend");
-        logic.execute("add --name Bob --department abc");
-        logic.execute("add --name Carol --department Other");
-        logic.execute("add --name Dana --department abc");
-        logic.execute("add --name Eve --department Other");
+        logic.execute("add --phone 95555555 --name Alice --department abc --tag friend");
+        logic.execute("add --phone 95555555 --name Bob --department abc");
+        logic.execute("add --phone 95555555 --name Carol --department Other");
+        logic.execute("add --phone 95555555 --name Dana --department abc");
+        logic.execute("add --phone 95555555 --name Eve --department Other");
         logic.execute("delete 5");
         logic.execute("delete 4");
         List<Person> before = List.copyOf(model.getAddressBook().getPersonList());
@@ -216,7 +216,7 @@ class DepartmentIntegrationTest {
     @Test
     void deleteDepartment_invalidRequestsPreserveDataAndUndo() throws Exception {
         logic.execute("depart --add abc");
-        logic.execute("add --name Alice --department abc");
+        logic.execute("add --phone 95555555 --name Alice --department abc");
         logic.execute("delete 1");
         AddressBook before = new AddressBook(model.getAddressBook());
         String bytes = Files.readString(storage.getAddressBookFilePath());
@@ -240,8 +240,8 @@ class DepartmentIntegrationTest {
     void undoDepartment_keepsLaterEditsAndRejectsCatalogueConflict() throws Exception {
         logic.execute("depart --add abc");
         logic.execute("depart --add Other");
-        logic.execute("add --name Alice --department abc");
-        logic.execute("add --name Bob --department abc");
+        logic.execute("add --phone 95555555 --name Alice --department abc");
+        logic.execute("add --phone 95555555 --name Bob --department abc");
         logic.execute("depart --delete abc");
         logic.execute("edit 1 --name Alicia --phone 91234567");
         logic.execute("edit 2 --department Other");
@@ -264,7 +264,7 @@ class DepartmentIntegrationTest {
     @Test
     void undoDepartment_interleavedDeletionsAndUnusedDepartment() throws Exception {
         logic.execute("depart --add abc");
-        logic.execute("add --name Alice --department abc");
+        logic.execute("add --phone 95555555 --name Alice --department abc");
         logic.execute("depart --delete abc");
         logic.execute("delete 1");
         logic.execute("undo");
@@ -282,9 +282,9 @@ class DepartmentIntegrationTest {
     @Test
     void undoDepartment_preservesUnrelatedEditsWithContactDeletionHistory() throws Exception {
         logic.execute("depart --add abc");
-        logic.execute("add --name Alice --department abc");
-        logic.execute("add --name Bob");
-        logic.execute("add --name Carol");
+        logic.execute("add --phone 95555555 --name Alice --department abc");
+        logic.execute("add --phone 95555555 --name Bob");
+        logic.execute("add --phone 95555555 --name Carol");
         logic.execute("delete 3");
         logic.execute("depart --delete abc");
         logic.execute("edit 2 --phone 91234567");

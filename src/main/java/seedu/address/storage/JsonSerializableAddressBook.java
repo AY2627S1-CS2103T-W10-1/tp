@@ -15,6 +15,7 @@ import seedu.address.model.AddressBook;
 import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.person.Department;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.exceptions.DuplicatePersonException;
 
 /**
  * An Immutable AddressBook that is serializable to JSON format.
@@ -73,16 +74,20 @@ class JsonSerializableAddressBook {
                 }
             }
         }
+        List<Person> restoredPersons = new ArrayList<>();
         for (JsonAdaptedPerson jsonAdaptedPerson : persons) {
             Person person = jsonAdaptedPerson.toModelType();
-            if (addressBook.hasPerson(person)) {
-                throw new IllegalValueException(MESSAGE_DUPLICATE_PERSON);
-            }
             if (departments != null && person.getDepartment().isPresent()
                     && !addressBook.getDepartmentList().contains(person.getDepartment().get())) {
                 throw new IllegalValueException("Contact department is absent from the catalogue.");
             }
-            addressBook.addPerson(person);
+            restoredPersons.add(person);
+        }
+        try {
+            // Loading is restoration, not a new add: keep every contact accepted by the old identity rule.
+            addressBook.setPersons(restoredPersons);
+        } catch (DuplicatePersonException e) {
+            throw new IllegalValueException(MESSAGE_DUPLICATE_PERSON);
         }
         return addressBook;
     }

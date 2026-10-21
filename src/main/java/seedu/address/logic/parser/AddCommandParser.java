@@ -20,7 +20,7 @@ import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
 import seedu.address.model.tag.Tag;
 
-/** Parses an add command with required name and optional contact information. */
+/** Parses an add command with a required name and at least one phone number or email address. */
 public class AddCommandParser implements Parser<AddCommand> {
 
     @Override
@@ -57,6 +57,10 @@ public class AddCommandParser implements Parser<AddCommand> {
             department = ParserUtil.parseDepartment(arguments.getValue(PREFIX_DEPARTMENT).orElseThrow());
         }
         Set<Tag> tags = ParserUtil.parseTags(arguments.getAllValues(PREFIX_TAG));
-        return new AddCommand(new Person(name, phone, email, address, tags, department));
+        Person person = new Person(name, phone, email, address, tags, department);
+        if (!person.hasContactInformation()) {
+            throw new ParseException(Person.MESSAGE_CONTACT_INFORMATION_REQUIRED);
+        }
+        return new AddCommand(person);
     }
 }
