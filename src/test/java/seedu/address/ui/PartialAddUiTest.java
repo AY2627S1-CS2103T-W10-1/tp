@@ -35,7 +35,7 @@ public class PartialAddUiTest {
     }
 
     @Test
-    public void enterAdd_nameOnlyAndSameName_thenCompleteAndPersist() throws Exception {
+    public void enterAdd_requiresContactInformation_thenCompletesAndPersists() throws Exception {
         FxTestUtil.run(() -> {
             ModelManager model = new ModelManager();
             Path dataPath = folder.resolve("contacts.json");
@@ -49,20 +49,26 @@ public class PartialAddUiTest {
             TextArea result = (TextArea) stage.getScene().lookup("#resultDisplay");
 
             enter(input, "add --name \"Alice Tan\"");
+            assertTrue(input.getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS));
+            assertTrue(model.getFilteredPersonList().isEmpty());
+            assertTrue(result.getText().contains(Person.MESSAGE_CONTACT_INFORMATION_REQUIRED));
+
+            enter(input, "add --name \"Alice Tan\" --email firstalice@example.com");
             assertEquals("", input.getText());
             assertEquals(1, model.getFilteredPersonList().size());
             assertTrue(result.getText().contains("Contact added successfully: Alice Tan | Phone: Not provided"));
             PersonCard card = new PersonCard(model.getFilteredPersonList().getFirst(), 1);
-            for (String field : new String[]{"phone", "email", "address"}) {
+            for (String field : new String[]{"phone", "address"}) {
                 assertEquals("Not provided", ((Label) card.getRoot().lookup("#" + field)).getText());
             }
+            assertEquals("firstalice@example.com", ((Label) card.getRoot().lookup("#email")).getText());
             assertEquals("Department: Not provided", ((Label) card.getRoot().lookup("#department")).getText());
             FlowPane tags = (FlowPane) card.getRoot().lookup("#tags");
             assertEquals("None", ((Label) tags.getChildren().getFirst()).getText());
 
-            enter(input, "add --name \"Alice Tan\" --email alice@example.com");
+            enter(input, "add --name \"Alice Tan\" --email secondalice@example.com");
             assertEquals(2, model.getFilteredPersonList().size());
-            enter(input, "add --name \"Alice Tan\"");
+            enter(input, "add --name \"Alice Tan\" --phone 87654321 --email firstalice@example.com");
             assertTrue(input.getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS));
             assertEquals(2, model.getFilteredPersonList().size());
 

@@ -14,6 +14,7 @@ import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.commons.util.JsonUtil;
 import seedu.address.model.AddressBook;
 import seedu.address.model.person.Department;
+import seedu.address.model.person.Person;
 import seedu.address.testutil.PersonBuilder;
 import seedu.address.testutil.TypicalPersons;
 
@@ -102,6 +103,17 @@ public class JsonSerializableAddressBookTest {
         AddressBook imported = JsonUtil.fromJsonString(legacy, JsonSerializableAddressBook.class).toModelType();
         assertEquals(List.of(new Department("abc")), imported.getDepartmentList());
         assertEquals("abc", imported.getPersonList().getFirst().getDepartment().orElseThrow().value);
+    }
+
+    @Test
+    public void toModelType_sameNameAndEitherMatchingContactField_preservesLegacyContacts() throws Exception {
+        Person first = new PersonBuilder().build();
+        for (Person second : List.of(new PersonBuilder(first).withPhone("91234567").build(),
+                new PersonBuilder(first).withEmail("other@example.com").build())) {
+            JsonSerializableAddressBook data = new JsonSerializableAddressBook(
+                    List.of(new JsonAdaptedPerson(first), new JsonAdaptedPerson(second)), null);
+            assertEquals(List.of(first, second), data.toModelType().getPersonList());
+        }
     }
 
 }

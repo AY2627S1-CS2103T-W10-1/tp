@@ -17,6 +17,9 @@ import seedu.address.model.tag.Tag;
  */
 public class Person {
 
+    public static final String MESSAGE_CONTACT_INFORMATION_REQUIRED =
+            "A phone number or email address must be provided.";
+
     // Identity fields
     private final Name name;
     private final Phone phone;
@@ -88,8 +91,8 @@ public class Person {
     }
 
     /**
-     * Returns true if both persons have the same name, phone and email.
-     * This defines a weaker notion of equality between two persons.
+     * Returns true if both persons have the same name and share a provided phone number or email address.
+     * Missing fields do not match. This duplicate check is symmetric but is not transitive.
      */
     public boolean isSamePerson(Person otherPerson) {
         if (otherPerson == this) {
@@ -98,8 +101,13 @@ public class Person {
 
         return otherPerson != null
                 && otherPerson.getName().equals(getName())
-                && otherPerson.getPhone().equals(getPhone())
-                && otherPerson.getEmail().equals(getEmail());
+                && ((phone.isProvided() && phone.equals(otherPerson.getPhone()))
+                    || (email.isProvided() && email.equals(otherPerson.getEmail())));
+    }
+
+    /** Returns whether this contact has at least one means of contact. */
+    public boolean hasContactInformation() {
+        return phone.isProvided() || email.isProvided();
     }
 
     /**

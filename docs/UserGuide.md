@@ -113,11 +113,13 @@ and restore it if minimized. Help preserves contacts, the active filter, display
 
 ### Adding a contact with partial information: `add`
 
-Adds a contact even if you only know their name. You can fill in other details later.
+Adds a contact with a name and at least one phone number or email address. You can fill in other details later.
 
 Format: `add --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMENT] [--address ADDRESS] [--tag TAG ...]`
 
-* Only `--name` is required. Names must be nonblank and contain letters, numbers or spaces.
+* `--name` and at least one of `--phone` or `--email` are required. Names must be nonblank and contain
+  letters, numbers or spaces. A name alone, even with an address, department or tags, is rejected with
+  `A phone number or email address must be provided.`
 * Options can appear in any order. Quotes around multiword values are optional:
   `--name "Alice Tan"` and `--name Alice Tan` are the same.
 * Phone numbers must contain 7–15 digits, with no spaces or `+` sign.
@@ -130,9 +132,13 @@ Format: `add --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMEN
 * Omit an unknown field entirely. An option with an empty value is rejected.
 * Unknown options, unmatched quotes and repeated options other than `--tag` are rejected.
 * Omitted phone, email, address and department show `Not provided`; omitted tags show `None`.
-* Contacts with the same name are allowed when their phone or email differs. The same name, phone **and**
-  email is a duplicate, including when those optional fields are absent. Different departments or tags alone
-  do not distinguish duplicate contacts.
+* Contacts with the same name are duplicates if either their provided phone numbers **or** email addresses
+  match. Missing fields do not count as matches. Same-name contacts can coexist only when neither provided
+  contact field matches; a different address, department or tag does not distinguish duplicates.
+* Contacts saved under the previous rule remain in their original order, even if the same name and phone
+  or email now conflict. Loading, saving and restarting do not merge or remove these records. New additions,
+  edits and contact restoration with `undo` still use the stricter rule. To edit a conflicting old contact,
+  change its name or contact details so the result does not conflict with any other contact.
 
 Short flags also work, and can be mixed with long ones:
 `add -n NAME [-p PHONE] [-e EMAIL] [-d DEPARTMENT] [-a ADDRESS] [-t TAG ...]`.
@@ -141,8 +147,8 @@ Examples:
 
 * `add --name "Alice Tan" --email alice@example.com`
 * `add --name "Bob Lee" --phone 91234567`
-* `depart --add Engineering`, then `add --name "Chen Wei" --department Engineering --tag intern new-client`
-* `add --name "Dana Lim"`
+* `depart --add Engineering`, then `add --name "Chen Wei" --phone 91234567 --department Engineering --tag intern new-client`
+* `add --name "Dana Lim" --email dana@example.com`
 * `add -n Betsy Crowe -t friend -e betsycrowe@example.com -a Newgate Prison -p 1234567 -t criminal`
 
 To complete a contact, find their name and use the displayed row number with the existing commands,
@@ -403,8 +409,12 @@ Format: `undo`
 * Both deletion types share one history. Repeated calls undo deletions in reverse chronological order.
   `add`, `edit`, `depart --add`, `depart --edit`, and `clear` cannot be undone.
 * History is remembered only until you close the app. Successful undo is saved and shows all contacts in stored order.
-* Undoing a contact deletion appends the restored contact to the list. A duplicate name, phone and email prevents
-  restoration; the history entry is kept so you can resolve the conflict and retry.
+* Undoing a contact deletion appends the restored contact to the list. A same-name contact sharing a provided phone number
+  or email prevents restoration. Missing fields do not match. The history entry is kept so you can resolve
+  every matching contact field or change the existing contact's name and retry.
+* A restored contact must have a phone number or email address. If a deleted legacy contact has neither,
+  `undo` reports `A phone number or email address must be provided.` and leaves data and history unchanged.
+  You can recreate that contact using `add` with the required contact information.
 * Undoing a department deletion restores the catalogue entry and the original assignments on existing contacts
   and contacts in deletion history. It preserves later edits to other fields and does not overwrite a department
   assigned after the deletion. Contacts removed by `clear` are not recreated.

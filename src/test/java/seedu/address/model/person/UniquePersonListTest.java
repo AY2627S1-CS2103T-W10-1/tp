@@ -108,6 +108,15 @@ public class UniquePersonListTest {
     }
 
     @Test
+    public void setPerson_retainsOwnPhoneButMatchesAnotherEmail_rejectsWithoutChangingList() {
+        Person otherAlice = new PersonBuilder(ALICE).withPhone("91234567").withEmail("other@example.com").build();
+        uniquePersonList.setPersons(List.of(ALICE, otherAlice));
+        Person edited = new PersonBuilder(ALICE).withEmail("other@example.com").build();
+        assertThrows(DuplicatePersonException.class, () -> uniquePersonList.setPerson(ALICE, edited));
+        assertEquals(List.of(ALICE, otherAlice), uniquePersonList.asUnmodifiableObservableList());
+    }
+
+    @Test
     public void remove_nullPerson_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> uniquePersonList.remove(null));
     }

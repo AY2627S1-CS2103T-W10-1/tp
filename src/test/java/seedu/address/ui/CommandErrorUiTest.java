@@ -28,6 +28,7 @@ import seedu.address.logic.LogicManager;
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.parser.ParserUtil;
 import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.person.Person;
@@ -37,7 +38,7 @@ import seedu.address.storage.StorageManager;
 import seedu.address.testutil.PersonBuilder;
 
 public class CommandErrorUiTest {
-    private static final String ADD_EXAMPLES = "\n\nExamples:\n  add --name \"Alice Tan\"\n"
+    private static final String ADD_EXAMPLES = "\n\nExamples:\n  add --name \"Alice Tan\" --phone 91234567\n"
             + "  add -n \"Alice Tan\" -e alice@example.com -d Engineering -t client important";
     private static final String DELETE_EXAMPLES = "\n\nExamples:\n  delete 2";
 
@@ -57,7 +58,8 @@ public class CommandErrorUiTest {
             TextArea feedback = feedback(stage);
             TextField input = input(stage);
             assertError(stage, "add --phone 91234567", AddCommand.MESSAGE_NAME_REQUIRED + ADD_EXAMPLES);
-            assertError(stage, "add --name Alice --phone 12", AddCommand.MESSAGE_INVALID_PHONE + ADD_EXAMPLES);
+            assertError(stage, "add --name Alice --phone 12", ParserUtil.MESSAGE_INVALID_PHONE + ADD_EXAMPLES);
+            assertError(stage, "add --name Alice", Person.MESSAGE_CONTACT_INFORMATION_REQUIRED + ADD_EXAMPLES);
             assertError(stage, "nonsense", MESSAGE_UNKNOWN_COMMAND + "\n\nExamples:\n  help");
             assertError(stage, "LS extra", ListCommand.MESSAGE_USAGE + "\n\nExamples:\n  list\n  ls");
             assertError(stage, "delete -1", String.format(MESSAGE_INVALID_COMMAND_FORMAT, DeleteCommand.MESSAGE_USAGE));
@@ -99,10 +101,10 @@ public class CommandErrorUiTest {
         FxTestUtil.run(() -> {
             ModelManager model = new ModelManager();
             Stage stage = showWindow(model, jsonStorage());
-            enter(input(stage), "add --name Alice");
+            enter(input(stage), "add --name Alice --phone 91234567");
             Path dataPath = testFolder.resolve("contacts.json");
             String saved = assertDoesNotThrow(() -> Files.readString(dataPath));
-            assertError(stage, "add --name Alice", AddCommand.MESSAGE_DUPLICATE_PERSON + ADD_EXAMPLES);
+            assertError(stage, "add --name Alice --phone 91234567", AddCommand.MESSAGE_DUPLICATE_PERSON + ADD_EXAMPLES);
             assertEquals(1, model.getAddressBook().getPersonList().size());
             assertEquals(saved, assertDoesNotThrow(() -> Files.readString(dataPath)));
         });
