@@ -73,4 +73,9 @@ public class ClearCommand extends Command {
         return other == this
                 || (other instanceof ClearCommand otherCommand && isConfirmed == otherCommand.isConfirmed);
     }
+
+    @Override
+    public int hashCode() {
+        return Boolean.hashCode(isConfirmed);
+    }
 }

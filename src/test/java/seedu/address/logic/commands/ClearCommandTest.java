@@ -9,7 +9,9 @@ import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
@@ -89,6 +91,20 @@ public class ClearCommandTest {
     public void requiresStorageSave_onlyConfirmedCommandSaves() {
         assertFalse(new ClearCommand().requiresStorageSave());
         assertTrue(new ClearCommand(true).requiresStorageSave());
+    }
+
+    @Test
+    public void hashCode_equalCommands_workInHashSet() {
+        Set<ClearCommand> commands = new HashSet<>();
+        commands.add(new ClearCommand());
+        commands.add(new ClearCommand(true));
+
+        assertTrue(commands.contains(new ClearCommand(false)));
+        assertTrue(commands.contains(new ClearCommand(true)));
+
+        commands.add(new ClearCommand(false));
+        commands.add(new ClearCommand(true));
+        assertEquals(2, commands.size());
     }
 
     @Test

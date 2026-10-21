@@ -113,7 +113,7 @@ class DepartmentIntegrationTest {
         assertEquals("Sales", model.getFilteredPersonList().getFirst().getDepartment().orElseThrow().value);
         assertFalse(model.hasDepartment(new Department("Engineering")));
         assertEquals(model.getAddressBook(), storage.readAddressBook().orElseThrow());
-        logic.execute("clear");
+        logic.execute("clear --confirm");
         assertTrue(model.getAddressBook().getDepartmentList().isEmpty());
         assertEquals(model.getAddressBook(), storage.readAddressBook().orElseThrow());
     }
