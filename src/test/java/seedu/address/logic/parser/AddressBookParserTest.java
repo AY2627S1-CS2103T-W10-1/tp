@@ -75,7 +75,7 @@ public class AddressBookParserTest {
 
     @Test
     public void parseCommand_depart() throws Exception {
-        assertTrue(parser.parseCommand("depart 1 --set Engineering") instanceof DepartCommand);
+        assertTrue(parser.parseCommand("depart --add Engineering") instanceof DepartCommand);
     }
 
     @Test

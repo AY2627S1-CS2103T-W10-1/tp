@@ -120,13 +120,14 @@ public class SortLogicIntegrationTest {
     }
 
     @Test
-    public void execute_sortThenDepartAndView_resolvesSortedIndices() throws Exception {
+    public void execute_sortThenEditDepartmentAndView_resolvesSortedIndices() throws Exception {
         model.addPerson(new PersonBuilder(alex).withDepartment("Marketing").build());
         model.addPerson(new PersonBuilder(beatrice).withDepartment("Engineering").build());
         Logic logic = createLogic(false);
         logic.execute("sort -b dept");
         assertEquals("Showing details of contact 1: Beatrice", logic.execute("view 1").getFeedbackToUser());
-        logic.execute("depart 1 --set Support");
+        logic.execute("depart --add Support");
+        logic.execute("edit 1 --department Support");
         Person updated = new PersonBuilder(beatrice).withDepartment("Support").build();
         assertEquals(updated, model.getAddressBook().getPersonList().get(1));
         assertEquals("Marketing", model.getAddressBook().getPersonList().get(0).getDepartment().orElseThrow().value);
