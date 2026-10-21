@@ -46,7 +46,7 @@ public class EditCommand extends Command {
             "",
             "Options:",
             "  -n, --name     Replacement name.",
-            "  -p, --phone    Replacement phone number.",
+            "  -p, --phone    Replacement phone number (7-15 digits).",
             "  -e, --email    Replacement email address.",
             "  -a, --address  Replacement postal address.",
             "  -d, --department  Replacement department; must already be registered.",

@@ -169,7 +169,7 @@ public class LegacyContactCompatibilityTest {
 
     private StorageManager storageWithLegacyContacts(boolean includeCatalogue) throws Exception {
         Path path = folder.resolve("contacts.json");
-        String json = Files.readString(FIXTURE);
+        String json = Files.readString(FIXTURE).replace("\r\n", "\n");
         if (!includeCatalogue) {
             json = json.replace("  \"departments\": [\"Engineering\", \"Sales\", \"Unused\"],\n", "");
         }

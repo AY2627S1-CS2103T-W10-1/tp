@@ -76,7 +76,7 @@ public class PartialAddCommandParserTest {
                     new AddCommand(partial("Alice", new Phone(phone), Email.notProvided())));
         }
         for (String phone : new String[]{"", "123456", "1234567890123456", "+6591234567", "123abc4", "１２３４５６７"}) {
-            assertParseFailure(parser, " --name Alice --phone " + phone, AddCommand.MESSAGE_INVALID_PHONE);
+            assertParseFailure(parser, " --name Alice --phone " + phone, ParserUtil.MESSAGE_INVALID_PHONE);
         }
     }
 
@@ -91,7 +91,7 @@ public class PartialAddCommandParserTest {
         assertParseFailure(parser, " --name Alice --tag", Tag.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, " --name Alice --tag \"two words\"", Tag.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, " --name Alice --tag comma,tag", Tag.MESSAGE_CONSTRAINTS);
-        assertParseFailure(parser, " --name Alice --tag " + "A".repeat(31), AddCommand.MESSAGE_INVALID_TAG);
+        assertParseFailure(parser, " --name Alice --tag " + "A".repeat(31), ParserUtil.MESSAGE_INVALID_TAG);
     }
 
     @Test
