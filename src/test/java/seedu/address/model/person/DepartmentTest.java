@@ -9,6 +9,15 @@ import org.junit.jupiter.api.Test;
 
 class DepartmentTest {
     @Test
+    void normalization_validatesTrimmedLengthAndPreservesInternalSpaces() {
+        assertEquals("Customer  Support", new Department(" Customer  Support ").value);
+        assertEquals(new Department("abc"), new Department(" abc "));
+        assertFalse(Department.isValidDepartment(" a "));
+        assertTrue(Department.isValidDepartment(" " + "a".repeat(50) + " "));
+        assertFalse(Department.isValidDepartment(" " + "a".repeat(51) + " "));
+    }
+
+    @Test
     void constructor_invalidDepartment_throwsIllegalArgumentException() {
         assertThrows(NullPointerException.class, () -> new Department(null));
         assertThrows(IllegalArgumentException.class, () -> new Department("!"));

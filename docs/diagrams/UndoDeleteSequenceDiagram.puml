@@ -1,0 +1,90 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as LogicManager LOGIC_COLOR
+participant ":AddressBookParser" as AddressBookParser LOGIC_COLOR
+participant ":UndoCommandParser" as UndoCommandParser LOGIC_COLOR
+participant "u:UndoCommand" as UndoCommand LOGIC_COLOR
+participant "r:CommandResult" as CommandResult LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant "m:Model" as Model MODEL_COLOR
+end box
+
+[-> LogicManager : execute("undo")
+activate LogicManager
+
+LogicManager -> AddressBookParser : parseCommand("undo")
+activate AddressBookParser
+
+create UndoCommandParser
+AddressBookParser -> UndoCommandParser
+activate UndoCommandParser
+
+UndoCommandParser --> AddressBookParser
+deactivate UndoCommandParser
+
+AddressBookParser -> UndoCommandParser : parse("")
+activate UndoCommandParser
+
+create UndoCommand
+UndoCommandParser -> UndoCommand
+activate UndoCommand
+
+UndoCommand --> UndoCommandParser :
+deactivate UndoCommand
+
+UndoCommandParser --> AddressBookParser : u
+deactivate UndoCommandParser
+'Hidden arrow to position the destroy marker below the end of the activation bar.
+UndoCommandParser -[hidden]-> AddressBookParser
+destroy UndoCommandParser
+
+AddressBookParser --> LogicManager : u
+deactivate AddressBookParser
+
+LogicManager -> UndoCommand : execute(m)
+activate UndoCommand
+
+UndoCommand -> Model : hasDeletedPerson()
+activate Model
+
+Model --> UndoCommand : true
+deactivate Model
+
+UndoCommand -> Model : getLastDeletedPerson()
+activate Model
+
+Model --> UndoCommand : p
+deactivate Model
+
+UndoCommand -> Model : hasPerson(p)
+activate Model
+
+Model --> UndoCommand : false
+deactivate Model
+
+UndoCommand -> Model : restoreLastDeletedPerson()
+activate Model
+
+Model -> Model : addPerson(p)
+
+Model --> UndoCommand
+deactivate Model
+
+create CommandResult
+UndoCommand -> CommandResult
+activate CommandResult
+
+CommandResult --> UndoCommand
+deactivate CommandResult
+
+UndoCommand --> LogicManager : r
+deactivate UndoCommand
+
+[<--LogicManager
+deactivate LogicManager
+@enduml
