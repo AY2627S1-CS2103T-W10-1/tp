@@ -1,0 +1,63 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+title Viewing contact details: successful execution
+
+participant ":MainWindow" as MainWindow UI_COLOR
+participant ":LogicManager" as LogicManager LOGIC_COLOR
+participant ":ViewCommand" as ViewCommand LOGIC_COLOR
+participant ":Model" as Model MODEL_COLOR
+participant ":Storage" as Storage STORAGE_COLOR
+participant ":ContactDetailsWindow" as DetailsWindow UI_COLOR
+
+MainWindow -> LogicManager : execute("view 1")
+activate LogicManager
+ref over LogicManager, ViewCommand
+AddressBookParser and ViewCommandParser
+parse the displayed index and create ViewCommand.
+end ref
+
+LogicManager -> ViewCommand : execute(model)
+activate ViewCommand
+ViewCommand -> Model : getFilteredPersonList()
+activate Model
+Model --> ViewCommand : displayedPersons
+deactivate Model
+note over ViewCommand, Model
+Assume a nonempty displayed list and a valid index.
+Filtering and sorting determine the selected contact.
+end note
+ViewCommand -> ViewCommand : formatDetails(displayedPersons.get(0))
+activate ViewCommand
+ViewCommand --> ViewCommand : details
+deactivate ViewCommand
+ViewCommand --> LogicManager : result: CommandResult(feedback, details)
+deactivate ViewCommand
+
+LogicManager -> ViewCommand : requiresStorageSave()
+activate ViewCommand
+ViewCommand --> LogicManager : true
+deactivate ViewCommand
+LogicManager -> Model : getAddressBook()
+activate Model
+Model --> LogicManager : addressBook
+deactivate Model
+LogicManager -> Storage : saveAddressBook(addressBook)
+activate Storage
+Storage --> LogicManager : saved successfully
+deactivate Storage
+LogicManager --> MainWindow : result
+deactivate LogicManager
+
+note over MainWindow
+Show the short feedback in ResultDisplay.
+end note
+MainWindow -> DetailsWindow : showDetails(details)
+activate DetailsWindow
+note over DetailsWindow
+Reuse the same window and show a snapshot.
+Later model changes do not update this snapshot.
+end note
+DetailsWindow --> MainWindow
+deactivate DetailsWindow
+@enduml

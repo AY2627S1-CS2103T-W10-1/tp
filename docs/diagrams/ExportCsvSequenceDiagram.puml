@@ -1,0 +1,68 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+title Exporting all contacts to CSV: successful execution
+
+participant ":LogicManager" as LogicManager LOGIC_COLOR
+participant ":ExportCommand" as ExportCommand LOGIC_COLOR
+participant ":Model" as Model MODEL_COLOR
+participant ":ReadOnlyAddressBook" as AddressBook MODEL_COLOR
+participant ":CsvContactExporter" as Exporter STORAGE_COLOR
+
+[-> LogicManager : execute("export --csv")
+activate LogicManager
+ref over LogicManager, ExportCommand
+AddressBookParser and ExportCommandParser
+create ExportCommand("contacts.csv").
+end ref
+
+LogicManager -> ExportCommand : execute(model)
+activate ExportCommand
+ExportCommand -> Model : getAddressBook()
+activate Model
+Model --> ExportCommand : addressBook
+deactivate Model
+ExportCommand -> AddressBook : getPersonList()
+activate AddressBook
+AddressBook --> ExportCommand : all stored contacts
+deactivate AddressBook
+note over ExportCommand, AddressBook
+Take a List.copyOf snapshot, independent of the filter.
+Assume contacts are nonempty and the file can be created.
+end note
+
+ExportCommand -> Exporter : export(contacts, "contacts.csv")
+activate Exporter
+note over Exporter
+Reject an existing destination.
+Create a temporary file in the output directory.
+end note
+Exporter -> Exporter : writeContacts(writer, contacts)
+activate Exporter
+note over Exporter
+Write UTF-8 header and escaped rows.
+Missing details become empty cells.
+end note
+Exporter --> Exporter
+deactivate Exporter
+note over Exporter
+Close the writer and move the temporary file
+without replacing an existing destination.
+Clean up the temporary file in finally.
+end note
+Exporter --> ExportCommand : export completed
+deactivate Exporter
+ExportCommand --> LogicManager : result: CommandResult(count and filename)
+deactivate ExportCommand
+
+LogicManager -> ExportCommand : requiresStorageSave()
+activate ExportCommand
+ExportCommand --> LogicManager : false
+deactivate ExportCommand
+note over LogicManager
+Return immediately: no JSON storage save.
+The model and displayed filter are unchanged.
+end note
+[<-- LogicManager : result
+deactivate LogicManager
+@enduml
