@@ -107,7 +107,7 @@ public class HelpContentViewTest {
             try {
                 Button copyUsage = (Button) view.lookup(".help-usage").lookup(".help-copy");
                 copyUsage.fire();
-                assertEquals("help [COMMAND]\n       ? [COMMAND]", clipboard.getString());
+                assertEquals("help [COMMAND]", clipboard.getString());
                 Button copyExample = (Button) view.lookup(".help-example").lookup(".help-copy");
                 copyExample.fire();
                 assertEquals("help", clipboard.getString());

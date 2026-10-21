@@ -17,7 +17,6 @@ public class ListCommand extends Command {
     public static final HelpPage HELP_PAGE = new HelpPage(COMMAND_WORD, String.join("\n",
             "Shows all contacts and removes the active filter and display sorting.",
             "Usage: list",
-            "       ls",
             "",
             "Aliases: ls",
             "Accepts no parameters. Contacts return to stored order.",
