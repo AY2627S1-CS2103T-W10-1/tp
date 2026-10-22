@@ -18,7 +18,6 @@ public class HelpCommand extends Command {
     public static final HelpPage HELP_PAGE = new HelpPage(COMMAND_WORD, String.join("\n",
             "Shows the command overview or detailed help for one command.",
             "Usage: help [COMMAND]",
-            "       ? [COMMAND]",
             "",
             "Aliases: ?",
             "Command names are case-insensitive; ls and ? also work as help topics.",

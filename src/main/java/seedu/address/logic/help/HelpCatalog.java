@@ -4,7 +4,6 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -26,21 +25,43 @@ import seedu.address.logic.commands.ViewCommand;
  * Ordered collection of command manuals with case-insensitive name and alias lookup.
  */
 public final class HelpCatalog {
-    private static final List<HelpPage> pages = List.of(AddCommand.HELP_PAGE, EditCommand.HELP_PAGE,
-            DepartCommand.HELP_PAGE, FindCommand.HELP_PAGE, ViewCommand.HELP_PAGE, ListCommand.HELP_PAGE,
-            SortCommand.HELP_PAGE, DeleteCommand.HELP_PAGE, UndoCommand.HELP_PAGE, ExportCommand.HELP_PAGE,
-            ClearCommand.HELP_PAGE, HelpCommand.HELP_PAGE, ExitCommand.HELP_PAGE);
-    private static final Map<String, String> aliases = Map.of(
-            ListCommand.COMMAND_ALIAS, ListCommand.COMMAND_WORD,
-            HelpCommand.COMMAND_ALIAS, HelpCommand.COMMAND_WORD);
+    private static final List<HelpEntry> entries = List.of(
+            entry(AddCommand.HELP_PAGE, "Add a contact."),
+            entry(EditCommand.HELP_PAGE, "Edit contact details."),
+            entry(DepartCommand.HELP_PAGE, "Set a department."),
+            entry(FindCommand.HELP_PAGE, "Search names or tags."),
+            entry(ViewCommand.HELP_PAGE, "View full contact details."),
+            entry(ListCommand.HELP_PAGE, "List all contacts.", ListCommand.COMMAND_ALIAS),
+            entry(SortCommand.HELP_PAGE, "Sort displayed contacts."),
+            entry(DeleteCommand.HELP_PAGE, "Delete a contact."),
+            entry(UndoCommand.HELP_PAGE, "Restore the latest deletion."),
+            entry(ExportCommand.HELP_PAGE, "Export contacts to CSV."),
+            entry(ClearCommand.HELP_PAGE, "Delete all contacts."),
+            entry(HelpCommand.HELP_PAGE, "Show command help.", HelpCommand.COMMAND_ALIAS),
+            entry(ExitCommand.HELP_PAGE, "Close the application."));
+    private static final List<HelpPage> pages = entries.stream().map(HelpEntry::page).toList();
+    private static final String OVERVIEW_GUIDANCE = "Use help COMMAND or ? COMMAND for usage, options and examples."
+            + "\nINDEX and CONTACT_ID are one-based positions in the displayed list."
+            + "\nCommand names are case-insensitive.";
     private static final HelpPage overview = new HelpPage("Available commands",
-            pages.stream().map(page -> displayName(page) + " — " + page.text().lines().findFirst().orElseThrow())
-                    .collect(Collectors.joining("\n"))
-                    + "\n\nUse help COMMAND or ? COMMAND for usage, options and examples."
-                    + "\nINDEX and CONTACT_ID refer to one-based positions in the displayed list."
-                    + "\nCommand names are case-insensitive. Press q to close this window.");
+            entries.stream().map(entry -> entry.displayName() + " — " + entry.summary())
+                    .collect(Collectors.joining("\n")) + "\n\n" + OVERVIEW_GUIDANCE);
 
     private HelpCatalog() {
+    }
+
+    /**
+     * Returns immutable overview entries in command display order.
+     */
+    public static List<HelpEntry> getEntries() {
+        return entries;
+    }
+
+    /**
+     * Returns the guidance displayed beneath the command overview.
+     */
+    public static String getOverviewGuidance() {
+        return OVERVIEW_GUIDANCE;
     }
 
     /**
@@ -66,15 +87,11 @@ public final class HelpCatalog {
      */
     public static Optional<HelpPage> findPage(String commandName) {
         String name = requireNonNull(commandName).trim().toLowerCase(Locale.ROOT);
-        String canonicalName = aliases.getOrDefault(name, name);
-        return pages.stream().filter(page -> page.title().equals(canonicalName)).findFirst();
+        return entries.stream().filter(entry -> entry.page().title().equals(name) || entry.aliases().contains(name))
+                .map(HelpEntry::page).findFirst();
     }
 
-    private static String displayName(HelpPage page) {
-        return switch (page.title()) {
-            case ListCommand.COMMAND_WORD -> page.title() + " | " + ListCommand.COMMAND_ALIAS;
-            case HelpCommand.COMMAND_WORD -> page.title() + " | " + HelpCommand.COMMAND_ALIAS;
-            default -> page.title();
-        };
+    private static HelpEntry entry(HelpPage page, String summary, String... aliases) {
+        return new HelpEntry(page, summary, List.of(aliases));
     }
 }

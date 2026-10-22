@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -48,6 +49,32 @@ public class HelpCatalogTest {
     @Test
     public void findPage_nullName_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> HelpCatalog.findPage(null));
+    }
+
+    @Test
+    public void entries_haveShortSummariesAndResolveEveryAlias() {
+        assertEquals(HelpCatalog.getPages(), HelpCatalog.getEntries().stream().map(HelpEntry::page).toList());
+        assertThrows(UnsupportedOperationException.class, () -> HelpCatalog.getEntries().clear());
+        for (HelpEntry entry : HelpCatalog.getEntries()) {
+            assertTrue(entry.summary().length() <= 35);
+            assertTrue(HelpCatalog.getOverview().text().contains(entry.displayName() + " — " + entry.summary()));
+            for (String alias : entry.aliases()) {
+                assertEquals(entry.page(), HelpCatalog.findPage(alias).orElseThrow());
+            }
+        }
+    }
+
+    @Test
+    public void entry_copiesAliasesAndRejectsNullFields() {
+        HelpPage page = new HelpPage("list", "Manual");
+        List<String> aliases = new ArrayList<>(List.of("ls"));
+        HelpEntry entry = new HelpEntry(page, "List contacts.", aliases);
+        aliases.clear();
+        assertEquals(List.of("ls"), entry.aliases());
+        assertThrows(UnsupportedOperationException.class, () -> entry.aliases().clear());
+        assertThrows(NullPointerException.class, () -> new HelpEntry(null, "Summary", List.of()));
+        assertThrows(NullPointerException.class, () -> new HelpEntry(page, null, List.of()));
+        assertThrows(NullPointerException.class, () -> new HelpEntry(page, "Summary", null));
     }
 
 }

@@ -4,7 +4,8 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.Scene?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.ScrollPane?>
+<?import seedu.address.ui.HelpContentView?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.stage.Stage?>
@@ -23,7 +24,12 @@
         <children>
           <Label fx:id="helpHeading" text="Available commands" />
           <Label fx:id="helpCloseHint" text="Press q while this window is active to close it." wrapText="true" />
-          <TextArea fx:id="helpText" editable="false" wrapText="true" VBox.vgrow="ALWAYS" />
+          <ScrollPane fx:id="helpScroll" fitToWidth="true" focusTraversable="true"
+                      hbarPolicy="NEVER" VBox.vgrow="ALWAYS">
+            <content>
+              <HelpContentView fx:id="helpContent" />
+            </content>
+          </ScrollPane>
         </children>
         <padding>
           <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />

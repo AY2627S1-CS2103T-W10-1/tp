@@ -20,6 +20,7 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuBar;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
@@ -65,13 +66,14 @@ public class HelpCommandUiTest {
 
             enter(input, "help depart");
             Stage help = helpStage();
-            TextArea text = (TextArea) help.getScene().lookup("#helpText");
+            ScrollPane scroll = (ScrollPane) help.getScene().lookup("#helpScroll");
+            HelpContentView content = (HelpContentView) scroll.getContent();
             Label heading = (Label) help.getScene().lookup("#helpHeading");
             assertEquals(HelpCommand.SHOWING_HELP_MESSAGE, feedback.getText());
-            assertEquals(DepartCommand.HELP_PAGE.text(), text.getText());
+            assertEquals(DepartCommand.HELP_PAGE.text(), content.getAccessibleText());
             assertEquals("depart", heading.getText());
-            assertFalse(text.isEditable());
-            assertTrue(text.isWrapText());
+            assertTrue(scroll.isFitToWidth());
+            assertTrue(content.lookup(".help-usage") != null);
 
             stage.toFront();
             stage.requestFocus();
@@ -80,23 +82,23 @@ public class HelpCommandUiTest {
             assertTrue(stage.isFocused());
 
             enter(input, "? sort");
-            awaitFocus(() -> help.isFocused() && text.isFocused());
+            awaitFocus(() -> help.isFocused() && scroll.isFocused());
             assertTrue(help.isFocused());
-            assertTrue(text.isFocused());
+            assertTrue(scroll.isFocused());
             assertEquals(help, helpStage());
-            assertEquals(SortCommand.HELP_PAGE.text(), text.getText());
+            assertEquals(SortCommand.HELP_PAGE.text(), content.getAccessibleText());
             enter(input, "help missing");
             assertTrue(input.getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS));
             assertTrue(feedback.getText().contains("Unknown help command: missing"));
-            assertEquals(SortCommand.HELP_PAGE.text(), text.getText());
+            assertEquals(SortCommand.HELP_PAGE.text(), content.getAccessibleText());
 
             MenuBar menu = (MenuBar) stage.getScene().lookup("#menuBar");
             menu.getMenus().get(1).getItems().getFirst().fire();
-            assertEquals(HelpCatalog.getOverview().text(), text.getText());
+            assertEquals(HelpCatalog.getOverview().text(), content.getAccessibleText());
             enter(input, "help depart");
             input.fireEvent(new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.F1,
                     false, false, false, false));
-            assertEquals(HelpCatalog.getOverview().text(), text.getText());
+            assertEquals(HelpCatalog.getOverview().text(), content.getAccessibleText());
             assertEquals("Available commands", heading.getText());
             assertEquals(help, helpStage());
             assertEquals(contacts, model.getFilteredPersonList());
