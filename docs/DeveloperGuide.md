@@ -563,12 +563,34 @@ owner-linked `ContactDetailsWindow` containing a read-only, wrapping, scrollable
 `view` follows the existing `LogicManager` save flow, like `list` and `find`, while preserving contact data
 and the current filter. Standard save errors are reported before a new details result reaches the UI. Contacts
 are validated and loaded into the model at startup, so `view` does not re-read contact data from disk.
-The `help` command skips storage saves and passes its selected `HelpPage` to the reusable Help window.
 
 Department display reads `Person.getDepartment()` from the Department implementation tracked by issue #65.
 The optional value is shown in full, or as `Department: Not provided` when absent. The `view` command uses
 the same displayed-list position as `edit`, so setting a department and then viewing that contact remains
 consistent after filtering.
+
+### Showing command help
+
+The sequence below shows a successful `help list` request, from command parsing to displaying the
+`list` manual in the reusable help window.
+
+![Successful help-command sequence](images/HelpCommandSequenceDiagram.png)
+
+`AddressBookParser` creates a `HelpCommandParser`, which validates the optional topic and resolves its
+`HelpPage` through `HelpCatalog.findPage`. For this request, the topic is `list`. The parser creates a
+`HelpCommand` carrying that page. The diagram omits the static catalogue lookup and result-factory calls,
+and summarizes their effects in notes.
+
+`HelpCommand.execute(model)` returns a `CommandResult` containing the selected page, feedback and
+`showHelp = true`. It does not change the model. Its `requiresStorageSave()` method returns false, so
+`LogicManager` returns the result without saving the address book. `MainWindow` displays the feedback
+and forwards the page to the existing `HelpWindow`. The window updates its heading and text, resets
+scrolling, and shows or restores itself with focus on the help text.
+
+With no topic, `help` or `?` selects the overview instead. Topic lookup is case-insensitive and accepts
+aliases such as `ls`; unknown topics or multiple arguments produce a `ParseException` before command
+execution. The Help menu and F1 call `MainWindow.handleHelp()` directly to display the overview,
+bypassing command parsing. These alternative paths are omitted from the successful sequence above.
 
 ### Undoing a deletion
 
