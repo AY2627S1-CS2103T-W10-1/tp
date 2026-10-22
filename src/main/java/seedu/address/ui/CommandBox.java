@@ -3,6 +3,8 @@ package seedu.address.ui;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Region;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.exceptions.CommandException;
@@ -17,6 +19,7 @@ public class CommandBox extends UiPart<Region> {
     private static final String FXML = "CommandBox.fxml";
 
     private final CommandExecutor commandExecutor;
+    private final CommandHistory history = new CommandHistory();
 
     @FXML
     private TextField commandTextField;
@@ -29,6 +32,7 @@ public class CommandBox extends UiPart<Region> {
         this.commandExecutor = commandExecutor;
         // calls #setStyleToDefault() whenever there is a change to the text of the command box.
         commandTextField.textProperty().addListener((unused1, unused2, unused3) -> setStyleToDefault());
+        commandTextField.addEventFilter(KeyEvent.KEY_PRESSED, this::handleHistoryNavigation);
     }
 
     /**
@@ -41,12 +45,38 @@ public class CommandBox extends UiPart<Region> {
             return;
         }
 
+        history.record(commandText);
         try {
             commandExecutor.execute(commandText);
             commandTextField.setText("");
         } catch (CommandException | ParseException e) {
             setStyleToIndicateCommandFailure();
         }
+    }
+
+    /**
+     * Recalls history before the text field handles unmodified Up/Down keys.
+     */
+    private void handleHistoryNavigation(KeyEvent event) {
+        if (event.isAltDown() || event.isControlDown() || event.isMetaDown() || event.isShiftDown()
+                || (event.getCode() != KeyCode.UP && event.getCode() != KeyCode.DOWN)) {
+            return;
+        }
+        if (event.getCode() == KeyCode.UP) {
+            history.previous(commandTextField.getText()).ifPresent(this::showHistoryEntry);
+        } else {
+            history.next().ifPresent(this::showHistoryEntry);
+        }
+        event.consume();
+    }
+
+    /**
+     * Displays recalled input without execution, ready for editing at the end of the command.
+     */
+    private void showHistoryEntry(String command) {
+        commandTextField.setText(command);
+        commandTextField.positionCaret(command.length());
+        setStyleToDefault();
     }
 
     /**
