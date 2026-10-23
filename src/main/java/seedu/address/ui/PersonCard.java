@@ -10,9 +10,14 @@ import javafx.scene.layout.Region;
 import seedu.address.model.person.Person;
 
 /**
- * A UI component that displays information of a {@code Person}.
+ * A one-line table row that displays the key information of a {@code Person}.
+ * Email and address are shown in the details pane instead.
  */
 public class PersonCard extends UiPart<Region> {
+
+    /** Placeholder shown for a field that was not provided. */
+    public static final String EMPTY_VALUE = "—";
+    public static final String EMPTY_STYLE_CLASS = "cell-empty";
 
     private static final String FXML = "PersonListCard.fxml";
 
@@ -35,10 +40,6 @@ public class PersonCard extends UiPart<Region> {
     @FXML
     private Label phone;
     @FXML
-    private Label address;
-    @FXML
-    private Label email;
-    @FXML
     private Label department;
     @FXML
     private FlowPane tags;
@@ -49,19 +50,30 @@ public class PersonCard extends UiPart<Region> {
     public PersonCard(Person person, int displayedIndex) {
         super(FXML);
         this.person = person;
-        id.setText(displayedIndex + ". ");
+        id.setText(String.valueOf(displayedIndex));
         name.setText(person.getName().fullName);
-        phone.setText(person.getPhone().toString());
-        address.setText(person.getAddress().toString());
-        email.setText(person.getEmail().toString());
-        department.setText(person.getDepartment()
-                .map(value -> "Department: " + value.value)
-                .orElse("Department: Not provided"));
+        setCell(phone, person.getPhone().value, person.getPhone().isProvided());
+        setCell(department, person.getDepartment().map(value -> value.value).orElse(""),
+                person.getDepartment().isPresent());
         if (person.getTags().isEmpty()) {
-            tags.getChildren().add(new Label("None"));
+            Label none = new Label(EMPTY_VALUE);
+            none.getStyleClass().add(EMPTY_STYLE_CLASS);
+            tags.getChildren().add(none);
         }
         person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.tagName))
                 .forEach(tag -> tags.getChildren().add(new Label(tag.tagName)));
+    }
+
+    /**
+     * Shows {@code value}, or a dimmed placeholder when the field was not provided.
+     */
+    private static void setCell(Label cell, String value, boolean isProvided) {
+        if (isProvided) {
+            cell.setText(value);
+            return;
+        }
+        cell.setText(EMPTY_VALUE);
+        cell.getStyleClass().add(EMPTY_STYLE_CLASS);
     }
 }

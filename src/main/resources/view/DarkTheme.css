@@ -1,298 +1,311 @@
-.background {
-    -fx-background-color: derive(#1d1d1d, 20%);
-    background-color: #383838; /* Used in the default.html file */
+/*
+ * Terminal-dashboard theme shared by every window (main, help and error alerts).
+ * The font family is set once here; other rules only set sizes, weights and colours.
+ */
+.root, .dialog-pane {
+    -fx-font-family: "Consolas";
+}
+
+.root {
+    -tui-bg: #1b1d21;
+    -tui-pane-bg: #1f2126;
+    -tui-border: #34383e;
+    -tui-accent: #5fb3d4;
+    -tui-text: #d6d9dd;
+    -tui-dim: #7d848c;
+    -tui-selected: #23394a;
+    -tui-tag-bg: #1f4254;
+    -tui-tag-text: #a9dcf0;
+
+    -fx-font-size: 13px;
+    -fx-background-color: -tui-bg;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.app-root {
+    -fx-background-color: -tui-bg;
+    -fx-spacing: 4;
+    -fx-padding: 4 0 0 0;
 }
 
 .label {
-    -fx-font-size: 11pt;
-    -fx-font-family: "Segoe UI Semibold";
-    -fx-text-fill: #555555;
-    -fx-opacity: 0.9;
+    -fx-text-fill: -tui-text;
 }
 
-.label-bright {
-    -fx-font-size: 11pt;
-    -fx-font-family: "Segoe UI Semibold";
-    -fx-text-fill: white;
-    -fx-opacity: 1;
+/* Panes */
+
+.split-pane.tui-split {
+    -fx-background-color: -tui-bg;
+    -fx-background-insets: 0;
+    -fx-padding: 0 4 0 4;
 }
 
-.label-header {
-    -fx-font-size: 32pt;
-    -fx-font-family: "Segoe UI Light";
-    -fx-text-fill: white;
-    -fx-opacity: 1;
+.split-pane.tui-split > .split-pane-divider {
+    -fx-background-color: -tui-bg;
+    -fx-padding: 0 2 0 2;
 }
 
-.text-field {
-    -fx-font-size: 12pt;
-    -fx-font-family: "Segoe UI Semibold";
-}
-
-.tab-pane {
-    -fx-padding: 0 0 0 1;
-}
-
-.tab-pane .tab-header-area {
-    -fx-padding: 0 0 0 0;
-    -fx-min-height: 0;
-    -fx-max-height: 0;
-}
-
-.table-view {
-    -fx-base: #1d1d1d;
-    -fx-control-inner-background: #1d1d1d;
-    -fx-background-color: #1d1d1d;
-    -fx-table-cell-border-color: transparent;
-    -fx-table-header-border-color: transparent;
-    -fx-padding: 5;
-}
-
-.table-view .column-header-background {
-    -fx-background-color: transparent;
-}
-
-.table-view .column-header, .table-view .filler {
-    -fx-size: 35;
-    -fx-border-width: 0 0 1 0;
-    -fx-background-color: transparent;
-    -fx-border-color:
-        transparent
-        transparent
-        derive(-fx-base, 80%)
-        transparent;
-    -fx-border-insets: 0 10 1 0;
-}
-
-.table-view .column-header .label {
-    -fx-font-size: 20pt;
-    -fx-font-family: "Segoe UI Light";
-    -fx-text-fill: white;
-    -fx-alignment: center-left;
-    -fx-opacity: 1;
-}
-
-.table-view:focused .table-row-cell:filled:focused:selected {
-    -fx-background-color: -fx-focus-color;
-}
-
-.split-pane:horizontal .split-pane-divider {
-    -fx-background-color: derive(#1d1d1d, 20%);
-    -fx-border-color: transparent transparent transparent #4d4d4d;
-}
-
-.split-pane {
-    -fx-border-radius: 1;
+.tui-pane {
+    -fx-background-color: -tui-pane-bg;
+    -fx-border-color: -tui-border;
     -fx-border-width: 1;
-    -fx-background-color: derive(#1d1d1d, 20%);
+    -fx-padding: 2 6 6 6;
+    -fx-spacing: 4;
 }
+
+.tui-pane.pane-focused {
+    -fx-border-color: -tui-accent;
+}
+
+.pane-title {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -tui-dim;
+}
+
+.pane-focused > .pane-title {
+    -fx-text-fill: -tui-accent;
+}
+
+/* Lists */
 
 .list-view {
+    -fx-background-color: -tui-pane-bg;
     -fx-background-insets: 0;
     -fx-padding: 0;
-    -fx-background-color: derive(#1d1d1d, 20%);
 }
 
 .list-cell {
-    -fx-label-padding: 0 0 0 0;
-    -fx-graphic-text-gap : 0;
-    -fx-padding: 0 0 0 0;
-}
-
-.list-cell:filled:even {
-    -fx-background-color: #3c3e3f;
-}
-
-.list-cell:filled:odd {
-    -fx-background-color: #515658;
+    -fx-background-color: -tui-pane-bg;
+    -fx-padding: 0;
+    -fx-text-fill: -tui-text;
 }
 
 .list-cell:filled:selected {
-    -fx-background-color: #424d5f;
+    -fx-background-color: derive(-tui-selected, -20%);
 }
 
-.list-cell:filled:selected #cardPane {
-    -fx-border-color: #3e7b91;
-    -fx-border-width: 1;
+.list-view:focused .list-cell:filled:selected {
+    -fx-background-color: -tui-selected;
 }
 
 .list-cell .label {
-    -fx-text-fill: white;
+    -fx-text-fill: -tui-text;
 }
 
-.cell_big_label {
-    -fx-font-family: "Segoe UI Semibold";
-    -fx-font-size: 16px;
-    -fx-text-fill: #010504;
+.column-header .label {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -tui-dim;
 }
 
-.cell_small_label {
-    -fx-font-family: "Segoe UI";
+.person-row {
+    -fx-border-color: transparent transparent #26292e transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.list-cell .cell-id {
+    -fx-text-fill: -tui-dim;
+}
+
+.cell-name {
+    -fx-font-weight: bold;
+}
+
+.list-cell .label.cell-empty {
+    -fx-text-fill: -tui-dim;
+}
+
+#tags {
+    -fx-hgap: 4;
+    -fx-vgap: 2;
+}
+
+#tags .label {
+    -fx-text-fill: -tui-tag-text;
+    -fx-background-color: -tui-tag-bg;
+    -fx-background-radius: 2;
+    -fx-padding: 0 4 0 4;
+    -fx-font-size: 11px;
+}
+
+#tags .label.cell-empty {
+    -fx-text-fill: -tui-dim;
+    -fx-background-color: transparent;
+    -fx-padding: 0;
     -fx-font-size: 13px;
-    -fx-text-fill: #010504;
 }
 
-.stack-pane {
-     -fx-background-color: derive(#1d1d1d, 20%);
+.department-row {
+    -fx-padding: 6 6 6 6;
 }
 
-.pane-with-border {
-     -fx-background-color: derive(#1d1d1d, 20%);
-     -fx-border-color: derive(#1d1d1d, 10%);
-     -fx-border-top-width: 1px;
+.list-cell .department-count {
+    -fx-text-fill: -tui-accent;
 }
+
+.list-cell .department-summary .label {
+    -fx-text-fill: -tui-dim;
+    -fx-font-style: italic;
+}
+
+.list-cell .department-summary .department-count {
+    -fx-text-fill: -tui-text;
+    -fx-font-style: normal;
+}
+
+.department-divider {
+    -fx-border-color: transparent transparent -tui-border transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+/* Text input and output */
+
+.text-field, .text-area {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-text-fill: -tui-text;
+    -fx-prompt-text-fill: -tui-dim;
+    -fx-highlight-fill: -tui-selected;
+    -fx-highlight-text-fill: -tui-text;
+    -fx-padding: 2;
+}
+
+.text-area .content, .text-area .scroll-pane, .text-area .scroll-pane .viewport {
+    -fx-background-color: transparent;
+}
+
+#commandTextField {
+    -fx-font-size: 14px;
+}
+
+/* Details pane: grey field names, white copyable values */
+
+.details-scroll, .details-scroll > .viewport {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.details-grid .details-label {
+    -fx-font-size: 15px;
+    -fx-text-fill: -tui-dim;
+}
+
+.text-area.details-value {
+    -fx-font-size: 15px;
+    -fx-padding: 0 4 0 4;
+    -fx-background-radius: 2;
+    -fx-text-fill: -tui-text;
+    -fx-highlight-fill: #2f6178;
+    -fx-highlight-text-fill: #ffffff;
+}
+
+.text-area.details-value .content {
+    -fx-padding: 0;
+}
+
+.text-area.details-value .scroll-pane {
+    -fx-hbar-policy: never;
+    -fx-vbar-policy: never;
+}
+
+.text-area.details-value:focused {
+    -fx-background-color: -tui-selected;
+}
+
+.text-area.details-value.details-empty {
+    -fx-text-fill: -tui-dim;
+}
+
+.command-line {
+    -fx-border-color: -tui-border transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 4 0 0 0;
+}
+
+.prompt-label {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -tui-accent;
+}
+
+/* Footer */
 
 .status-bar {
-    -fx-background-color: derive(#1d1d1d, 30%);
-}
-
-.result-display {
-    -fx-background-color: transparent;
-    -fx-font-family: "Segoe UI Light";
-    -fx-font-size: 13pt;
-    -fx-text-fill: white;
-}
-
-.result-display .label {
-    -fx-text-fill: black !important;
+    -fx-background-color: #16181b;
 }
 
 .status-bar .label {
-    -fx-font-family: "Segoe UI Light";
-    -fx-text-fill: white;
-    -fx-padding: 4px;
-    -fx-pref-height: 30px;
+    -fx-font-size: 12px;
+    -fx-text-fill: -tui-dim;
 }
 
-.status-bar-with-border {
-    -fx-background-color: derive(#1d1d1d, 30%);
-    -fx-border-color: derive(#1d1d1d, 25%);
-    -fx-border-width: 1px;
+.status-bar .status-count {
+    -fx-text-fill: -tui-text;
 }
 
-.status-bar-with-border .label {
-    -fx-text-fill: white;
-}
+/* Buttons and dialogs (help Copy buttons, error alerts) */
 
-.grid-pane {
-    -fx-background-color: derive(#1d1d1d, 30%);
-    -fx-border-color: derive(#1d1d1d, 30%);
-    -fx-border-width: 1px;
-}
-
-.grid-pane .stack-pane {
-    -fx-background-color: derive(#1d1d1d, 30%);
-}
-
-.context-menu {
-    -fx-background-color: derive(#1d1d1d, 50%);
-}
-
-.context-menu .label {
-    -fx-text-fill: white;
-}
-
-.menu-bar {
-    -fx-background-color: derive(#1d1d1d, 20%);
-}
-
-.menu-bar .label {
-    -fx-font-size: 14pt;
-    -fx-font-family: "Segoe UI Light";
-    -fx-text-fill: white;
-    -fx-opacity: 0.9;
-}
-
-.menu .left-container {
-    -fx-background-color: black;
-}
-
-/*
- * Metro style Push Button
- * Author: Pedro Duque Vieira
- * http://pixelduke.wordpress.com/2012/10/23/jmetro-windows-8-controls-on-java/
- */
 .button {
-    -fx-padding: 5 22 5 22;
-    -fx-border-color: #e2e2e2;
-    -fx-border-width: 2;
-    -fx-background-radius: 0;
-    -fx-background-color: #1d1d1d;
-    -fx-font-family: "Segoe UI", Helvetica, Arial, sans-serif;
-    -fx-font-size: 11pt;
-    -fx-text-fill: #d8d8d8;
-    -fx-background-insets: 0 0 0 0, 0, 1, 2;
+    -fx-background-color: transparent;
+    -fx-background-radius: 2;
+    -fx-border-color: -tui-border;
+    -fx-border-radius: 2;
+    -fx-border-width: 1;
+    -fx-padding: 3 12 3 12;
+    -fx-text-fill: -tui-text;
 }
 
-.button:hover {
-    -fx-background-color: #3a3a3a;
+.button:hover, .button:focused {
+    -fx-background-color: -tui-selected;
+    -fx-border-color: -tui-accent;
 }
 
-.button:pressed, .button:default:hover:pressed {
-  -fx-background-color: white;
-  -fx-text-fill: #1d1d1d;
-}
-
-.button:focused {
-    -fx-border-color: white, white;
-    -fx-border-width: 1, 1;
-    -fx-border-style: solid, segments(1, 1);
-    -fx-border-radius: 0, 0;
-    -fx-border-insets: 1 1 1 1, 0;
-}
-
-.button:disabled, .button:default:disabled {
-    -fx-opacity: 0.4;
-    -fx-background-color: #1d1d1d;
-    -fx-text-fill: white;
-}
-
-.button:default {
-    -fx-background-color: -fx-focus-color;
-    -fx-text-fill: #ffffff;
-}
-
-.button:default:hover {
-    -fx-background-color: derive(-fx-focus-color, 30%);
+.button:pressed {
+    -fx-background-color: derive(-tui-selected, 20%);
 }
 
 .dialog-pane {
-    -fx-background-color: #1d1d1d;
+    -fx-background-color: -tui-bg;
 }
 
-.dialog-pane > *.button-bar > *.container {
-    -fx-background-color: #1d1d1d;
+.dialog-pane:header .header-panel {
+    -fx-background-color: -tui-pane-bg;
+    -fx-border-color: transparent transparent -tui-border transparent;
 }
 
-.dialog-pane > *.label.content {
+.dialog-pane:header .header-panel .label {
     -fx-font-size: 14px;
     -fx-font-weight: bold;
-    -fx-text-fill: white;
+    -fx-text-fill: -tui-text;
 }
 
-.dialog-pane:header *.header-panel {
-    -fx-background-color: derive(#1d1d1d, 25%);
+.dialog-pane > .content.label {
+    -fx-text-fill: -tui-text;
 }
 
-.dialog-pane:header *.header-panel *.label {
-    -fx-font-size: 18px;
-    -fx-font-style: italic;
-    -fx-fill: white;
-    -fx-text-fill: white;
+.dialog-pane > .button-bar > .container {
+    -fx-background-color: -tui-bg;
 }
+
+/* Scroll bars */
 
 .scroll-bar {
-    -fx-background-color: derive(#1d1d1d, 20%);
+    -fx-background-color: transparent;
 }
 
 .scroll-bar .thumb {
-    -fx-background-color: derive(#1d1d1d, 50%);
-    -fx-background-insets: 3;
+    -fx-background-color: #3a3f46;
+    -fx-background-insets: 2;
+    -fx-background-radius: 3;
 }
 
 .scroll-bar .increment-button, .scroll-bar .decrement-button {
     -fx-background-color: transparent;
-    -fx-padding: 0 0 0 0;
+    -fx-padding: 0;
 }
 
 .scroll-bar .increment-arrow, .scroll-bar .decrement-arrow {
@@ -300,53 +313,13 @@
 }
 
 .scroll-bar:vertical .increment-arrow, .scroll-bar:vertical .decrement-arrow {
-    -fx-padding: 1 8 1 8;
+    -fx-padding: 1 5 1 5;
 }
 
 .scroll-bar:horizontal .increment-arrow, .scroll-bar:horizontal .decrement-arrow {
-    -fx-padding: 8 1 8 1;
+    -fx-padding: 5 1 5 1;
 }
 
-#cardPane {
+.corner {
     -fx-background-color: transparent;
-    -fx-border-width: 0;
-}
-
-#commandTypeLabel {
-    -fx-font-size: 11px;
-    -fx-text-fill: #F70D1A;
-}
-
-#commandTextField {
-    -fx-background-color: transparent #383838 transparent #383838;
-    -fx-background-insets: 0;
-    -fx-border-color: #383838 #383838 #ffffff #383838;
-    -fx-border-insets: 0;
-    -fx-border-width: 1;
-    -fx-font-family: "Segoe UI Light";
-    -fx-font-size: 13pt;
-    -fx-text-fill: white;
-}
-
-#filterField, #personListPanel, #personWebpage {
-    -fx-effect: innershadow(gaussian, black, 10, 0, 0, 0);
-}
-
-#resultDisplay .content, #contactDetails .content {
-    -fx-background-color: transparent, #383838, transparent, #383838;
-    -fx-background-radius: 0;
-}
-
-#tags {
-    -fx-hgap: 7;
-    -fx-vgap: 3;
-}
-
-#tags .label {
-    -fx-text-fill: white;
-    -fx-background-color: #3e7b91;
-    -fx-padding: 1 3 1 3;
-    -fx-border-radius: 2;
-    -fx-background-radius: 2;
-    -fx-font-size: 11;
 }

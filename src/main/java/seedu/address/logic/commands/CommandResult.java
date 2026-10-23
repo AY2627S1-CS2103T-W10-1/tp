@@ -21,7 +21,7 @@ public class CommandResult {
     /** The application should exit. */
     private final boolean exit;
 
-    /** Full contact details for the separate window, absent for other commands. */
+    /** Full contact details for the details pane, absent for other commands. */
     private final String contactDetails;
 
     /** Selected help content, absent for ordinary and legacy help results. */

@@ -1,8 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
 <VBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
+  <!-- Column min/pref widths, spacing and padding must match PersonListCard.fxml so both shrink alike. -->
+  <HBox fx:id="columnHeader" alignment="CENTER_LEFT" spacing="10" styleClass="column-header">
+    <padding>
+      <Insets top="2" right="8" bottom="4" left="8" />
+    </padding>
+    <Label text="ID" minWidth="32" prefWidth="32" alignment="CENTER_RIGHT" />
+    <Label text="NAME" minWidth="80" prefWidth="170" />
+    <Label text="PHONE" minWidth="64" prefWidth="84" />
+    <Label text="DEPT" minWidth="50" prefWidth="110" />
+    <Label text="TAGS" minWidth="40" prefWidth="110" />
+  </HBox>
   <ListView fx:id="personListView" VBox.vgrow="ALWAYS" />
 </VBox>

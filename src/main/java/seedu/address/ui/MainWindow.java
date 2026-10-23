@@ -1,29 +1,39 @@
 package seedu.address.ui;
 
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextInputControl;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.Logic;
 import seedu.address.logic.commands.CommandResult;
+import seedu.address.logic.commands.ViewCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.help.HelpCatalog;
 import seedu.address.logic.parser.exceptions.ParseException;
 
 /**
- * The Main Window. Provides the basic application layout containing
- * a menu bar and space where other JavaFX elements can be placed.
+ * The Main Window. Lays out numbered panes, in the style of a terminal dashboard:
+ * [1] departments, [2] contacts, [3] details and [4] output with the command prompt.
  */
 public class MainWindow extends UiPart<Stage> {
+
+    public static final String FOCUSED_PANE_STYLE_CLASS = "pane-focused";
 
     private static final String FXML = "MainWindow.fxml";
 
@@ -34,10 +44,24 @@ public class MainWindow extends UiPart<Stage> {
     private Path dataFilePath;
 
     // Independent Ui parts residing in this Ui container
+    private DepartmentPanel departmentPanel;
     private PersonListPanel personListPanel;
+    private DetailsPanel detailsPanel;
     private ResultDisplay resultDisplay;
+    private CommandBox commandBox;
     private HelpWindow helpWindow;
-    private ContactDetailsWindow contactDetailsWindow;
+
+    @FXML
+    private VBox departmentPane;
+
+    @FXML
+    private VBox contactPane;
+
+    @FXML
+    private VBox detailsPane;
+
+    @FXML
+    private VBox outputPane;
 
     @FXML
     private StackPane commandBoxPlaceholder;
@@ -46,7 +70,13 @@ public class MainWindow extends UiPart<Stage> {
     private MenuItem helpMenuItem;
 
     @FXML
+    private StackPane departmentPanelPlaceholder;
+
+    @FXML
     private StackPane personListPanelPlaceholder;
+
+    @FXML
+    private StackPane detailsPanelPlaceholder;
 
     @FXML
     private StackPane resultDisplayPlaceholder;
@@ -70,9 +100,9 @@ public class MainWindow extends UiPart<Stage> {
         setWindowDefaultSize(logic.getGuiSettings());
 
         setAccelerators();
+        trackFocusedPane();
 
         helpWindow = new HelpWindow();
-        contactDetailsWindow = new ContactDetailsWindow(primaryStage);
     }
 
     public Stage getPrimaryStage() {
@@ -114,20 +144,75 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     /**
+     * Highlights the pane that contains the keyboard focus.
+     */
+    private void trackFocusedPane() {
+        getRoot().getScene().focusOwnerProperty().addListener((unused, oldOwner, newOwner) ->
+                highlightPaneOf(newOwner));
+    }
+
+    private void highlightPaneOf(Node focusOwner) {
+        List<VBox> panes = List.of(departmentPane, contactPane, detailsPane, outputPane);
+        panes.forEach(pane -> pane.getStyleClass().remove(FOCUSED_PANE_STYLE_CLASS));
+        for (Node node = focusOwner; node != null; node = node.getParent()) {
+            if (panes.contains(node)) {
+                node.getStyleClass().add(FOCUSED_PANE_STYLE_CLASS);
+                return;
+            }
+        }
+    }
+
+    /**
+     * Binds Alt+1 to Alt+4 to the numbered panes, and Esc to the command prompt.
+     */
+    private void setPaneShortcuts() {
+        Map<KeyCombination, Runnable> focusActions = new LinkedHashMap<>();
+        focusActions.put(new KeyCodeCombination(KeyCode.DIGIT1, KeyCombination.ALT_DOWN), departmentPanel::focus);
+        focusActions.put(new KeyCodeCombination(KeyCode.DIGIT2, KeyCombination.ALT_DOWN), personListPanel::focus);
+        focusActions.put(new KeyCodeCombination(KeyCode.DIGIT3, KeyCombination.ALT_DOWN), detailsPanel::focus);
+        focusActions.put(new KeyCodeCombination(KeyCode.DIGIT4, KeyCombination.ALT_DOWN), commandBox::focus);
+        focusActions.put(new KeyCodeCombination(KeyCode.ESCAPE), commandBox::focus);
+
+        getRoot().addEventFilter(KeyEvent.KEY_PRESSED, event -> focusActions.entrySet().stream()
+                .filter(entry -> entry.getKey().match(event))
+                .findFirst()
+                .ifPresent(entry -> {
+                    entry.getValue().run();
+                    event.consume();
+                }));
+    }
+
+    /**
      * Fills up all the placeholders of this window.
      */
     void fillInnerParts() {
+        departmentPanel = new DepartmentPanel(logic.getDepartmentList(), logic.getPersonList());
+        departmentPanelPlaceholder.getChildren().add(departmentPanel.getRoot());
+
         personListPanel = new PersonListPanel(logic.getFilteredPersonList());
         personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
+
+        detailsPanel = new DetailsPanel();
+        detailsPanelPlaceholder.getChildren().add(detailsPanel.getRoot());
+        personListPanel.selectedPersonProperty().addListener((unused, oldPerson, newPerson) -> {
+            if (newPerson != null) {
+                detailsPanel.showDetails(ViewCommand.formatDetails(newPerson));
+            }
+        });
 
         resultDisplay = new ResultDisplay();
         resultDisplayPlaceholder.getChildren().add(resultDisplay.getRoot());
 
-        StatusBarFooter statusBarFooter = new StatusBarFooter(dataFilePath);
+        StatusBarFooter statusBarFooter = new StatusBarFooter(dataFilePath, logic.getFilteredPersonList(),
+                logic.getPersonList());
         statusbarPlaceholder.getChildren().add(statusBarFooter.getRoot());
 
-        CommandBox commandBox = new CommandBox(this::executeCommand);
+        commandBox = new CommandBox(this::executeCommand);
         commandBoxPlaceholder.getChildren().add(commandBox.getRoot());
+
+        setPaneShortcuts();
+        // The prompt, not the first pane in traversal order, receives the initial focus.
+        commandBox.focus();
     }
 
     /**
@@ -163,7 +248,6 @@ public class MainWindow extends UiPart<Stage> {
                 (int) primaryStage.getX(), (int) primaryStage.getY());
         logic.setGuiSettings(guiSettings);
         helpWindow.hide();
-        contactDetailsWindow.hide();
         primaryStage.hide();
     }
 
@@ -186,7 +270,10 @@ public class MainWindow extends UiPart<Stage> {
                 helpWindow.showPage(commandResult.getHelpPage().orElse(HelpCatalog.getOverview()));
             }
 
-            commandResult.getContactDetails().ifPresent(contactDetailsWindow::showDetails);
+            commandResult.getContactDetails().ifPresent(details -> {
+                personListPanel.clearSelection();
+                detailsPanel.showDetails(details);
+            });
 
             if (commandResult.isExit()) {
                 handleExit();
@@ -195,7 +282,7 @@ public class MainWindow extends UiPart<Stage> {
             return commandResult;
         } catch (CommandException | ParseException e) {
             logger.info("An error occurred while executing command: " + commandText);
-            resultDisplay.setFeedbackToUser(CommandErrorFormatter.format(commandText, e.getMessage()));
+            resultDisplay.setErrorFeedback(CommandErrorFormatter.format(commandText, e.getMessage()));
             throw e;
         }
     }
