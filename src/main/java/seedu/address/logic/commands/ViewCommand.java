@@ -64,8 +64,10 @@ public class ViewCommand extends Command {
     /**
      * Formats every currently supported contact field without truncation, in two groups separated by blank lines:
      * how to reach the contact (name, phone, email, address), then how they are organised (department, tags).
+     * Shared with the UI, so the details pane shows a selected contact exactly as {@code view} does.
      */
-    private String formatDetails(Person person) {
+    public static String formatDetails(Person person) {
+        requireNonNull(person);
         String tags = person.getTags().stream()
                 .map(tag -> tag.tagName)
                 .sorted()

@@ -145,7 +145,7 @@
 
 .col-name {
     -fx-min-width: 70;
-    -fx-pref-width: 170;
+    -fx-pref-width: 150;
 }
 
 .col-phone {
@@ -155,12 +155,12 @@
 
 .col-email {
     -fx-min-width: 70;
-    -fx-pref-width: 210;
+    -fx-pref-width: 190;
 }
 
 .col-department {
     -fx-min-width: 60;
-    -fx-pref-width: 120;
+    -fx-pref-width: 110;
 }
 
 /* Tags take whatever width is left, so a contact with many tags cannot push the other columns aside. */

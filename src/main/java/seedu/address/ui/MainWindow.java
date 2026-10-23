@@ -19,7 +19,6 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import javafx.stage.Window;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.Logic;
@@ -30,15 +29,14 @@ import seedu.address.logic.help.HelpCatalog;
 import seedu.address.logic.parser.exceptions.ParseException;
 
 /**
- * The Main Window. Lays out numbered panes in the style of a terminal dashboard:
- * [1] departments, [2] contacts and [4] output with the command prompt.
- * Contact details open as [3] popups, one per viewed contact.
+ * The Main Window. Lays out numbered panes in the style of a terminal dashboard: [1] departments, [2] contacts,
+ * [3] details of the selected contact and [4] output with the command prompt.
+ * {@code view}, Enter or a double-click on a contact also pops its details out into a window of its own,
+ * one per contact, for side-by-side comparison.
  */
 public class MainWindow extends UiPart<Stage> {
 
     public static final String FOCUSED_PANE_STYLE_CLASS = "pane-focused";
-    public static final String MESSAGE_NO_DETAILS_OPEN =
-            "No contact details are open. Run view CONTACT_ID, or press Enter on a contact in [2].";
 
     private static final String FXML = "MainWindow.fxml";
 
@@ -51,6 +49,7 @@ public class MainWindow extends UiPart<Stage> {
     // Independent Ui parts residing in this Ui container
     private DepartmentPanel departmentPanel;
     private PersonListPanel personListPanel;
+    private DetailsPanel detailsPanel;
     private ResultDisplay resultDisplay;
     private CommandBox commandBox;
     private HelpWindow helpWindow;
@@ -61,6 +60,9 @@ public class MainWindow extends UiPart<Stage> {
 
     @FXML
     private VBox contactPane;
+
+    @FXML
+    private VBox detailsPane;
 
     @FXML
     private VBox outputPane;
@@ -76,6 +78,9 @@ public class MainWindow extends UiPart<Stage> {
 
     @FXML
     private StackPane personListPanelPlaceholder;
+
+    @FXML
+    private StackPane detailsPanelPlaceholder;
 
     @FXML
     private StackPane resultDisplayPlaceholder;
@@ -145,7 +150,7 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     /**
-     * Binds Alt+1 to Alt+4 to the numbered panes and Esc to the command prompt.
+     * Binds Alt+1 to Alt+4 to the numbered panes and Esc to the command prompt; Alt+3 also reaches the popups.
      * The same keys work in every contact details popup, so the keyboard never gets stuck in one.
      */
     private void addPaneShortcuts(Scene scene) {
@@ -154,8 +159,7 @@ public class MainWindow extends UiPart<Stage> {
                         focusInMainWindow(() -> departmentPanel.focus()),
                 new KeyCodeCombination(KeyCode.DIGIT2, KeyCombination.ALT_DOWN), () ->
                         focusInMainWindow(() -> personListPanel.focus()),
-                new KeyCodeCombination(KeyCode.DIGIT3, KeyCombination.ALT_DOWN), () ->
-                        focusNextDetailsWindow(scene.getWindow()),
+                new KeyCodeCombination(KeyCode.DIGIT3, KeyCombination.ALT_DOWN), () -> focusNextDetails(scene),
                 new KeyCodeCombination(KeyCode.DIGIT4, KeyCombination.ALT_DOWN), () ->
                         focusInMainWindow(() -> commandBox.focus()),
                 new KeyCodeCombination(KeyCode.ESCAPE), () -> focusInMainWindow(() -> commandBox.focus()));
@@ -174,10 +178,17 @@ public class MainWindow extends UiPart<Stage> {
         focusPane.run();
     }
 
-    private void focusNextDetailsWindow(Window current) {
-        if (!contactDetailsWindows.focusAfter(current)) {
-            resultDisplay.setFeedbackToUser(MESSAGE_NO_DETAILS_OPEN);
+    /**
+     * Steps through every details view on repeated Alt+3: the [3] pane, then each popup, oldest first,
+     * then back to the pane.
+     */
+    private void focusNextDetails(Scene scene) {
+        boolean inMainWindow = scene == primaryStage.getScene();
+        boolean inDetails = !inMainWindow || paneOf(scene.getFocusOwner()) == detailsPane;
+        if (inDetails && contactDetailsWindows.focusAfter(scene.getWindow())) {
+            return;
         }
+        focusInMainWindow(() -> detailsPanel.focus());
     }
 
     /**
@@ -192,14 +203,27 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     private void highlightPaneOf(Node focusOwner) {
-        List<VBox> panes = List.of(departmentPane, contactPane, outputPane);
-        panes.forEach(pane -> pane.getStyleClass().remove(FOCUSED_PANE_STYLE_CLASS));
-        for (Node node = focusOwner; node != null; node = node.getParent()) {
-            if (panes.contains(node)) {
-                node.getStyleClass().add(FOCUSED_PANE_STYLE_CLASS);
-                return;
+        panes().forEach(pane -> pane.getStyleClass().remove(FOCUSED_PANE_STYLE_CLASS));
+        VBox focusedPane = paneOf(focusOwner);
+        if (focusedPane != null) {
+            focusedPane.getStyleClass().add(FOCUSED_PANE_STYLE_CLASS);
+        }
+    }
+
+    private List<VBox> panes() {
+        return List.of(departmentPane, contactPane, detailsPane, outputPane);
+    }
+
+    /**
+     * Returns the numbered pane that contains {@code node}, or null if none does.
+     */
+    private VBox paneOf(Node node) {
+        for (Node current = node; current != null; current = current.getParent()) {
+            if (current instanceof VBox pane && panes().contains(pane)) {
+                return pane;
             }
         }
+        return null;
     }
 
     /**
@@ -212,6 +236,15 @@ public class MainWindow extends UiPart<Stage> {
         personListPanel = new PersonListPanel(logic.getFilteredPersonList());
         personListPanel.setOnViewRequested(this::viewContact);
         personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
+
+        detailsPanel = new DetailsPanel();
+        detailsPanelPlaceholder.getChildren().add(detailsPanel.getRoot());
+        // Selecting a contact shows it at once; view, Enter and double-click pop it out into a window instead.
+        personListPanel.selectedPersonProperty().addListener((unused, oldPerson, newPerson) -> {
+            if (newPerson != null) {
+                detailsPanel.showDetails(ViewCommand.formatDetails(newPerson));
+            }
+        });
 
         resultDisplay = new ResultDisplay();
         resultDisplayPlaceholder.getChildren().add(resultDisplay.getRoot());

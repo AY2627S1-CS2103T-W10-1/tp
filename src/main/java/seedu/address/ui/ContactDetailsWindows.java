@@ -58,19 +58,18 @@ public class ContactDetailsWindows {
     }
 
     /**
-     * Focuses the popup after {@code current} if it is one of the popups, and the newest popup otherwise,
-     * so repeated presses from inside the popups cycle through all of them.
+     * Focuses the popup after {@code current} if it is one of the popups, and the oldest popup otherwise,
+     * so repeated presses step through every popup once.
      *
      * @param current Window the request came from.
-     * @return False if no popup is open.
+     * @return False if there is no popup after {@code current}.
      */
     public boolean focusAfter(Window current) {
-        if (openWindows.isEmpty()) {
+        int index = openWindows.stream().map(ContactDetailsWindow::getRoot).toList().indexOf(current);
+        if (index + 1 >= openWindows.size()) {
             return false;
         }
-        int index = openWindows.stream().map(ContactDetailsWindow::getRoot).toList().indexOf(current);
-        int next = index < 0 ? openWindows.size() - 1 : (index + 1) % openWindows.size();
-        openWindows.get(next).focus();
+        openWindows.get(index + 1).focus();
         return true;
     }
 

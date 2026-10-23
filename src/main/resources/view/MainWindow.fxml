@@ -11,7 +11,7 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<!-- Numbered panes: [1] departments, [2] contacts and [4] output; [3] is the contact details popups. -->
+<!-- Numbered panes: [1] departments, [2] contacts, [3] details and [4] output. -->
 <fx:root type="javafx.stage.Stage" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
          title="sudoContact" minWidth="760" minHeight="520" onCloseRequest="#handleExit">
   <icons>
@@ -35,14 +35,18 @@
           </Menu>
         </MenuBar>
 
-        <SplitPane dividerPositions="0.2" styleClass="tui-split" VBox.vgrow="ALWAYS">
-          <VBox fx:id="departmentPane" styleClass="tui-pane" minWidth="170" SplitPane.resizableWithParent="false">
+        <SplitPane dividerPositions="0.17, 0.7" styleClass="tui-split" VBox.vgrow="ALWAYS">
+          <VBox fx:id="departmentPane" styleClass="tui-pane" minWidth="150" SplitPane.resizableWithParent="false">
             <Label text="[1] Departments" styleClass="pane-title" />
             <StackPane fx:id="departmentPanelPlaceholder" VBox.vgrow="ALWAYS" />
           </VBox>
-          <VBox fx:id="contactPane" styleClass="tui-pane" minWidth="420">
+          <VBox fx:id="contactPane" styleClass="tui-pane" minWidth="360">
             <Label text="[2] Contacts" styleClass="pane-title" />
             <StackPane fx:id="personListPanelPlaceholder" VBox.vgrow="ALWAYS" />
+          </VBox>
+          <VBox fx:id="detailsPane" styleClass="tui-pane" minWidth="200">
+            <Label text="[3] Details" styleClass="pane-title" />
+            <StackPane fx:id="detailsPanelPlaceholder" VBox.vgrow="ALWAYS" />
           </VBox>
         </SplitPane>
 

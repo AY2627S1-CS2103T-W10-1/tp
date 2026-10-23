@@ -18,12 +18,13 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Region;
 
 /**
- * Shows a snapshot of one contact's full details as a grid of field names and values, inside a details popup.
- * Values can be selected and copied: j/k (or Tab, Up/Down) move between values, and moving to a value
- * selects it so Ctrl+C copies it.
+ * Shows a snapshot of one contact's full details as a grid of field names and values, in the docked [3] pane
+ * and in each details popup. Values can be selected and copied: j/k (or Tab, Up/Down) move between values,
+ * and moving to a value selects it so Ctrl+C copies it.
  */
 public class DetailsPanel extends UiPart<Region> {
 
+    public static final String PLACEHOLDER = "Click a contact in [2], or select it with j/k, to see it here.";
     public static final String LABEL_STYLE_CLASS = "details-label";
     public static final String VALUE_STYLE_CLASS = "details-value";
     public static final String EMPTY_STYLE_CLASS = "details-empty";
@@ -44,8 +45,15 @@ public class DetailsPanel extends UiPart<Region> {
     @FXML
     private GridPane contactDetails;
 
+    /**
+     * Creates a details panel that shows a hint until the first contact is displayed.
+     */
     public DetailsPanel() {
         super(FXML);
+        Label placeholder = new Label(PLACEHOLDER);
+        placeholder.setWrapText(true);
+        placeholder.getStyleClass().add(LABEL_STYLE_CLASS);
+        contactDetails.add(placeholder, 0, 0, 2, 1);
     }
 
     /**
