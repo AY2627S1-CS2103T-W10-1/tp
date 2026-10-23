@@ -57,4 +57,23 @@ public class CountCommandTest {
         assertFalse(new CountCommand(false).requiresStorageSave());
         assertFalse(new CountCommand(true).requiresStorageSave());
     }
+
+    @Test
+    public void equals_distinguishesScopeAndRejectsOtherCommandTypes() {
+        CountCommand displayed = new CountCommand(false);
+        assertEquals(displayed, displayed);
+        assertEquals(displayed, new CountCommand(false));
+        assertEquals(new CountCommand(true), new CountCommand(true));
+        assertFalse(displayed.equals(new CountCommand(true)));
+        assertFalse(displayed.equals(new ListCommand()));
+        assertFalse(displayed.equals(null));
+    }
+
+    @Test
+    public void toString_includesScopeForDiagnostics() {
+        assertEquals(CountCommand.class.getCanonicalName() + "{isAllContacts=false}",
+                new CountCommand(false).toString());
+        assertEquals(CountCommand.class.getCanonicalName() + "{isAllContacts=true}",
+                new CountCommand(true).toString());
+    }
 }
