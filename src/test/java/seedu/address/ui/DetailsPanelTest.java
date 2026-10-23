@@ -35,6 +35,7 @@ public class DetailsPanelTest {
         FxTestUtil.run(() -> {
             DetailsPanel panel = new DetailsPanel();
             GridPane grid = grid(panel);
+            assertEquals(DetailsPanel.PLACEHOLDER, ((Label) grid.getChildren().getFirst()).getText());
 
             panel.showDetails(DETAILS);
             assertEquals(List.of("Name", "Phone", "Email", "Address", "Department", "Tags"),

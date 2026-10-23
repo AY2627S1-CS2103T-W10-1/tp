@@ -18,12 +18,14 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 import seedu.address.logic.LogicManager;
 import seedu.address.model.ModelManager;
@@ -60,9 +62,12 @@ public class DashboardUiTest {
             press(scene.getFocusOwner(), KeyCode.DIGIT2, true);
             assertSame(contacts, scene.getFocusOwner());
             assertEquals(0, contacts.getSelectionModel().getSelectedIndex());
+            assertTrue(dockedDetails(scene).startsWith("Name: Alice Pauline\n"));
 
             press(contacts, KeyCode.J, false);
             assertEquals(1, contacts.getSelectionModel().getSelectedIndex());
+            assertTrue(dockedDetails(scene).startsWith("Name: Benson Meier\n"));
+            assertTrue(main.getContactDetailsWindows().getOpenWindows().isEmpty());
             press(contacts, KeyCode.ENTER, false);
             assertEquals("Showing details of contact 2: Benson Meier", feedback.getText());
             assertEquals(1, main.getContactDetailsWindows().getOpenWindows().size());
@@ -74,30 +79,35 @@ public class DashboardUiTest {
     }
 
     @Test
-    public void altThree_cyclesPopupsAndEscReturnsToPrompt() throws Exception {
+    public void altThree_stepsThroughDockedPaneThenPopups() throws Exception {
         FxTestUtil.run(() -> {
             MainWindow main = showMainWindow();
             Scene scene = main.getPrimaryStage().getScene();
             TextField input = (TextField) scene.lookup("#commandTextField");
-            TextArea feedback = (TextArea) scene.lookup("#resultDisplay");
+            Label placeholder = (Label) ((GridPane) ((ScrollPane) scene.lookup("#detailsScroll")).getContent())
+                    .getChildren().getFirst();
+            assertEquals(DetailsPanel.PLACEHOLDER, placeholder.getText());
 
             press(input, KeyCode.DIGIT3, true);
-            assertEquals(MainWindow.MESSAGE_NO_DETAILS_OPEN, feedback.getText());
+            assertTrue(isInDetailsPane(scene));
+            press(scene.getFocusOwner(), KeyCode.DIGIT3, true);
+            assertTrue(isInDetailsPane(scene));
 
             enter(input, "view 1");
             enter(input, "view 2");
-            ContactDetailsWindow alice = main.getContactDetailsWindows().getOpenWindows().get(0);
-            ContactDetailsWindow benson = main.getContactDetailsWindows().getOpenWindows().get(1);
+            Scene aliceScene = main.getContactDetailsWindows().getOpenWindows().get(0).getRoot().getScene();
+            Scene bensonScene = main.getContactDetailsWindows().getOpenWindows().get(1).getRoot().getScene();
 
             press(input, KeyCode.DIGIT3, true);
-            Scene bensonScene = benson.getRoot().getScene();
-            assertTrue(isDetailsValue(bensonScene.getFocusOwner()));
-
-            press(bensonScene.getFocusOwner(), KeyCode.DIGIT3, true);
-            Scene aliceScene = alice.getRoot().getScene();
+            assertTrue(isInDetailsPane(scene));
+            press(scene.getFocusOwner(), KeyCode.DIGIT3, true);
             assertTrue(isDetailsValue(aliceScene.getFocusOwner()));
+            press(aliceScene.getFocusOwner(), KeyCode.DIGIT3, true);
+            assertTrue(isDetailsValue(bensonScene.getFocusOwner()));
+            press(bensonScene.getFocusOwner(), KeyCode.DIGIT3, true);
+            assertTrue(isInDetailsPane(scene));
 
-            press(aliceScene.getFocusOwner(), KeyCode.ESCAPE, false);
+            press(bensonScene.getFocusOwner(), KeyCode.ESCAPE, false);
             assertSame(input, scene.getFocusOwner());
         });
     }
@@ -123,6 +133,24 @@ public class DashboardUiTest {
 
             click(carl, 2);
             assertEquals(1, main.getContactDetailsWindows().getOpenWindows().size());
+        });
+    }
+
+    @Test
+    public void selectingContact_showsItInDockedPaneWithoutPopup() throws Exception {
+        FxTestUtil.run(() -> {
+            MainWindow main = showMainWindow();
+            Scene scene = main.getPrimaryStage().getScene();
+            @SuppressWarnings("unchecked")
+            ListView<Person> contacts = (ListView<Person>) scene.lookup("#personListView");
+
+            // A single click selects the row, as here.
+            contacts.getSelectionModel().select(2);
+            assertTrue(dockedDetails(scene).startsWith("Name: Carl Kurz\n"));
+            assertTrue(main.getContactDetailsWindows().getOpenWindows().isEmpty());
+
+            contacts.getSelectionModel().clearSelection();
+            assertTrue(dockedDetails(scene).startsWith("Name: Carl Kurz\n"));
         });
     }
 
@@ -156,6 +184,21 @@ public class DashboardUiTest {
 
     private static boolean isDetailsValue(Node node) {
         return node != null && node.getStyleClass().contains(DetailsPanel.VALUE_STYLE_CLASS);
+    }
+
+    /** Returns the snapshot shown in the docked [3] pane. */
+    private static String dockedDetails(Scene scene) {
+        return ((ScrollPane) scene.lookup("#detailsScroll")).getContent().getAccessibleText();
+    }
+
+    private static boolean isInDetailsPane(Scene scene) {
+        Node detailsPane = scene.lookup("#detailsPane");
+        for (Node node = scene.getFocusOwner(); node != null; node = node.getParent()) {
+            if (node == detailsPane) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void click(Node target, int clickCount) {

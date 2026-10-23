@@ -80,21 +80,20 @@ public class ContactDetailsWindowsTest {
     }
 
     @Test
-    public void focusAfter_cyclesFromNewestThroughAllWindows() throws Exception {
+    public void focusAfter_stepsFromOldestToNewestOnce() throws Exception {
         FxTestUtil.run(() -> {
             Stage owner = shownOwner();
             ContactDetailsWindows windows = new ContactDetailsWindows(owner, unused -> { });
             assertFalse(windows.focusAfter(owner));
 
-            ContactDetailsWindow first = windows.show(alice, "Alice");
-            ContactDetailsWindow second = windows.show(benson, "Benson");
+            ContactDetailsWindow first = windows.show(alice, "Name: Alice");
+            ContactDetailsWindow second = windows.show(benson, "Name: Benson");
 
             assertTrue(windows.focusAfter(owner));
-            assertTrue(hasFocusedDetails(second));
-            assertTrue(windows.focusAfter(second.getRoot()));
             assertTrue(hasFocusedDetails(first));
             assertTrue(windows.focusAfter(first.getRoot()));
             assertTrue(hasFocusedDetails(second));
+            assertFalse(windows.focusAfter(second.getRoot()));
         });
     }
 
