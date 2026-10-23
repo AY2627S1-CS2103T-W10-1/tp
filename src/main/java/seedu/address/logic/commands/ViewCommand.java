@@ -3,8 +3,10 @@ package seedu.address.logic.commands;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.core.index.Index;
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.commands.exceptions.CommandException;
@@ -39,6 +41,8 @@ public class ViewCommand extends Command {
     public static final String MESSAGE_INVALID_CONTACT_ID =
             "Error: Please enter a Contact ID in the range 1-%1$d.";
 
+    private static final Logger logger = LogsCenter.getLogger(ViewCommand.class);
+
     private final Index targetIndex;
 
     public ViewCommand(Index targetIndex) {
@@ -50,14 +54,18 @@ public class ViewCommand extends Command {
         requireNonNull(model);
         List<Person> displayedPersons = model.getFilteredPersonList();
         if (displayedPersons.isEmpty()) {
+            logger.fine("Contact view rejected because the displayed list is empty.");
             throw new CommandException(MESSAGE_EMPTY_LIST);
         }
         if (targetIndex.getZeroBased() >= displayedPersons.size()) {
+            logger.fine("Contact view rejected: index " + targetIndex.getOneBased()
+                    + " exceeds displayed contact count " + displayedPersons.size() + ".");
             throw new CommandException(String.format(MESSAGE_INVALID_CONTACT_ID, displayedPersons.size()));
         }
 
         Person person = displayedPersons.get(targetIndex.getZeroBased());
         String feedback = String.format(MESSAGE_SUCCESS, targetIndex.getOneBased(), person.getName());
+        logger.fine("Preparing contact details for displayed index " + targetIndex.getOneBased() + ".");
         return new CommandResult(feedback, formatDetails(person));
     }
 

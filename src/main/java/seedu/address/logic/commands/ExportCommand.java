@@ -7,7 +7,9 @@ import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.logging.Logger;
 
+import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.help.HelpPage;
@@ -50,6 +52,8 @@ public class ExportCommand extends Command {
     public static final String MESSAGE_WRITE_ERROR = "Unable to create the CSV file '%1$s'. "
             + "Please check the folder's permissions and available space.";
 
+    private static final Logger logger = LogsCenter.getLogger(ExportCommand.class);
+
     private final String fileName;
     private final CsvContactExporter exporter;
 
@@ -71,15 +75,19 @@ public class ExportCommand extends Command {
         requireNonNull(model);
         List<Person> contacts = List.copyOf(model.getAddressBook().getPersonList());
         if (contacts.isEmpty()) {
+            logger.fine("CSV export skipped because the address book is empty.");
             throw new CommandException(MESSAGE_EMPTY_LIST);
         }
         try {
             exporter.export(contacts, fileName);
         } catch (FileAlreadyExistsException e) {
+            logger.fine("CSV export rejected because the destination file already exists.");
             throw new CommandException(String.format(MESSAGE_ALREADY_EXISTS, fileName), e);
         } catch (IOException e) {
+            logger.warning("CSV export failed: " + e.getClass().getSimpleName());
             throw new CommandException(String.format(MESSAGE_WRITE_ERROR, fileName), e);
         }
+        logger.info("CSV export completed: " + contacts.size() + " contacts written.");
         return new CommandResult(String.format(MESSAGE_SUCCESS, contacts.size(), fileName));
     }
 
