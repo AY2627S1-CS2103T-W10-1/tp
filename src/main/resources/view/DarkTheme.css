@@ -1,9 +1,10 @@
 /*
  * Terminal-dashboard theme shared by every window (main, help and error alerts).
  * The font family is set once here; other rules only set sizes, weights and colours.
+ * It keeps AB3's Segoe UI font; on macOS and Linux, where Segoe UI is not installed, JavaFX uses the system font.
  */
 .root, .dialog-pane {
-    -fx-font-family: "Consolas";
+    -fx-font-family: "Segoe UI";
 }
 
 .root {

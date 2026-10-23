@@ -38,11 +38,13 @@
 
 .help-content Text {
     -fx-fill: -tui-text;
+    -fx-font-family: "System";
     -fx-font-size: 13px;
 }
 
 .help-command {
     -fx-text-fill: -tui-accent;
+    -fx-font-family: Monospaced;
     -fx-font-size: 14px;
     -fx-font-weight: bold;
 }
@@ -64,8 +66,14 @@
     -fx-alignment: top-left;
 }
 
+/* Option rows pad flags with spaces to line up their descriptions, so they need a monospaced font too. */
+.help-code-text Text, .help-options Text {
+    -fx-font-family: Monospaced;
+}
+
 .help-content .help-token {
     -fx-fill: -tui-accent;
+    -fx-font-family: Monospaced;
     -fx-font-weight: bold;
 }
 

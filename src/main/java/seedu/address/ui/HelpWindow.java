@@ -39,7 +39,7 @@ public class HelpWindow extends UiPart<Stage> {
     public HelpWindow(Stage root) {
         super(FXML, root);
         setPage(HelpCatalog.getOverview());
-        // Wide enough for most option descriptions to fit on one line in the monospace font.
+        // Wide enough for most usage lines and option descriptions to fit on one line.
         getRoot().setWidth(720);
         getRoot().setHeight(460);
         getRoot().getScene().addEventFilter(KeyEvent.KEY_PRESSED, event -> {
