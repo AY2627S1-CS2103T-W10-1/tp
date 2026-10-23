@@ -1,29 +1,44 @@
 package seedu.address.ui;
 
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
+import javafx.beans.InvalidationListener;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextInputControl;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.Logic;
 import seedu.address.logic.commands.CommandResult;
+import seedu.address.logic.commands.ViewCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.help.HelpCatalog;
 import seedu.address.logic.parser.exceptions.ParseException;
 
 /**
- * The Main Window. Provides the basic application layout containing
- * a menu bar and space where other JavaFX elements can be placed.
+ * The Main Window. Lays out numbered panes in the style of a terminal dashboard:
+ * [1] departments, [2] contacts and [4] output with the command prompt.
+ * Contact details open as [3] popups, one per viewed contact.
  */
 public class MainWindow extends UiPart<Stage> {
+
+    public static final String FOCUSED_PANE_STYLE_CLASS = "pane-focused";
+    public static final String MESSAGE_NO_DETAILS_OPEN =
+            "No contact details are open. Run view CONTACT_ID, or press Enter on a contact in [2].";
 
     private static final String FXML = "MainWindow.fxml";
 
@@ -34,16 +49,30 @@ public class MainWindow extends UiPart<Stage> {
     private Path dataFilePath;
 
     // Independent Ui parts residing in this Ui container
+    private DepartmentPanel departmentPanel;
     private PersonListPanel personListPanel;
     private ResultDisplay resultDisplay;
+    private CommandBox commandBox;
     private HelpWindow helpWindow;
-    private ContactDetailsWindow contactDetailsWindow;
+    private ContactDetailsWindows contactDetailsWindows;
+
+    @FXML
+    private VBox departmentPane;
+
+    @FXML
+    private VBox contactPane;
+
+    @FXML
+    private VBox outputPane;
 
     @FXML
     private StackPane commandBoxPlaceholder;
 
     @FXML
     private MenuItem helpMenuItem;
+
+    @FXML
+    private StackPane departmentPanelPlaceholder;
 
     @FXML
     private StackPane personListPanelPlaceholder;
@@ -70,9 +99,11 @@ public class MainWindow extends UiPart<Stage> {
         setWindowDefaultSize(logic.getGuiSettings());
 
         setAccelerators();
+        addPaneShortcuts(primaryStage.getScene());
+        trackFocusedPane();
 
         helpWindow = new HelpWindow();
-        contactDetailsWindow = new ContactDetailsWindow(primaryStage);
+        contactDetailsWindows = new ContactDetailsWindows(primaryStage, this::addPaneShortcuts);
     }
 
     public Stage getPrimaryStage() {
@@ -114,20 +145,86 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     /**
+     * Binds Alt+1 to Alt+4 to the numbered panes and Esc to the command prompt.
+     * The same keys work in every contact details popup, so the keyboard never gets stuck in one.
+     */
+    private void addPaneShortcuts(Scene scene) {
+        Map<KeyCombination, Runnable> shortcuts = Map.of(
+                new KeyCodeCombination(KeyCode.DIGIT1, KeyCombination.ALT_DOWN), () ->
+                        focusInMainWindow(() -> departmentPanel.focus()),
+                new KeyCodeCombination(KeyCode.DIGIT2, KeyCombination.ALT_DOWN), () ->
+                        focusInMainWindow(() -> personListPanel.focus()),
+                new KeyCodeCombination(KeyCode.DIGIT3, KeyCombination.ALT_DOWN), () ->
+                        focusNextDetailsWindow(scene.getWindow()),
+                new KeyCodeCombination(KeyCode.DIGIT4, KeyCombination.ALT_DOWN), () ->
+                        focusInMainWindow(() -> commandBox.focus()),
+                new KeyCodeCombination(KeyCode.ESCAPE), () -> focusInMainWindow(() -> commandBox.focus()));
+
+        scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> shortcuts.entrySet().stream()
+                .filter(entry -> entry.getKey().match(event))
+                .findFirst()
+                .ifPresent(entry -> {
+                    entry.getValue().run();
+                    event.consume();
+                }));
+    }
+
+    private void focusInMainWindow(Runnable focusPane) {
+        primaryStage.requestFocus();
+        focusPane.run();
+    }
+
+    private void focusNextDetailsWindow(Window current) {
+        if (!contactDetailsWindows.focusAfter(current)) {
+            resultDisplay.setFeedbackToUser(MESSAGE_NO_DETAILS_OPEN);
+        }
+    }
+
+    /**
+     * Highlights the pane that has the keyboard focus, and no pane while a popup has it.
+     */
+    private void trackFocusedPane() {
+        Scene scene = primaryStage.getScene();
+        InvalidationListener update = unused ->
+                highlightPaneOf(primaryStage.isFocused() ? scene.getFocusOwner() : null);
+        scene.focusOwnerProperty().addListener(update);
+        primaryStage.focusedProperty().addListener(update);
+    }
+
+    private void highlightPaneOf(Node focusOwner) {
+        List<VBox> panes = List.of(departmentPane, contactPane, outputPane);
+        panes.forEach(pane -> pane.getStyleClass().remove(FOCUSED_PANE_STYLE_CLASS));
+        for (Node node = focusOwner; node != null; node = node.getParent()) {
+            if (panes.contains(node)) {
+                node.getStyleClass().add(FOCUSED_PANE_STYLE_CLASS);
+                return;
+            }
+        }
+    }
+
+    /**
      * Fills up all the placeholders of this window.
      */
     void fillInnerParts() {
+        departmentPanel = new DepartmentPanel(logic.getDepartmentList(), logic.getPersonList());
+        departmentPanelPlaceholder.getChildren().add(departmentPanel.getRoot());
+
         personListPanel = new PersonListPanel(logic.getFilteredPersonList());
+        personListPanel.setOnViewRequested(this::viewContact);
         personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
 
         resultDisplay = new ResultDisplay();
         resultDisplayPlaceholder.getChildren().add(resultDisplay.getRoot());
 
-        StatusBarFooter statusBarFooter = new StatusBarFooter(dataFilePath);
+        StatusBarFooter statusBarFooter = new StatusBarFooter(dataFilePath, logic.getFilteredPersonList(),
+                logic.getPersonList());
         statusbarPlaceholder.getChildren().add(statusBarFooter.getRoot());
 
-        CommandBox commandBox = new CommandBox(this::executeCommand);
+        commandBox = new CommandBox(this::executeCommand);
         commandBoxPlaceholder.getChildren().add(commandBox.getRoot());
+
+        // The prompt, not the first pane in traversal order, receives the initial focus.
+        commandBox.focus();
     }
 
     /**
@@ -163,12 +260,27 @@ public class MainWindow extends UiPart<Stage> {
                 (int) primaryStage.getX(), (int) primaryStage.getY());
         logic.setGuiSettings(guiSettings);
         helpWindow.hide();
-        contactDetailsWindow.hide();
+        contactDetailsWindows.hideAll();
         primaryStage.hide();
     }
 
     public PersonListPanel getPersonListPanel() {
         return personListPanel;
+    }
+
+    ContactDetailsWindows getContactDetailsWindows() {
+        return contactDetailsWindows;
+    }
+
+    /**
+     * Runs {@code view} for the contact picked in [2], as if it had been typed at the prompt.
+     */
+    private void viewContact(int contactId) {
+        try {
+            executeCommand(ViewCommand.COMMAND_WORD + " " + contactId);
+        } catch (CommandException | ParseException e) {
+            logger.fine("Viewing the selected contact failed; the error is shown in the output pane.");
+        }
     }
 
     /**
@@ -186,7 +298,12 @@ public class MainWindow extends UiPart<Stage> {
                 helpWindow.showPage(commandResult.getHelpPage().orElse(HelpCatalog.getOverview()));
             }
 
-            commandResult.getContactDetails().ifPresent(contactDetailsWindow::showDetails);
+            if (commandResult.isShowDetails()) {
+                contactDetailsWindows.show(commandResult.getViewedPerson().orElseThrow(),
+                        commandResult.getContactDetails().orElseThrow());
+                // The popup stays in front of its owner, while typing carries on in the main window.
+                primaryStage.requestFocus();
+            }
 
             if (commandResult.isExit()) {
                 handleExit();
@@ -195,7 +312,7 @@ public class MainWindow extends UiPart<Stage> {
             return commandResult;
         } catch (CommandException | ParseException e) {
             logger.info("An error occurred while executing command: " + commandText);
-            resultDisplay.setFeedbackToUser(CommandErrorFormatter.format(commandText, e.getMessage()));
+            resultDisplay.setErrorFeedback(CommandErrorFormatter.format(commandText, e.getMessage()));
             throw e;
         }
     }

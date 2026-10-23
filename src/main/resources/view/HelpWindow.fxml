@@ -17,6 +17,8 @@
   <scene>
     <Scene>
       <stylesheets>
+        <!-- The main window's theme supplies the shared colours; HelpWindow.css lays out the help content. -->
+        <URL value="@DarkTheme.css" />
         <URL value="@HelpWindow.css" />
       </stylesheets>
 

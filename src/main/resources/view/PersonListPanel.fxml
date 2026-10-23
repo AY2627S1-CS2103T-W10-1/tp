@@ -1,8 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
 <VBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
-  <ListView fx:id="personListView" VBox.vgrow="ALWAYS" />
+  <HBox styleClass="contact-header" alignment="CENTER_LEFT">
+    <Label text="ID" styleClass="col-id" />
+    <Label text="NAME" styleClass="col-name" />
+    <Label text="PHONE" styleClass="col-phone" />
+    <Label text="EMAIL" styleClass="col-email" />
+    <Label text="DEPARTMENT" styleClass="col-department" />
+    <Label text="TAGS" styleClass="col-tags" />
+  </HBox>
+  <ListView fx:id="personListView" styleClass="contact-list" VBox.vgrow="ALWAYS" />
 </VBox>

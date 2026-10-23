@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+
+<ScrollPane fx:id="detailsScroll" fitToWidth="true" hbarPolicy="NEVER" focusTraversable="true"
+            styleClass="details-scroll" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
+  <GridPane fx:id="contactDetails" hgap="16" vgap="6" styleClass="details-grid">
+    <padding>
+      <Insets top="6" right="8" bottom="6" left="8" />
+    </padding>
+    <columnConstraints>
+      <!-- Field names keep their full width; values take the rest and wrap. -->
+      <ColumnConstraints minWidth="-Infinity" />
+      <ColumnConstraints hgrow="ALWAYS" minWidth="40" />
+    </columnConstraints>
+  </GridPane>
+</ScrollPane>

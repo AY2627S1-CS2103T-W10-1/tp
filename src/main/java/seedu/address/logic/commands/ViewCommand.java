@@ -58,24 +58,25 @@ public class ViewCommand extends Command {
 
         Person person = displayedPersons.get(targetIndex.getZeroBased());
         String feedback = String.format(MESSAGE_SUCCESS, targetIndex.getOneBased(), person.getName());
-        return new CommandResult(feedback, formatDetails(person));
+        return new CommandResult(feedback, person, formatDetails(person));
     }
 
     /**
-     * Formats every currently supported contact field without truncation.
+     * Formats every currently supported contact field without truncation, in two groups separated by blank lines:
+     * how to reach the contact (name, phone, email, address), then how they are organised (department, tags).
      */
     private String formatDetails(Person person) {
         String tags = person.getTags().stream()
                 .map(tag -> tag.tagName)
                 .sorted()
                 .collect(Collectors.joining(", "));
-        return "Contact details:\n"
-                + "Name: " + person.getName() + "\n"
+        return "Name: " + person.getName() + "\n"
                 + "Phone: " + person.getPhone() + "\n"
                 + "Email: " + person.getEmail() + "\n"
+                + "Address: " + person.getAddress() + "\n"
+                + "\n\n"
                 + "Department: " + person.getDepartment().map(department -> department.value)
                         .orElse("Not provided") + "\n"
-                + "Address: " + person.getAddress() + "\n"
                 + "Tags: " + (tags.isEmpty() ? "None" : tags);
     }
 
