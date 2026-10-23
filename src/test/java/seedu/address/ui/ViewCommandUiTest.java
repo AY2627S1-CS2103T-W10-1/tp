@@ -2,20 +2,23 @@ package seedu.address.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import javafx.event.ActionEvent;
+import javafx.scene.Scene;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
-import javafx.stage.Window;
 import seedu.address.logic.LogicManager;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
@@ -34,7 +37,7 @@ public class ViewCommandUiTest {
     }
 
     @Test
-    public void enterView_filteredList_opensDetailsAndExitClosesWindow() throws Exception {
+    public void enterView_differentContacts_opensOnePopupEachAndExitClosesThem() throws Exception {
         FxTestUtil.run(() -> {
             ModelManager model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
             Path dataPath = testFolder.resolve("contacts.json");
@@ -45,45 +48,51 @@ public class ViewCommandUiTest {
             main.fillInnerParts();
             stage.show();
             TextField input = (TextField) stage.getScene().lookup("#commandTextField");
-
-            enter(input, "find Benson");
-            enter(input, "view 1");
             TextArea feedback = (TextArea) stage.getScene().lookup("#resultDisplay");
-            assertEquals("Showing details of contact 1: Benson Meier", feedback.getText());
+            ContactDetailsWindows popups = main.getContactDetailsWindows();
 
-            Stage details = (Stage) Window.getWindows().stream()
-                    .filter(window -> window instanceof Stage candidate
-                            && "Contact details".equals(candidate.getTitle()))
-                    .findFirst().orElseThrow();
-            TextArea text = (TextArea) details.getScene().lookup("#contactDetails");
-            assertTrue(text.getText().contains("Name: Benson Meier\n"));
-            assertTrue(text.getText().contains("Department: Not provided\n"));
-            assertTrue(details.isShowing());
-            assertEquals(1, model.getFilteredPersonList().size());
+            enter(input, "find Meier");
+            enter(input, "view 1");
+            assertEquals("Showing details of contact 1: Benson Meier", feedback.getText());
+            enter(input, "view 2");
+            assertEquals("Showing details of contact 2: Daniel Meier", feedback.getText());
+
+            List<ContactDetailsWindow> open = popups.getOpenWindows();
+            assertEquals(2, open.size());
+            ContactDetailsWindow benson = open.get(0);
+            assertEquals(ContactDetailsWindow.TITLE_PREFIX + "Benson Meier", benson.getRoot().getTitle());
+            assertEquals(ContactDetailsWindow.TITLE_PREFIX + "Daniel Meier", open.get(1).getRoot().getTitle());
+            assertTrue(detailsText(benson).contains("Name: Benson Meier\n"));
+            assertTrue(detailsText(benson).contains("Department: Not provided\n"));
+            assertEquals(stage, benson.getRoot().getOwner());
             assertEquals("", input.getText());
 
-            enter(input, "view 2");
+            enter(input, "view 3");
             assertTrue(input.getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS));
-            assertTrue(text.getText().contains("Name: Benson Meier\n"));
+            assertEquals(2, popups.getOpenWindows().size());
 
             enter(input, "depart --add \"R&D Engineering\"");
+            enter(input, "find Benson");
             enter(input, "edit 1 --department \"R&D Engineering\"");
             enter(input, "find Benson");
             assertFalse(input.getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS));
-            assertTrue(text.getText().contains("Department: Not provided\n"));
+            assertTrue(detailsText(benson).contains("Department: Not provided\n"));
+
             enter(input, "view 1");
-            assertTrue(text.getText().contains("Department: R&D Engineering\n"));
-            assertEquals("Showing details of contact 1: Benson Meier", feedback.getText());
-            assertEquals(1, model.getFilteredPersonList().size());
-            assertEquals(details, Window.getWindows().stream()
-                    .filter(window -> window instanceof Stage candidate
-                            && "Contact details".equals(candidate.getTitle()))
-                    .findFirst().orElseThrow());
+            assertTrue(detailsText(benson).contains("Department: R&D Engineering\n"));
+            assertEquals(2, popups.getOpenWindows().size());
+            assertSame(benson, popups.getOpenWindows().getFirst());
 
             enter(input, "exit");
-            assertFalse(details.isShowing());
+            assertFalse(benson.getRoot().isShowing());
+            assertTrue(popups.getOpenWindows().isEmpty());
             assertFalse(stage.isShowing());
         });
+    }
+
+    private static String detailsText(ContactDetailsWindow window) {
+        Scene scene = window.getRoot().getScene();
+        return ((ScrollPane) scene.lookup("#detailsScroll")).getContent().getAccessibleText();
     }
 
     private void enter(TextField input, String command) {
