@@ -82,23 +82,27 @@ The **API** of this component is specified in [`Ui.java`](https://github.com/se-
 
 ![Structure of the UI Component](images/UiClassDiagram.png)
 
-The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `DepartmentPanel`, `PersonListPanel`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
+The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `DepartmentPanel`, `PersonListPanel`, `DetailsPanel`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
 
 `MainWindow` lays its parts out as numbered panes, in the style of a terminal dashboard: [1] `DepartmentPanel`
-(each registered department with its number of contacts), [2] `PersonListPanel` (one table row per contact), and
-[4] the `ResultDisplay` above the `CommandBox` prompt. Alt+1, Alt+2 and Alt+4 (or Esc) move the keyboard focus
-between them, and the pane with the focus is outlined. `DepartmentPanel` and `StatusBarFooter` read the unfiltered
+(each registered department with its number of contacts), [2] `PersonListPanel` (one table row per contact),
+[3] a docked `DetailsPanel`, and [4] the `ResultDisplay` above the `CommandBox` prompt. Alt+1 to Alt+4 (or Esc for
+the prompt) move the keyboard focus between them, and the pane with the focus is outlined. `DepartmentPanel` and `StatusBarFooter` read the unfiltered
 `Logic.getPersonList()` and `Logic.getDepartmentList()`, so they stay up to date with every change.
 
-Contact details are [3]: popup windows managed by `ContactDetailsWindows`. A successful `view` command returns the
+Contact details appear in two places. The docked [3] pane follows the selection in [2]: selecting a row with a
+click or j/k formats that contact with `ViewCommand.formatDetails(Person)` and shows it at once, without running a
+command, so glancing through contacts stays instant. To compare contacts side by side, details can also pop out
+into windows managed by `ContactDetailsWindows`. A successful `view` command returns the
 viewed `Person` and a details snapshot through `CommandResult`. `ContactDetailsWindows.show(Person, String)` refreshes
 the open `ContactDetailsWindow` (a `UiPart<Stage>`) whose contact `isSamePerson` as the viewed one, or opens a new
-popup cascaded from the main window. Each popup hosts a `DetailsPanel`, which turns every `Field: value` line of the
-snapshot into a grey field name beside a read-only value that can be selected with j/k or Tab and copied. Several contacts can therefore be compared side by side, while viewing the
-same contact again never duplicates its popup. Popups are owned by the main stage, so they stay in front of it,
+popup cascaded from the main window. Like the docked pane, each popup hosts a `DetailsPanel`, which turns every
+`Field: value` line of the snapshot into a grey field name beside a read-only value that can be selected with j/k or
+Tab and copied. Several contacts can therefore be compared side by side, while viewing the same contact again never
+duplicates its popup. Popups are owned by the main stage, so they stay in front of it,
 and the keyboard focus stays at the prompt after `view`. Pressing Enter on a row in [2], or double-clicking it,
-runs `view` with that row's contact ID. Alt+3 cycles the focus through the popups, `q` closes the focused one, and
-every popup is hidden when the application exits.
+runs `view` with that row's contact ID. Repeated Alt+3 presses step through the docked pane and then each popup,
+`q` closes the focused popup, and every popup is hidden when the application exits.
 
 The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/ui/MainWindow.java).
 
@@ -1285,7 +1289,8 @@ For the department assignment examples below, register the required names first 
       The main result box shows only `Showing details of contact CONTACT_ID: NAME`.
    1. View a contact without tags. Expected: the Tags field shows a dimmed `None`.
    1. View a contact without a department. Expected: the Department field shows a dimmed `Not provided`.
-   1. Press Alt+3, then `j` and Ctrl+C. Expected: the phone number is highlighted and copied to the clipboard.
+   1. Press Alt+3 until a popup has the focus, then press `j` and Ctrl+C.
+      Expected: the phone number is highlighted and copied to the clipboard.
    1. Run `find Benson`, then `edit 1 --department "R&D Engineering"`. Run `find Benson` again, then `view 1`.
       Expected: Benson's details include `Department: R&D Engineering`; `view` preserves the current filter.
    1. Change the selected contact's department with `edit 1 --department Sales`.
@@ -1294,10 +1299,13 @@ For the department assignment examples below, register the required names first 
    1. View another contact. Expected: a second popup opens, offset from the first. Both stay in front of the
       main window, and the prompt keeps the keyboard focus.
    1. View the first contact again. Expected: its existing popup updates rather than a third popup opening.
-   1. Press Alt+3 repeatedly. Expected: the focus cycles through the open popups. Press Esc.
+   1. Press Alt+3 repeatedly. Expected: the focus moves to [3] Details, then through each open popup,
+      then back to [3] Details. Press Esc.
       Expected: the focus returns to the prompt.
    1. Press `q` in a popup. Expected: only that popup closes, and the main window regains the focus.
    1. Close a contact's popup, then view that contact again. Expected: a popup reopens with the current details.
+   1. Click a row in [2], then move with `j`/`k`.
+      Expected: [3] Details shows each selected contact at once, and no popup opens.
    1. Select a row in [2] with Alt+2 and `j`/`k`, then press Enter. Separately, double-click another row.
       Expected: each gives the same result as running `view` with that row's contact ID.
    1. Edit the viewed contact. Expected: the snapshot stays unchanged until another `view` command is run.
