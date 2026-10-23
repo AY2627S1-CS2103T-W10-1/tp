@@ -33,7 +33,7 @@ public class HelpWindowTest {
             HelpContentView content = (HelpContentView) scroll.getContent();
             assertEquals(HelpCatalog.getOverview().text(), content.getAccessibleText());
             assertTrue(scroll.isFitToWidth());
-            assertEquals(13, content.lookupAll(".help-command-row").size());
+            assertEquals(14, content.lookupAll(".help-command-row").size());
             assertTrue(window.isShowing());
 
             scroll.fireEvent(keyPress(KeyCode.A, false, false, false, false));

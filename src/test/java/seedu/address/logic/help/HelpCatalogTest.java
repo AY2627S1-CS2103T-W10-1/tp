@@ -15,7 +15,7 @@ import seedu.address.logic.parser.AddressBookParser;
 public class HelpCatalogTest {
     @Test
     public void pages_coverEverySupportedCommandAndAliases() {
-        assertEquals(List.of("add", "edit", "depart", "find", "view", "list", "sort", "delete", "undo",
+        assertEquals(List.of("add", "edit", "depart", "find", "view", "list", "count", "sort", "delete", "undo",
                 "export", "clear", "help", "exit"), HelpCatalog.getPages().stream().map(HelpPage::title).toList());
         for (HelpPage page : HelpCatalog.getPages()) {
             assertEquals(page, HelpCatalog.findPage(page.title()).orElseThrow());

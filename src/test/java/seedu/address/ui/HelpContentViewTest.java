@@ -41,7 +41,7 @@ public class HelpContentViewTest {
             HelpContentView view = new HelpContentView();
             view.showPage(HelpCatalog.getOverview());
             List<Node> rows = ((Parent) view.getChildren().getFirst()).getChildrenUnmodifiable();
-            assertEquals(13, rows.size());
+            assertEquals(14, rows.size());
             for (int i = 0; i < rows.size(); i++) {
                 Parent row = (Parent) rows.get(i);
                 Label command = (Label) row.getChildrenUnmodifiable().getFirst();
@@ -124,7 +124,7 @@ public class HelpContentViewTest {
             view.showPage(AddCommand.HELP_PAGE);
             view.showPage(HelpCatalog.getOverview());
             assertTrue(view.lookupAll(".help-copy").isEmpty());
-            assertEquals(13, view.lookupAll(".help-command-row").size());
+            assertEquals(14, view.lookupAll(".help-command-row").size());
             view.showPage(new HelpPage("Other", "First line\nSecond line\n\nMore information."));
             assertTrue(visibleText(view).contains("First line\nSecond line"));
             assertTrue(visibleText(view).contains("More information."));

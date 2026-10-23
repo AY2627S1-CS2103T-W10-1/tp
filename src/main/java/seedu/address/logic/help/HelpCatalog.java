@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.ClearCommand;
+import seedu.address.logic.commands.CountCommand;
 import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.DepartCommand;
 import seedu.address.logic.commands.EditCommand;
@@ -32,6 +33,7 @@ public final class HelpCatalog {
             entry(FindCommand.HELP_PAGE, "Search names or tags."),
             entry(ViewCommand.HELP_PAGE, "View full contact details."),
             entry(ListCommand.HELP_PAGE, "List all contacts.", ListCommand.COMMAND_ALIAS),
+            entry(CountCommand.HELP_PAGE, "Count displayed or stored contacts."),
             entry(SortCommand.HELP_PAGE, "Sort displayed contacts."),
             entry(DeleteCommand.HELP_PAGE, "Delete a contact."),
             entry(UndoCommand.HELP_PAGE, "Restore the latest deletion."),
