@@ -6,12 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import javafx.event.ActionEvent;
+import javafx.scene.Node;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
@@ -34,7 +36,7 @@ public class ViewCommandUiTest {
     }
 
     @Test
-    public void enterView_filteredList_opensDetailsAndExitClosesWindow() throws Exception {
+    public void enterView_filteredList_showsDetailsInPaneAndExitClosesWindow() throws Exception {
         FxTestUtil.run(() -> {
             ModelManager model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
             Path dataPath = testFolder.resolve("contacts.json");
@@ -51,37 +53,29 @@ public class ViewCommandUiTest {
             TextArea feedback = (TextArea) stage.getScene().lookup("#resultDisplay");
             assertEquals("Showing details of contact 1: Benson Meier", feedback.getText());
 
-            Stage details = (Stage) Window.getWindows().stream()
-                    .filter(window -> window instanceof Stage candidate
-                            && "Contact details".equals(candidate.getTitle()))
-                    .findFirst().orElseThrow();
-            TextArea text = (TextArea) details.getScene().lookup("#contactDetails");
-            assertTrue(text.getText().contains("Name: Benson Meier\n"));
-            assertTrue(text.getText().contains("Department: Not provided\n"));
-            assertTrue(details.isShowing());
+            Node details = stage.getScene().lookup("#contactDetails");
+            assertTrue(details.getAccessibleText().contains("Name: Benson Meier\n"));
+            assertTrue(details.getAccessibleText().contains("Department: Not provided\n"));
+            assertEquals(List.of(stage), Window.getWindows().stream().filter(Window::isShowing).toList());
             assertEquals(1, model.getFilteredPersonList().size());
             assertEquals("", input.getText());
 
             enter(input, "view 2");
             assertTrue(input.getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS));
-            assertTrue(text.getText().contains("Name: Benson Meier\n"));
+            assertTrue(details.getAccessibleText().contains("Name: Benson Meier\n"));
 
             enter(input, "depart --add \"R&D Engineering\"");
             enter(input, "edit 1 --department \"R&D Engineering\"");
             enter(input, "find Benson");
             assertFalse(input.getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS));
-            assertTrue(text.getText().contains("Department: Not provided\n"));
+            assertTrue(details.getAccessibleText().contains("Department: Not provided\n"));
             enter(input, "view 1");
-            assertTrue(text.getText().contains("Department: R&D Engineering\n"));
+            assertTrue(details.getAccessibleText().contains("Department: R&D Engineering\n"));
             assertEquals("Showing details of contact 1: Benson Meier", feedback.getText());
             assertEquals(1, model.getFilteredPersonList().size());
-            assertEquals(details, Window.getWindows().stream()
-                    .filter(window -> window instanceof Stage candidate
-                            && "Contact details".equals(candidate.getTitle()))
-                    .findFirst().orElseThrow());
+            assertEquals(List.of(stage), Window.getWindows().stream().filter(Window::isShowing).toList());
 
             enter(input, "exit");
-            assertFalse(details.isShowing());
             assertFalse(stage.isShowing());
         });
     }

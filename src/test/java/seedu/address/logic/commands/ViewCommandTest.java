@@ -33,8 +33,9 @@ public class ViewCommandTest {
 
         CommandResult result = new ViewCommand(Index.fromOneBased(index)).execute(model);
 
-        assertEquals("Contact details:\nName: Amy Bee\nPhone: 85355255\nEmail: amy@gmail.com\n"
-                + "Department: Not provided\nAddress: 123, Jurong West Ave 6, #08-111\nTags: client, vendor",
+        assertEquals("Name: Amy Bee\nPhone: 85355255\nEmail: amy@gmail.com\n"
+                + "Address: 123, Jurong West Ave 6, #08-111\n\n\n"
+                + "Department: Not provided\nTags: client, vendor",
                 result.getContactDetails().orElseThrow());
         assertEquals("Showing details of contact " + index + ": Amy Bee", result.getFeedbackToUser());
         assertTrue(result.isShowDetails());

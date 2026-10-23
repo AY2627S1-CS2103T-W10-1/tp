@@ -55,6 +55,14 @@ public class CommandBox extends UiPart<Region> {
     }
 
     /**
+     * Gives the command input keyboard focus, keeping any text already typed.
+     */
+    public void focus() {
+        commandTextField.requestFocus();
+        commandTextField.positionCaret(commandTextField.getLength());
+    }
+
+    /**
      * Recalls history before the text field handles unmodified Up/Down keys.
      */
     private void handleHistoryNavigation(KeyEvent event) {

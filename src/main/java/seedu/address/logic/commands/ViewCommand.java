@@ -21,7 +21,7 @@ public class ViewCommand extends Command {
 
     /** Detailed usage, supported options and examples for this command. */
     public static final HelpPage HELP_PAGE = new HelpPage(COMMAND_WORD, String.join("\n",
-            "Shows a contact's full details in a separate window.",
+            "Shows a contact's full details in the details pane.",
             "Usage: view INDEX",
             "",
             "INDEX is a positive, one-based position in the currently displayed list.",
@@ -62,20 +62,23 @@ public class ViewCommand extends Command {
     }
 
     /**
-     * Formats every currently supported contact field without truncation.
+     * Formats every currently supported contact field without truncation, in two groups separated by blank lines:
+     * how to reach the contact (name, phone, email, address), then how they are organised (department, tags).
+     * Shared with the UI so a selected row renders exactly as {@code view} does.
      */
-    private String formatDetails(Person person) {
+    public static String formatDetails(Person person) {
+        requireNonNull(person);
         String tags = person.getTags().stream()
                 .map(tag -> tag.tagName)
                 .sorted()
                 .collect(Collectors.joining(", "));
-        return "Contact details:\n"
-                + "Name: " + person.getName() + "\n"
+        return "Name: " + person.getName() + "\n"
                 + "Phone: " + person.getPhone() + "\n"
                 + "Email: " + person.getEmail() + "\n"
+                + "Address: " + person.getAddress() + "\n"
+                + "\n\n"
                 + "Department: " + person.getDepartment().map(department -> department.value)
                         .orElse("Not provided") + "\n"
-                + "Address: " + person.getAddress() + "\n"
                 + "Tags: " + (tags.isEmpty() ? "None" : tags);
     }
 
