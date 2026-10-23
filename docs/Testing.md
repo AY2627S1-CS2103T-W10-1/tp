@@ -52,9 +52,12 @@ while preserving the filter and JSON data.
 identity errors and persistence. On headless Linux run `xvfb-run -a ./gradlew check coverage`; GUI tests use
 software rendering. Other platforms can use `./gradlew check coverage`.
 
-### Contact details interface tests
+### Dashboard and contact details interface tests
 
-The `view` interface tests use JavaFX's existing runtime without additional test libraries.
+`ViewCommandUiTest`, `DetailsPanelTest`, `DepartmentPanelTest`, `ResultDisplayTest` and `DashboardUiTest` cover the
+docked details pane, live department counts, output growth and error colouring, and the keyboard shortcuts
+(Alt+1 to Alt+4, Esc, j/k) by firing key events at the real `MainWindow`.
+These interface tests use JavaFX's existing runtime without additional test libraries.
 On headless Linux, run `xvfb-run -a ./gradlew check coverage` to provide a virtual display.
 The CI workflow does this automatically; without `DISPLAY`, local Linux interface tests are skipped.
 Other operating systems can use `./gradlew check coverage` normally. Tests use software rendering

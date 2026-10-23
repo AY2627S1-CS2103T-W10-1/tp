@@ -89,6 +89,30 @@ sudoContact is a **desktop application for managing contacts, optimized for use 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </div>
 
+### The main window and keyboard shortcuts
+
+The main window is split into numbered panes, so you can do everything from the keyboard:
+
+* **[1] Departments**: two summary rows, then every registered department with its number of contacts.
+  `All contacts` counts every stored contact, even while a `find` filter hides some.
+  `No department` counts contacts that have no department assigned.
+* **[2] Contacts**: the currently displayed contacts, one per line, with ID, name, phone, department and tags.
+  Missing values show as `—`. Email and address are shown in the details pane.
+* **[3] Details**: the full details of the contact you viewed or selected.
+* **[4] Output**: the result of your last command, with the command prompt (`$`) below it.
+  Errors are shown in red, together with example commands.
+
+The footer shows the shortcuts, how many contacts are shown out of the total, and where your data is saved.
+
+Shortcut | Action
+---------|-------
+**Alt+1** / **Alt+2** / **Alt+3** | Move the keyboard focus to the departments, contacts or details pane. The focused pane is outlined.
+**Alt+4** or **Esc** | Return to the command prompt, keeping anything you have typed.
+**j** / **k** (or **Down** / **Up**) | In the contacts pane, select the next or previous contact and show its details.
+**j** / **k** (or **Tab** / **Shift+Tab**), then **Ctrl+C** | In the details pane, move to the next or previous field and copy its value.
+**Up** / **Down** | In the command prompt, recall earlier commands (see below).
+**F1** | Open the command help.
+
 ### Recalling command history
 
 While the command box is focused, press **Up** to recall the last submitted command, then older commands.
@@ -99,7 +123,7 @@ You can edit a recalled command and press Enter to submit it again. Browsing doe
 Navigating away from an edited history entry discards those edits; the original history entry stays unchanged.
 Successful and failed commands are remembered, including repeated submissions. Blank input is not stored.
 History lasts only until you close the application and is not saved to disk.
-When a command fails, the result box keeps the original error and shows up to two example commands
+When a command fails, the output pane keeps the original error and shows up to two example commands
 underneath it. These examples are shared with command help. Errors that already include examples
 are shown without another examples section. Unknown commands suggest `help` instead.
 Examples demonstrate valid syntax; an index, contact, filename, or storage problem may still need to be resolved.
@@ -112,7 +136,7 @@ Command names and aliases appear in bold cyan beside short descriptions.
 Supply a command name to view its syntax, supported options, examples, and behavior notes
 in separate sections. Commands and option names are highlighted; use the **Copy** buttons
 beside usage and examples to copy their text.
-You can also open the overview from the Help menu or with `F1`.
+You can also open the overview with `F1`.
 Press unmodified `q` while the Help window is active to close it.
 
 Format: `help [COMMAND]` or `? [COMMAND]`
@@ -320,9 +344,13 @@ A missing file follows the existing sample-data behavior.
 
 ### Viewing a contact's details: `view`
 
-Shows the selected contact's name, phone, email, department, address and tags in a separate contact details window.
-The main result box shows a brief confirmation, such as `Showing details of contact 1: Amy Bee`.
-Long values in the details window wrap onto multiple lines; scroll to read them. Text can be selected and copied.
+Shows the selected contact's details in the **[3] Details** pane, in two groups: name, phone, email and address
+first, then department and tags below a gap.
+The output pane shows a brief confirmation, such as `Showing details of contact 1: Amy Bee`.
+Field names are grey, values are white, and missing values (`Not provided`, `None`) are dimmed.
+Long values wrap onto multiple lines.
+To copy a value, press **Alt+3** and use **j**/**k** to move between fields. The value you move to is selected,
+so **Ctrl+C** copies it.
 Contacts without tags show `Tags: None`.
 Contacts without a department show `Department: Not provided`.
 
@@ -334,8 +362,8 @@ Format: `view CONTACT_ID`
 * A contact ID outside the displayed list produces an error showing the valid range.
 * An empty displayed list produces `There is no contact to view in the currently displayed list.`
 * Viewing leaves contact data and the current filter unchanged and uses the same automatic saving flow as other commands.
-* The window shows a snapshot. Run `view CONTACT_ID` again after editing, deleting or filtering to refresh it.
-  Viewing another contact updates the same window. Closing the window does not exit sudoContact.
+* The pane shows a snapshot. Run `view CONTACT_ID` again after editing, deleting or filtering to refresh it.
+  Viewing another contact, or selecting one in **[2] Contacts** with **Alt+2** and then **j**/**k**, replaces it.
 
 Examples:
 
