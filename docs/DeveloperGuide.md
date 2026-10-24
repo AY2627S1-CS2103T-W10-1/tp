@@ -22,6 +22,8 @@ He Qianyi is responsible for reviewing and understanding these changes.
 He Qianyi used OpenAI Codex to assist with updating and verifying the UI class diagram and the UML sequence diagrams for contact viewing, partial-contact addition and CSV export.
 
 He Qianyi used OpenAI Codex to assist with diagnostic logging for contact viewing and CSV export.
+He Qianyi used OpenAI Codex to assist with iterative email validation, long-input regression tests,
+contact-workflow glossary updates and alpha-review documentation corrections.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -230,6 +232,18 @@ stored values are empty strings and whose display strings are `Not provided`. Th
 parser validators still reject empty supplied values. Department remains optional. The department
 catalogue and assignment rules are specified below under Department management.
 
+Unrecognised single-hyphen words within a value are literal text rather than unsupported options:
+`add --name Alice --phone 91234567 --address Road -x typo` stores `Road -x typo` as the address.
+Recognised short flags still delimit fields unless quoted. This distinction also applies to `edit`.
+`Name` currently accepts only ASCII letters, digits and ordinary spaces, starting with a letter or digit;
+accented or Chinese characters, apostrophes and hyphens are outside this version's supported name format.
+
+`Email.isValidEmail` scans characters and separator boundaries iteratively, preserving the existing format
+rules without recursive regex matching. Validation takes linear time and constant auxiliary space, including
+long local parts and domains. This avoids a `StackOverflowError` on repeated email segments and retains
+previously accepted stored emails. Invalid email input still produces the normal `ParseException` through
+`ParserUtil`; there is no new email-length restriction.
+
 `JsonAdaptedPerson` maps null, omitted or empty phone/email/address fields to the missing value objects;
 nonempty invalid data still causes a loading error. Existing fully populated data retains its fields.
 `add` and `edit` both parse user input through `ParserUtil`, which validates phone numbers as 7–15 digits and
@@ -242,6 +256,7 @@ Tag search and matching reuse the teammate's implementation.
 
 `Person.isSamePerson` requires the same name and at least one matching provided phone number or email
 address. Missing fields are not matches. Address, Department and tags do not contribute to identity.
+Names and emails are compared case-sensitively; phone numbers use exact string equality.
 This duplicate relation is not transitive: a proposed edit can match its original contact by phone and another
 contact by email. Therefore both `EditCommand` and `UniquePersonList.setPerson` check every other contact,
 excluding the edited target, even when the original and edited versions match. `edit` can complete partial
@@ -270,6 +285,9 @@ rename/delete/undo on the restored data. Rejected operations retain stored bytes
 `AddCommand` returns full labelled feedback, sorted tags and missing-field placeholders. `PersonCard` shows
 those same placeholders for missing fields and `None` for no tags. `LogicManager` retains the existing save
 failure behaviour: it reports the error instead of returning an addition-success result.
+The model change and filter/sort reset occur before saving. If saving fails, the contact addition or edit
+remains in memory and is not rolled back, so repeating an `add` may fail the duplicate check. After resolving
+the storage error, `list` retries the normal save. The UG describes this recovery before closing the app.
 
 ### Department management: design specification
 
@@ -634,7 +652,8 @@ How `undo` works:
 1. `UndoCommand#execute` checks `Model#hasDeletedPerson()`. If the history is empty, it throws a `CommandException`
    saying there is nothing to undo.
 1. It reads the most recent deletion with `Model#getLastDeletedPerson()` and checks `Model#hasPerson(...)`. A contact
-   with the same name, phone and email (`Person#isSamePerson`) may have been added since the deletion. If so, it
+   with the same name and either a matching provided phone number or a matching provided email address
+   (`Person#isSamePerson`) may have been added since the deletion. If so, it
    throws a `CommandException` that names the existing contact. The deletion stays in the history, so the user can
    `edit` or `delete` that contact and run `undo` again.
 1. Otherwise, `Model#restoreLastDeletedPerson()` calls `Model#addPerson`. This appends the same `Person` object to the
@@ -748,7 +767,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 2a. The list is empty.
 
-  * 2a1. sudoContact shows a message indicating that there are no contacts.
+  * 2a1. sudoContact shows an empty contact list and the normal `Listed all persons.` feedback.
 
   Use case ends.
 
@@ -771,11 +790,14 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * 2b. The request contains an explicit `--descending` token.
   * 2b1. sudoContact reports that only ascending sorting is supported.
   * Use case ends.
-* 3a. The displayed list is empty and startup contact loading succeeded.
+* 3a. The displayed list is empty, including after contact loading failed at startup.
   * 3a1. sudoContact displays `No contacts found to sort.`
   * Use case ends.
-* 3b. Contact loading failed at startup, or a displayed contact contains invalid department or tag data.
-  * 3b1. sudoContact reports the loading or invalid-data error without changing display order or writing the file.
+* 3b. A displayed contact contains invalid department or tag data.
+  * 3b1. sudoContact reports the invalid-data error without changing display order or writing the file.
+  * Use case ends.
+* 3c. Contact loading failed at startup and valid contacts were subsequently added in the same session.
+  * 3c1. sudoContact sorts the current in-memory contacts normally; restarting is not required.
   * Use case ends.
 
 **Use case: UC3 - Delete a contact**
@@ -1127,8 +1149,10 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * **Mainstream OS**: Windows, Linux, Unix, or macOS
 * **Matching contact**: For a tag search, a contact that has at least one of the tags specified in the command (OR matching). A matching contact is displayed once even when it has more than one specified tag.
 * **Private contact detail**: A contact detail that is not meant to be shared with others
-* **Currently displayed list**: The contacts shown after any filtering or sorting. The `CONTACT_ID` used to view a contact refers to its one-based position in this list.
-* **Partial contact**: A contact with a name but without some optional details, such as a phone number, email address, department, or tags.
+* **Currently displayed list**: The contacts shown after filtering or sorting. The one-based `CONTACT_ID` used by `view`, `edit` and `delete` refers to a position in this list, which can differ from stored order.
+* **Stored contact list**: All contacts in the address book's canonical in-memory order, including contacts hidden by a filter. A normal JSON save persists this list. CSV export uses the entire list; display sorting does not reorder it.
+* **Partial contact**: A contact with some optional details omitted. New contacts require a name and at least one phone number or email address; older saved name-only contacts remain loadable.
+* **Omitted contact detail**: An unknown optional field not supplied when adding a contact. Absent phone, email, address and department show `Not provided`; no tags shows `None`. Explicitly supplied empty phone/email/address values are rejected.
 * **Duplicate contact**: An existing contact with the same name and a matching provided phone number or email address as a contact being added, edited, or restored. Missing fields do not match. Comparisons are case-sensitive.
 * **CSV export**: A UTF-8 comma-separated values file containing a header row and one row for each stored contact.
 * **Tag**: An optional label attached to a contact to support categorisation and searching. Tag matching is case-sensitive.

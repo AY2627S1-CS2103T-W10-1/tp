@@ -15,11 +15,12 @@ sudoContact is a **desktop application for managing contacts, optimized for use 
 1. Ensure that Java `25` or later is installed on your computer.<br>
    **Mac users:** Ensure you have the precise JDK version prescribed [here](https://se-education.org/guides/tutorials/javaInstallationMac.html).
 
-1. Download the latest `.jar` file from [here](https://github.com/se-edu/addressbook-level3/releases).
+1. Download the latest `.jar` file from the [sudoContact releases](https://github.com/AY2627S1-CS2103T-W10-1/tp/releases).
 
-1. Copy the file to the folder you want to use as the _home folder_ for your AddressBook.
+1. Copy the file to a writable folder you want to use as the _home folder_ for sudoContact.
 
-1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar addressbook.jar`.<br>
+1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar "sudoContact.jar"`.
+   If the downloaded file has a different name, substitute its actual filename.<br>
    A GUI similar to the one below should appear in a few seconds. Note how the app contains some sample data.<br>
    ![Ui](images/Ui.png)
 
@@ -131,7 +132,9 @@ Adds a contact with a name and at least one phone number or email address. You c
 Format: `add --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMENT] [--address ADDRESS] [--tag TAG ...]`
 
 * `--name` and at least one of `--phone` or `--email` are required. Names must be nonblank and contain
-  letters, numbers or spaces. A name alone, even with an address, department or tags, is rejected with
+  only ASCII letters (`A-Z`, `a-z`), digits (`0-9`) or ordinary spaces. The current name format does not
+  support accented or Chinese characters, apostrophes or hyphens; use an ASCII transliteration and spaces
+  if needed. A name alone, even with an address, department or tags, is rejected with
   `A phone number or email address must be provided.`
 * Options can appear in any order. Quotes around multiword values are optional:
   `--name "Alice Tan"` and `--name Alice Tan` are the same.
@@ -143,11 +146,15 @@ Format: `add --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMEN
 * Tags contain 1–30 letters, numbers, hyphens or underscores. Leading `#` or `/` is removed.
   Repeat `--tag`, or put multiple tags after one flag. Identical tags are deduplicated; display preserves case.
 * Omit an unknown field entirely. An option with an empty value is rejected.
-* Unknown options, unmatched quotes and repeated options other than `--tag` are rejected.
+* Unknown long options beginning with `--`, unmatched quotes and repeated options other than `--tag` are rejected.
+  An unrecognised single-hyphen word inside a value is kept as text: `--address Road -x typo` stores
+  the address `Road -x typo`. Recognised short flags such as `-t` start a new field unless quoted.
 * Omitted phone, email, address and department show `Not provided`; omitted tags show `None`.
 * Contacts with the same name are duplicates if either their provided phone numbers **or** email addresses
   match. Missing fields do not count as matches. Same-name contacts can coexist only when neither provided
   contact field matches; a different address, department or tag does not distinguish duplicates.
+  Name and email comparisons are case-sensitive: `Alice` and `alice` are different names, and
+  `Alice@example.com` and `alice@example.com` are different email values. Phone numbers are compared exactly.
 * Contacts saved under the previous rule remain in their original order, even if the same name and phone
   or email now conflict. Loading, saving and restarting do not merge or remove these records. New additions,
   edits and contact restoration with `undo` still use the stricter rule. To edit a conflicting old contact,
@@ -168,6 +175,10 @@ To complete a contact, find their name and use the displayed row number with the
 for example, register Engineering with `depart --add Engineering`, then run `find Dana` followed by
 `edit 1 -p 91234567 -e dana@example.com --department Engineering`.
 Contacts are saved automatically and retain their supplied and omitted fields after restarting.
+Successful addition clears the active filter and sorting, and shows all contacts in stored order.
+If saving fails, an error is shown, but the new contact remains in the current session's list; saving has
+not been confirmed. Repeating the same `add` may therefore report a duplicate. Resolve the reported
+storage problem, then run `list` to retry saving before closing the app.
 
 ### Listing all contacts: `list` or `ls`
 
@@ -355,11 +366,16 @@ Format: `edit INDEX [-n NAME] [-p PHONE] [-e EMAIL] [-a ADDRESS] [-d DEPARTMENT]
 * Existing values will be updated to the input values.
 * New values follow the same rules as in `add`. For example, a phone number must contain 7–15 digits, and a
   leading `#` or `/` is removed from each tag.
+  Names use the same ASCII-only format, and name/email duplicate comparisons are case-sensitive.
+  Unknown `--` options are rejected; unrecognised single-hyphen words inside values remain literal text.
 * `-d`/`--department` accepts only a registered department; use `depart --list` to see available names.
   If a supplied department is unknown, no fields are changed.
 * After a successful edit, the full list is shown in stored order.
 * When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
 * To remove all of a person's tags, enter `-t` without a tag after it.
+
+If saving an edit fails, the changed contact remains in memory even though saving has not been confirmed.
+Resolve the storage problem and run `list` to retry saving before closing; the edit is not rolled back.
 
 Examples:
 *  `edit 1 -p 91234567 -e johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.
@@ -508,15 +524,21 @@ or free space and retry. Export is a copy for external use; it does not replace 
 
 ### Saving the data
 
-AddressBook automatically saves data after successful commands except `sort` and `export`.
-You do not need to save manually.
+sudoContact automatically saves contact changes after successful commands; no separate save command is needed.
+The JSON save is skipped for `sort`, `export`, `help`/`?`, `depart --list`, and `clear` without `--confirm`.
 `sort` changes only the displayed order; it does not write the contact file or persist the sort order.
 `export` writes a separate CSV copy; it does not modify or save the JSON contact file.
+Help and department listing only display information; unconfirmed `clear` only displays its warning.
+`clear --confirm` does save the cleared data. `list`/`ls`, `find` and `view` retain the normal JSON-save behavior.
 Departments and tags are contact data and are saved normally when changed.
 
 ### Editing the data file
 
-AddressBook data is saved automatically as a JSON file `[JAR file location]/data/addressbook.json`. Advanced users are welcome to update data directly by editing that data file.
+Contact data is saved as `data/addressbook.json` relative to the terminal's current working directory when
+the app is launched. `preferences.json` is also relative to that directory. Following Quick start by first
+using `cd` makes this the folder containing the JAR. Launching the JAR by its full path from another folder
+uses that other folder for data instead. Advanced users may edit the JSON file while the app is closed;
+check the launch directory before copying or changing it.
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
 If your changes make the data file invalid, AddressBook starts with an empty address book at the next run. The invalid file remains on disk until a successful command that saves data overwrites it. `sort` uses the current in-memory contacts without writing the file; failed commands also do not save. Still, we recommend backing up the file before editing it.<br>
