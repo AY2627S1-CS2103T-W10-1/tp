@@ -85,7 +85,8 @@ public class HelpContentViewTest {
             assertTrue(tokens.stream().anyMatch(token -> token.getText().equals("add")));
             assertTrue(tokens.stream().anyMatch(token -> token.getText().equals("--name")));
             for (Text token : tokens) {
-                assertEquals(Color.web("#7dd3fc"), token.getFill());
+                // The main window's accent (-tui-accent in DarkTheme.css), so help matches the dashboard.
+                assertEquals(Color.web("#4fb3d9"), token.getFill());
                 assertTrue(token.getFont().getStyle().contains("Bold"));
             }
         });
@@ -143,8 +144,9 @@ public class HelpContentViewTest {
                     ScrollPane scroll = new ScrollPane(content);
                     scroll.setFitToWidth(true);
                     scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-                    scroll.getStylesheets().add(HelpContentView.class
-                            .getResource("/view/HelpWindow.css").toExternalForm());
+                    scroll.getStylesheets().addAll(
+                            HelpContentView.class.getResource("/view/DarkTheme.css").toExternalForm(),
+                            HelpContentView.class.getResource("/view/HelpWindow.css").toExternalForm());
                     new Scene(scroll, width, 300);
                     scroll.resize(width, 300);
                     scroll.applyCss();

@@ -36,4 +36,37 @@ public class ResultDisplayTest {
             assertEquals("Error\n\nExamples:\n  help", text.getText());
         });
     }
+
+    @Test
+    public void setErrorFeedback_highlightsUntilNextFeedback() throws Exception {
+        FxTestUtil.run(() -> {
+            ResultDisplay display = new ResultDisplay();
+            TextArea text = (TextArea) display.getRoot().lookup("#resultDisplay");
+
+            display.setErrorFeedback("Error");
+            display.setErrorFeedback("Error\n\nExamples:\n  help");
+            assertEquals("Error\n\nExamples:\n  help", text.getText());
+            assertEquals(1L, text.getStyleClass().stream().filter(ResultDisplay.ERROR_STYLE_CLASS::equals).count());
+
+            display.setFeedbackToUser("Listed all persons");
+            assertFalse(text.getStyleClass().contains(ResultDisplay.ERROR_STYLE_CLASS));
+            assertThrows(NullPointerException.class, () -> display.setErrorFeedback(null));
+        });
+    }
+
+    @Test
+    public void setFeedback_growsWithLinesBetweenLimits() throws Exception {
+        FxTestUtil.run(() -> {
+            ResultDisplay display = new ResultDisplay();
+            TextArea text = (TextArea) display.getRoot().lookup("#resultDisplay");
+            assertEquals(ResultDisplay.MIN_ROWS, text.getPrefRowCount());
+
+            display.setErrorFeedback("Error\n\nExamples:\n  help");
+            assertEquals(4, text.getPrefRowCount());
+            display.setFeedbackToUser("Listed all persons");
+            assertEquals(ResultDisplay.MIN_ROWS, text.getPrefRowCount());
+            display.setFeedbackToUser("Long feedback\n".repeat(30));
+            assertEquals(ResultDisplay.MAX_ROWS, text.getPrefRowCount());
+        });
+    }
 }

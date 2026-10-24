@@ -8,6 +8,7 @@ participant ":LogicManager" as LogicManager LOGIC_COLOR
 participant ":ViewCommand" as ViewCommand LOGIC_COLOR
 participant ":Model" as Model MODEL_COLOR
 participant ":Storage" as Storage STORAGE_COLOR
+participant ":ContactDetailsWindows" as Popups UI_COLOR
 participant ":ContactDetailsWindow" as DetailsWindow UI_COLOR
 
 MainWindow -> LogicManager : execute("view 1")
@@ -52,12 +53,20 @@ deactivate LogicManager
 note over MainWindow
 Show the short feedback in ResultDisplay.
 end note
-MainWindow -> DetailsWindow : showDetails(details)
+MainWindow -> Popups : show(person, details)
+activate Popups
+note over Popups
+Reuse the popup that shows the same contact,
+or open a new one.
+end note
+Popups -> DetailsWindow : showDetails(person, details)
 activate DetailsWindow
 note over DetailsWindow
-Reuse the same window and show a snapshot.
-Later model changes do not update this snapshot.
+Show a snapshot. Later model changes
+do not update this snapshot.
 end note
-DetailsWindow --> MainWindow
+DetailsWindow --> Popups
 deactivate DetailsWindow
+Popups --> MainWindow
+deactivate Popups
 @enduml

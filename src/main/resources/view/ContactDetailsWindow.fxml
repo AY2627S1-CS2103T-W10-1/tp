@@ -4,26 +4,30 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.Scene?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.stage.Stage?>
 
 <Stage xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
-       title="Contact details" minWidth="350" minHeight="300">
+       title="Contact details" minWidth="320" minHeight="220">
   <scene>
     <Scene>
       <stylesheets>
         <URL value="@DarkTheme.css" />
         <URL value="@Extensions.css" />
       </stylesheets>
-      <VBox spacing="10" prefWidth="620" prefHeight="450" styleClass="pane-with-border">
+      <VBox spacing="4" prefWidth="440" prefHeight="320" styleClass="details-window">
         <padding>
-          <Insets top="15" right="15" bottom="15" left="15" />
+          <Insets top="4" right="8" bottom="8" left="4" />
         </padding>
-        <TextArea fx:id="contactDetails" editable="false" wrapText="true" VBox.vgrow="ALWAYS"
-                  styleClass="result-display" />
-        <Label text="To refresh these details, run view CONTACT_ID again." styleClass="label-bright"
-               wrapText="true" />
+        <Label text="[3] Details" styleClass="pane-title" />
+        <StackPane fx:id="detailsPanelPlaceholder" VBox.vgrow="ALWAYS" />
+        <Label text="j/k move · Ctrl+C copy · q close · Esc prompt · Alt+3 next popup" styleClass="key-hint"
+               wrapText="true">
+          <padding>
+            <Insets left="8" />
+          </padding>
+        </Label>
       </VBox>
     </Scene>
   </scene>

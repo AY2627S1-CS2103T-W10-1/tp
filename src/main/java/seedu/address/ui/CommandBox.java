@@ -36,6 +36,15 @@ public class CommandBox extends UiPart<Region> {
     }
 
     /**
+     * Gives the command prompt keyboard focus, keeping any text that is already typed.
+     */
+    public void focus() {
+        commandTextField.requestFocus();
+        commandTextField.deselect();
+        commandTextField.end();
+    }
+
+    /**
      * Handles the Enter button pressed event.
      */
     @FXML

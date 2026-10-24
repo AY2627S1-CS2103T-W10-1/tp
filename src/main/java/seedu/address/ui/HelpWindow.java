@@ -39,8 +39,9 @@ public class HelpWindow extends UiPart<Stage> {
     public HelpWindow(Stage root) {
         super(FXML, root);
         setPage(HelpCatalog.getOverview());
-        getRoot().setWidth(560);
-        getRoot().setHeight(420);
+        // Wide enough for most usage lines and option descriptions to fit on one line.
+        getRoot().setWidth(720);
+        getRoot().setHeight(460);
         getRoot().getScene().addEventFilter(KeyEvent.KEY_PRESSED, event -> {
             if (event.getCode() == KeyCode.Q && !event.isAltDown() && !event.isControlDown()
                     && !event.isMetaDown() && !event.isShiftDown()) {
