@@ -73,8 +73,29 @@ public class DashboardUiTest {
             assertEquals(1, main.getContactDetailsWindows().getOpenWindows().size());
             assertSame(contacts, scene.getFocusOwner());
 
+            press(contacts, KeyCode.DIGIT4, true);
+            assertSame(input, scene.getFocusOwner());
+            press(input, KeyCode.DIGIT2, true);
             press(contacts, KeyCode.ESCAPE, false);
             assertSame(input, scene.getFocusOwner());
+        });
+    }
+
+    @Test
+    public void enterOnContact_saveFails_showsErrorWithoutPopup() throws Exception {
+        FxTestUtil.run(() -> {
+            // A folder in place of the data file makes every save, and so every view, fail.
+            MainWindow main = showMainWindow(testFolder);
+            Scene scene = main.getPrimaryStage().getScene();
+            TextArea feedback = (TextArea) scene.lookup("#resultDisplay");
+            Node contacts = scene.lookup("#personListView");
+
+            press(scene.lookup("#commandTextField"), KeyCode.DIGIT2, true);
+            press(contacts, KeyCode.ENTER, false);
+
+            assertTrue(feedback.getStyleClass().contains(ResultDisplay.ERROR_STYLE_CLASS));
+            assertTrue(main.getContactDetailsWindows().getOpenWindows().isEmpty());
+            assertTrue(main.getPrimaryStage().isShowing());
         });
     }
 
@@ -171,8 +192,11 @@ public class DashboardUiTest {
     }
 
     private MainWindow showMainWindow() {
+        return showMainWindow(testFolder.resolve("contacts.json"));
+    }
+
+    private MainWindow showMainWindow(Path dataPath) {
         ModelManager model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
-        Path dataPath = testFolder.resolve("contacts.json");
         StorageManager storage = new StorageManager(new JsonAddressBookStorage(dataPath),
                 new JsonUserPrefsStorage(testFolder.resolve("preferences.json")));
         Stage stage = new Stage();

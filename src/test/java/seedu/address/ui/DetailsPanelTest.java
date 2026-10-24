@@ -91,6 +91,34 @@ public class DetailsPanelTest {
     }
 
     @Test
+    public void keyboard_modifiedKeysAndLastValue_keepFocus() throws Exception {
+        FxTestUtil.run(() -> {
+            DetailsPanel panel = new DetailsPanel();
+            Stage stage = new Stage();
+            stage.setScene(new Scene(panel.getRoot(), 500, 400));
+            stage.show();
+            panel.showDetails(DETAILS);
+            List<TextArea> values = values(grid(panel));
+            Scene scene = stage.getScene();
+            panel.focus();
+
+            // Ctrl, Alt and Meta shortcuts, and Shift with j/k, are left to the value.
+            for (int modifier = 0; modifier < 3; modifier++) {
+                Event.fireEvent(scene.getFocusOwner(), new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.J,
+                        false, modifier == 0, modifier == 1, modifier == 2));
+                assertEquals(values.get(0), scene.getFocusOwner());
+            }
+            press(scene, KeyCode.J, true);
+            press(scene, KeyCode.K, true);
+            assertEquals(values.get(0), scene.getFocusOwner());
+
+            values.getLast().requestFocus();
+            press(scene, KeyCode.J, false);
+            assertEquals(values.getLast(), scene.getFocusOwner());
+        });
+    }
+
+    @Test
     public void showDetails_longValueGrowsToShowEveryWrappedLine() throws Exception {
         FxTestUtil.run(() -> {
             DetailsPanel panel = new DetailsPanel();

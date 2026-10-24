@@ -56,7 +56,8 @@ public class ContactDetailsWindow extends UiPart<Stage> {
      * Returns true if this popup is open and shows {@code other}, or an earlier snapshot of the same contact.
      */
     public boolean showsContact(Person other) {
-        return getRoot().isShowing() && person != null && person.isSamePerson(other);
+        // A popup is only shown by showDetails, which sets the contact first.
+        return getRoot().isShowing() && person.isSamePerson(other);
     }
 
     /**

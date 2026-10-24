@@ -98,9 +98,12 @@ public class ContactDetailsWindowTest {
             window.focus();
             Node value = window.getRoot().getScene().getFocusOwner();
 
-            Event.fireEvent(value, new KeyEvent(KeyEvent.KEY_PRESSED, "q", "q", KeyCode.Q,
-                    true, false, false, false));
-            assertTrue(window.getRoot().isShowing());
+            // Shift, Ctrl, Alt or Meta with q is left alone.
+            for (int modifier = 0; modifier < 4; modifier++) {
+                Event.fireEvent(value, new KeyEvent(KeyEvent.KEY_PRESSED, "q", "q", KeyCode.Q,
+                        modifier == 0, modifier == 1, modifier == 2, modifier == 3));
+                assertTrue(window.getRoot().isShowing());
+            }
 
             Event.fireEvent(value, new KeyEvent(KeyEvent.KEY_PRESSED, "q", "q", KeyCode.Q,
                     false, false, false, false));
