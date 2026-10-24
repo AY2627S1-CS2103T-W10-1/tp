@@ -108,7 +108,7 @@ public class MainWindow extends UiPart<Stage> {
         trackFocusedPane();
 
         helpWindow = new HelpWindow();
-        contactDetailsWindows = new ContactDetailsWindows(primaryStage, this::addPaneShortcuts);
+        contactDetailsWindows = new ContactDetailsWindows(primaryStage, logic.getPersonList(), this::addPaneShortcuts);
     }
 
     public Stage getPrimaryStage() {

@@ -96,13 +96,15 @@ command, so glancing through contacts stays instant. To compare contacts side by
 into windows managed by `ContactDetailsWindows`. A successful `view` command returns the
 viewed `Person` and a details snapshot through `CommandResult`. `ContactDetailsWindows.show(Person, String)` refreshes
 the open `ContactDetailsWindow` (a `UiPart<Stage>`) whose contact `isSamePerson` as the viewed one, or opens a new
-popup cascaded from the main window. Like the docked pane, each popup hosts a `DetailsPanel`, which turns every
-`Field: value` line of the snapshot into a grey field name beside a read-only value that can be selected with j/k or
-Tab and copied. Several contacts can therefore be compared side by side, while viewing the same contact again never
-duplicates its popup. Popups are owned by the main stage, so they stay in front of it,
-and the keyboard focus stays at the prompt after `view`. Pressing Enter on a row in [2], or double-clicking it,
-runs `view` with that row's contact ID. Repeated Alt+3 presses step through the docked pane and then each popup,
-`q` closes the focused popup, and every popup is hidden when the application exits.
+popup cascaded from the main window. An edit can change every field `isSamePerson` compares, so
+`ContactDetailsWindows` also listens to `Logic.getPersonList()`: when a contact is replaced in place, its popup
+switches to the edited `Person`, and viewing a renamed contact still refreshes its popup. Like the docked pane, each
+popup hosts a `DetailsPanel`, which turns every `Field: value` line of the snapshot into a grey field name beside a
+read-only value that can be selected with j/k or Tab and copied. Several contacts can therefore be compared side by
+side, while viewing the same contact again never duplicates its popup. Popups are owned by the main stage, so they
+stay in front of it, and the keyboard focus stays at the prompt after `view`. Pressing Enter on a row in [2], or
+double-clicking it, runs `view` with that row's contact ID. Repeated Alt+3 presses step through the docked pane and
+then each popup, `q` closes the focused popup, and every popup is hidden when the application exits.
 
 The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/ui/MainWindow.java).
 
@@ -1296,6 +1298,8 @@ For the department assignment examples below, register the required names first 
    1. Change the selected contact's department with `edit 1 --department Sales`.
       Expected: the details snapshot stays unchanged. Run `find Benson` again, then `view 1`;
       the refreshed snapshot displays `Department: Sales`.
+   1. With Benson's popup open, run `edit 1 --name Benson Renamed`, `find Benson`, then `view 1`.
+      Expected: the existing popup refreshes and is titled `Contact details: Benson Renamed`; no second popup opens.
    1. View another contact. Expected: a second popup opens, offset from the first. Both stay in front of the
       main window, and the prompt keeps the keyboard focus.
    1. View the first contact again. Expected: its existing popup updates rather than a third popup opening.

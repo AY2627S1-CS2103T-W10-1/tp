@@ -83,6 +83,15 @@ public class ViewCommandUiTest {
             assertEquals(2, popups.getOpenWindows().size());
             assertSame(benson, popups.getOpenWindows().getFirst());
 
+            // A renamed contact no longer matches its old snapshot, yet viewing it still reuses its popup.
+            enter(input, "edit 1 --name Benson Renamed");
+            enter(input, "find Benson");
+            enter(input, "view 1");
+            assertFalse(input.getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS));
+            assertEquals(ContactDetailsWindow.TITLE_PREFIX + "Benson Renamed", benson.getRoot().getTitle());
+            assertEquals(2, popups.getOpenWindows().size());
+            assertSame(benson, popups.getOpenWindows().getFirst());
+
             enter(input, "exit");
             assertFalse(benson.getRoot().isShowing());
             assertTrue(popups.getOpenWindows().isEmpty());

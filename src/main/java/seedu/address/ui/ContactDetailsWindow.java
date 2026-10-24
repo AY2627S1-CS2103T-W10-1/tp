@@ -60,6 +60,18 @@ public class ContactDetailsWindow extends UiPart<Stage> {
     }
 
     /**
+     * Ties this popup to {@code edited} if it shows {@code original}, so that viewing the edited contact
+     * refreshes this popup. The displayed snapshot stays unchanged until then.
+     */
+    public void followEdit(Person original, Person edited) {
+        requireNonNull(original);
+        requireNonNull(edited);
+        if (original.equals(person)) {
+            person = edited;
+        }
+    }
+
+    /**
      * Brings the popup to the front and gives its first value keyboard focus, so values can be copied.
      */
     public void focus() {

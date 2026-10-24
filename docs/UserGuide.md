@@ -355,7 +355,8 @@ Format: `view CONTACT_ID`
 * An empty displayed list produces `There is no contact to view in the currently displayed list.`
 * Viewing leaves contact data and the current filter unchanged and uses the same automatic saving flow as other commands.
 * Each contact gets its own popup, so you can view several contacts and compare them side by side.
-  Viewing a contact that already has a popup updates that popup instead of opening another one.
+  Viewing a contact that already has a popup updates that popup instead of opening another one,
+  even if you have since edited the contact's name, phone or email.
 * The command prompt keeps the keyboard focus after `view`, so you can keep typing. Press `Alt+3` to move to
   [3] Details and then into the popups, `q` to close the focused popup, and `Esc` to return to the prompt.
 * A popup shows a snapshot. Run `view CONTACT_ID` again after editing, deleting or filtering to refresh it.
