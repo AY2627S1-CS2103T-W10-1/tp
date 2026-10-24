@@ -15,7 +15,7 @@ import javafx.event.ActionEvent;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.HBox;
+import javafx.scene.layout.FlowPane;
 import javafx.stage.Stage;
 import seedu.address.logic.LogicManager;
 import seedu.address.model.ModelManager;
@@ -64,7 +64,7 @@ public class PartialAddUiTest {
                 assertTrue(missing.getStyleClass().contains(PersonCard.EMPTY_STYLE_CLASS));
             }
             assertEquals("firstalice@example.com", ((Label) card.getRoot().lookup("#email")).getText());
-            HBox tags = (HBox) card.getRoot().lookup("#tags");
+            FlowPane tags = (FlowPane) card.getRoot().lookup("#tags");
             assertEquals(PersonCard.EMPTY_VALUE, ((Label) tags.getChildren().getFirst()).getText());
 
             enter(input, "add --name \"Alice Tan\" --email secondalice@example.com");
@@ -95,7 +95,7 @@ public class PartialAddUiTest {
             assertEquals("amy@gmail.com", ((Label) card.getRoot().lookup("#email")).getText());
             assertEquals("R&D", ((Label) card.getRoot().lookup("#department")).getText());
             assertFalse(card.getRoot().lookup("#department").getStyleClass().contains(PersonCard.EMPTY_STYLE_CLASS));
-            HBox tags = (HBox) card.getRoot().lookup("#tags");
+            FlowPane tags = (FlowPane) card.getRoot().lookup("#tags");
             assertEquals(2, tags.getChildren().size());
             assertEquals("new-client", ((Label) tags.getChildren().getFirst()).getText());
         });

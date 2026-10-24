@@ -85,10 +85,11 @@ The **API** of this component is specified in [`Ui.java`](https://github.com/se-
 The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `DepartmentPanel`, `PersonListPanel`, `DetailsPanel`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
 
 `MainWindow` lays its parts out as numbered panes, in the style of a terminal dashboard: [1] `DepartmentPanel`
-(each registered department with its number of contacts), [2] `PersonListPanel` (one table row per contact),
-[3] a docked `DetailsPanel`, and [4] the `ResultDisplay` above the `CommandBox` prompt. Alt+1 to Alt+4 (or Esc for
-the prompt) move the keyboard focus between them, and the pane with the focus is outlined. `DepartmentPanel` and `StatusBarFooter` read the unfiltered
-`Logic.getPersonList()` and `Logic.getDepartmentList()`, so they stay up to date with every change.
+(each registered department with its number of contacts), [2] `PersonListPanel` (one table row per contact, which
+grows taller when its tags wrap), [3] a docked `DetailsPanel`, and [4] the `ResultDisplay` above the `CommandBox`
+prompt. Alt+1 to Alt+4 (or Esc for the prompt) move the keyboard focus between them, and the pane with the focus
+is outlined. `DepartmentPanel` and `StatusBarFooter` read the unfiltered `Logic.getPersonList()` and
+`Logic.getDepartmentList()`, so they stay up to date with every change.
 
 Contact details appear in two places. The docked [3] pane follows the selection in [2]: selecting a row with a
 click or j/k formats that contact with `ViewCommand.formatDetails(Person)` and shows it at once, without running a
@@ -282,9 +283,10 @@ and without a department catalogue. It verifies every contact field and ordering
 an unrelated addition and repeated restarts, plus strict add/edit/contact-undo rejection and department
 rename/delete/undo on the restored data. Rejected operations retain stored bytes and contact undo history.
 
-`AddCommand` returns full labelled feedback, sorted tags and missing-field placeholders. `PersonCard` shows
-those same placeholders for missing fields and `None` for no tags. `LogicManager` retains the existing save
-failure behaviour: it reports the error instead of returning an addition-success result.
+`AddCommand` returns full labelled feedback, sorted tags and missing-field placeholders. In the contact
+table, `PersonCard` shows a dimmed `—` for missing fields and for no tags, while the [3] Details pane and
+popups show the same `Not provided` and `None` placeholders as `AddCommand`. `LogicManager` retains the
+existing save failure behaviour: it reports the error instead of returning an addition-success result.
 
 ### Department management: design specification
 

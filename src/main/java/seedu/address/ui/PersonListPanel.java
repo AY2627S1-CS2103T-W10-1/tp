@@ -17,11 +17,10 @@ import seedu.address.model.person.Person;
 
 /**
  * Panel containing the list of persons, shown as a table with one row per contact.
+ * A row grows taller when its tags wrap onto further lines.
  */
 public class PersonListPanel extends UiPart<Region> {
     private static final String FXML = "PersonListPanel.fxml";
-    /** Rows share one height so long lists scroll smoothly. */
-    private static final double ROW_HEIGHT = 28;
     /** Room for the vertical scroll bar, so rows never make the list scroll sideways. */
     private static final double SCROLL_BAR_ALLOWANCE = 14;
     private final Logger logger = LogsCenter.getLogger(PersonListPanel.class);
@@ -38,7 +37,6 @@ public class PersonListPanel extends UiPart<Region> {
         super(FXML);
         personListView.setItems(personList);
         personListView.setCellFactory(listView -> new PersonListViewCell());
-        personListView.setFixedCellSize(ROW_HEIGHT);
         VimKeys.install(personListView);
         personListView.addEventFilter(KeyEvent.KEY_PRESSED, this::handleEnter);
     }

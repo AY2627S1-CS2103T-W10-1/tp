@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
 
-<!-- One table row; the col-* style classes keep each column as wide as its header in PersonListPanel.fxml. -->
-<HBox id="cardPane" fx:id="cardPane" styleClass="contact-row" alignment="CENTER_LEFT"
+<!-- One table row; the col-* style classes keep each column as wide as its header in PersonListPanel.fxml.
+     Tags wrap onto further lines, and the other columns line up with the first line of tags. -->
+<HBox id="cardPane" fx:id="cardPane" styleClass="contact-row" alignment="BASELINE_LEFT"
       xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
   <Label fx:id="id" styleClass="col-id" />
   <Label fx:id="name" styleClass="col-name" />
   <Label fx:id="phone" styleClass="col-phone" />
   <Label fx:id="email" styleClass="col-email" />
   <Label fx:id="department" styleClass="col-department" />
-  <HBox fx:id="tags" styleClass="col-tags" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS" />
+  <FlowPane fx:id="tags" styleClass="col-tags" HBox.hgrow="ALWAYS" />
 </HBox>

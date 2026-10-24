@@ -133,6 +133,11 @@
     -fx-spacing: 12;
 }
 
+/* A row with one line of text is 28px tall; wrapped tags make it taller. */
+.contact-row {
+    -fx-padding: 5 0 6 0;
+}
+
 .col-id {
     -fx-min-width: 28;
     -fx-pref-width: 28;
@@ -163,11 +168,15 @@
     -fx-pref-width: 110;
 }
 
-/* Tags take whatever width is left, so a contact with many tags cannot push the other columns aside. */
+/*
+ * Tags take whatever width is left and wrap onto further lines, so a contact with many tags cannot push the other
+ * columns aside. The minimum width fits a typical tag.
+ */
 .col-tags {
-    -fx-min-width: 40;
+    -fx-min-width: 80;
     -fx-pref-width: 0;
-    -fx-spacing: 4;
+    -fx-hgap: 4;
+    -fx-vgap: 4;
 }
 
 .cell-empty {

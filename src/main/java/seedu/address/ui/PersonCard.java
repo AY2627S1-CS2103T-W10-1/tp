@@ -4,9 +4,9 @@ import java.util.Comparator;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
-import javafx.scene.shape.Rectangle;
 import seedu.address.model.person.Person;
 
 /**
@@ -45,7 +45,7 @@ public class PersonCard extends UiPart<Region> {
     @FXML
     private Label department;
     @FXML
-    private HBox tags;
+    private FlowPane tags;
 
     /**
      * Creates a {@code PersonCard} with the given {@code Person} and index to display.
@@ -70,10 +70,10 @@ public class PersonCard extends UiPart<Region> {
                 .forEach(tag -> {
                     Label label = new Label(tag.tagName);
                     label.getStyleClass().add(TAG_STYLE_CLASS);
-                    label.setMinWidth(Region.USE_PREF_SIZE);
+                    // A tag wider than the column is shortened with an ellipsis instead of being cut off.
+                    label.maxWidthProperty().bind(tags.widthProperty());
                     tags.getChildren().add(label);
                 });
-        clipToBounds(tags);
     }
 
     /**
@@ -84,15 +84,5 @@ public class PersonCard extends UiPart<Region> {
         if (!isProvided) {
             label.getStyleClass().add(EMPTY_STYLE_CLASS);
         }
-    }
-
-    /**
-     * Hides tags that do not fit on the row, so every row keeps the same height.
-     */
-    private static void clipToBounds(Region region) {
-        Rectangle clip = new Rectangle();
-        clip.widthProperty().bind(region.widthProperty());
-        clip.heightProperty().bind(region.heightProperty());
-        region.setClip(clip);
     }
 }
