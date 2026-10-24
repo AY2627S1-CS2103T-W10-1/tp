@@ -129,7 +129,10 @@ public class DetailsPanel extends UiPart<Region> {
     }
 
     private static void fitHeightToText(TextArea field) {
-        Node text = field.lookup(".text");
+        // The value's own scroll pane is not skinned yet, so a lookup cannot pass through it; its content can.
+        Node text = field.lookup(".scroll-pane") instanceof ScrollPane pane && pane.getContent() != null
+                ? pane.getContent().lookup(".text")
+                : null;
         if (text == null) {
             return;
         }

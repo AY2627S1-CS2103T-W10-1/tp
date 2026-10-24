@@ -24,6 +24,8 @@ import javafx.stage.Stage;
 public class DetailsPanelTest {
     private static final String DETAILS = "Name: Amy Bee\nPhone: 85355255\nEmail: Not provided\n"
             + "Address: 123, Jurong West Ave 6, #08-111\n\n\nDepartment: R&D\nTags: None";
+    private static final String LONG_ADDRESS = "Blk 123, Jurong West Avenue 6, #08-111, Singapore 640123, "
+            + "beside the community club";
 
     @BeforeAll
     public static void setUpToolkit() throws Exception {
@@ -85,6 +87,32 @@ public class DetailsPanelTest {
             assertEquals(values.get(0), scene.getFocusOwner());
             press(scene, KeyCode.K, false);
             assertEquals(values.get(0), scene.getFocusOwner());
+        });
+    }
+
+    @Test
+    public void showDetails_longValueGrowsToShowEveryWrappedLine() throws Exception {
+        FxTestUtil.run(() -> {
+            DetailsPanel panel = new DetailsPanel();
+            Stage stage = new Stage();
+            stage.setScene(new Scene(panel.getRoot(), 360, 400));
+            stage.show();
+            panel.showDetails("Name: Amy Bee\nAddress: " + LONG_ADDRESS);
+            // Wrapping changes the text's height after the first layout, so the value needs further passes.
+            for (int pass = 0; pass < 3; pass++) {
+                panel.getRoot().applyCss();
+                panel.getRoot().layout();
+            }
+
+            List<TextArea> values = values(grid(panel));
+            TextArea name = values.get(0);
+            TextArea address = values.get(1);
+            double addressTextHeight = address.lookup(".text").getBoundsInLocal().getHeight();
+            assertTrue(addressTextHeight > 1.5 * name.lookup(".text").getBoundsInLocal().getHeight(),
+                    "The address should wrap onto more than one line.");
+            assertTrue(address.getHeight() >= addressTextHeight, "Every wrapped line should be visible.");
+            assertTrue(address.getHeight() > 1.5 * name.getHeight(),
+                    "The wrapped value should be taller than a one-line value.");
         });
     }
 
