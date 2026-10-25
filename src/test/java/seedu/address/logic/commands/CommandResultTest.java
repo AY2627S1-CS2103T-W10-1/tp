@@ -9,6 +9,8 @@ import static seedu.address.testutil.Assert.assertThrows;
 import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.help.HelpPage;
+import seedu.address.model.person.Person;
+import seedu.address.testutil.PersonBuilder;
 
 public class CommandResultTest {
     @Test
@@ -57,25 +59,32 @@ public class CommandResultTest {
 
     @Test
     public void detailsResult_preservesFlagsAndEquality() {
-        CommandResult details = new CommandResult("feedback", "details");
+        Person amy = new PersonBuilder().build();
+        CommandResult details = new CommandResult("feedback", amy, "details");
         assertTrue(details.isShowDetails());
         assertFalse(details.isShowHelp());
         assertFalse(details.isExit());
         assertFalse(new CommandResult("details").isShowDetails());
-        assertEquals(details, new CommandResult("feedback", "details"));
-        assertEquals(details.hashCode(), new CommandResult("feedback", "details").hashCode());
+        assertEquals(details, new CommandResult("feedback", new PersonBuilder().build(), "details"));
+        assertEquals(details.hashCode(), new CommandResult("feedback", amy, "details").hashCode());
         assertEquals("feedback", details.getFeedbackToUser());
         assertEquals("details", details.getContactDetails().orElseThrow());
+        assertEquals(amy, details.getViewedPerson().orElseThrow());
         assertTrue(new CommandResult("feedback").getContactDetails().isEmpty());
+        assertTrue(new CommandResult("feedback").getViewedPerson().isEmpty());
         assertNotEquals(details, new CommandResult("feedback"));
-        assertNotEquals(details, new CommandResult("feedback", "different details"));
-        assertNotEquals(details.hashCode(), new CommandResult("feedback", "different details").hashCode());
+        assertNotEquals(details, new CommandResult("feedback", amy, "different details"));
+        assertNotEquals(details.hashCode(), new CommandResult("feedback", amy, "different details").hashCode());
+        Person bob = new PersonBuilder().withName("Bob Choo").build();
+        assertNotEquals(details, new CommandResult("feedback", bob, "details"));
     }
 
     @Test
-    public void detailsResult_nullFeedbackOrDetails_throwsNullPointerException() {
-        assertThrows(NullPointerException.class, () -> new CommandResult(null, "details"));
-        assertThrows(NullPointerException.class, () -> new CommandResult("feedback", null));
+    public void detailsResult_nullArgument_throwsNullPointerException() {
+        Person amy = new PersonBuilder().build();
+        assertThrows(NullPointerException.class, () -> new CommandResult(null, amy, "details"));
+        assertThrows(NullPointerException.class, () -> new CommandResult("feedback", null, "details"));
+        assertThrows(NullPointerException.class, () -> new CommandResult("feedback", amy, null));
     }
 
     @Test
