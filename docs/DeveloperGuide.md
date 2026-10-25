@@ -349,13 +349,9 @@ an obsolete department name. A rename retains the active filter and resets displ
 `ModelManager` records the department and affected contact objects in a deletion entry, alongside markers for
 contact deletions in a shared chronological history. Matching assignments in contact deletion history are
 cleared too. The active filter is retained and sorting resets to stored order.
-`UndoCommand` checks the latest deletion type. For a department deletion, it rejects an existing catalogue name
-before changing state; otherwise it restores the department and assignments on tracked contacts still without
-a department, including contacts awaiting restoration. `setPerson` updates tracked references so subsequent
-name or phone edits survive undo. Explicit reassignment to another department is preserved. Missing contacts
-are not recreated. The history entry is consumed only on success, and all contacts are displayed in stored order.
-Department restoration reports `Restored deleted department: [NAME]`; a name conflict reports
-`Cannot restore the deleted department because it already exists: [NAME]` and preserves data and history.
+`UndoCommand` restores the most recently deleted contact after checking for a conflicting contact.
+`setPerson` updates tracked references so subsequent name or phone edits survive undo. Missing contacts are not
+recreated. The history entry is consumed only on success, and all contacts are displayed in stored order.
 History is session-only. Successful deletion and restoration use the normal storage-save flow.
 
 Renaming an entry to its own name is allowed. `clear` resets the catalogue together with contacts.
