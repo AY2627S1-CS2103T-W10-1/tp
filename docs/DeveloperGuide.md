@@ -388,7 +388,6 @@ The old `depart CONTACT_ID --set DEPARTMENT` form is not supported.
 Names are case-sensitive and contain 2-50 characters from ASCII letters (`A-Z`, `a-z`), digits (`0-9`),
 spaces, `-`, and `&`; names consisting only of whitespace are invalid. Names containing spaces must be one quoted argument, using matching single or double quotes, e.g. `depart --edit Engineering "Customer Support"`.
 Unlike `add` and `edit`, an unquoted multi-word department name is treated as multiple arguments and is rejected.
-Leading and trailing whitespace is trimmed after quotes are removed; internal spaces are preserved and count towards the length limit.
 A closing quote must be followed by whitespace or the end of input. An unquoted name starting with `--`
 is treated as an invalid option-like argument. To use such a name, quote it.
 Renaming to the source's exact current name is allowed; renaming to another existing entry is not.
@@ -613,9 +612,8 @@ bypassing command parsing. These alternative paths are omitted from the successf
 
 ### Undoing a deletion
 
-`undo` restores the most recent contact or department deletion in the current session. Contact deletions are
-created by `delete INDEX`, while department deletions are created by `depart --delete DEPARTMENT`. Both deletion
-types share one chronological history and are restored in reverse order. `undo` does not revert `add`, `edit`,
+`undo` restores the most recent contact deletion in the current session. Contact deletions are created by
+`delete INDEX` and are restored in reverse order. `undo` does not revert `add`, `edit`,
 `depart --add`, `depart --edit`, or `clear`, and there is no `redo`.
 
 `ModelManager` keeps a shared deletion history containing deleted contacts and deleted departments. The history
