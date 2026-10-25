@@ -70,22 +70,6 @@ alt Most recent deletion is a contact
     Model -> Model : addPerson(p)
     Model --> UndoCommand
     deactivate Model
-else Most recent deletion is a department
-    UndoCommand -> Model : getLastDeletedDepartment()
-    activate Model
-    Model --> UndoCommand : d
-    deactivate Model
-
-    UndoCommand -> Model : hasDepartment(d)
-    activate Model
-    Model --> UndoCommand : false
-    deactivate Model
-
-    UndoCommand -> Model : restoreLastDeletedDepartment()
-    activate Model
-    Model -> Model : restore department and assignments
-    Model --> UndoCommand
-    deactivate Model
 end
 
 UndoCommand --> LogicManager : r
