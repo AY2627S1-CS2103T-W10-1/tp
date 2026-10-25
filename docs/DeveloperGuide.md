@@ -651,10 +651,11 @@ How `undo` works:
    the parser throws a `ParseException` with the usage message.
 1. `UndoCommand#execute` checks `Model#hasDeletedPerson()`. If the history is empty, it throws a `CommandException`
    saying there is nothing to undo.
-1. It reads the most recent deletion with `Model#getLastDeletedPerson()` and checks `Model#hasPerson(...)`. A contact
-   with the same name, phone and email (`Person#isSamePerson`) may have been added since the deletion. If so, it
-   throws a `CommandException` that names the existing contact. The deletion stays in the history, so the user can
-   `edit` or `delete` that contact and run `undo` again.
+1. It reads the most recent deletion with `Model#getLastDeletedPerson()` and checks `Model#hasPerson(...)` for a
+   [duplicate contact](#glossary) already in the list: one with the same name and a matching provided phone number
+   or email address (`Person#isSamePerson`). If one exists, it throws a `CommandException` that names it. One
+   matching field is enough, so a contact with a different email, or no email, still blocks `undo` if its phone
+   matches. The deletion stays in the history, so the user can `edit` or `delete` that contact and run `undo` again.
 1. Otherwise, `Model#restoreLastDeletedPerson()` calls `Model#addPerson`. This appends the same `Person` object to the
    end of the stored list, so its department, tags and other fields are unchanged. `addPerson` also shows the full
    list, which clears any `find` filter and `sort` order. The deletion is popped only after the add succeeds, so a
