@@ -863,7 +863,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
   Use case ends.
 
 
-****Use case: UC5a - List departments**
+**Use case: UC5a - List departments**
 
 **MSS**
 
