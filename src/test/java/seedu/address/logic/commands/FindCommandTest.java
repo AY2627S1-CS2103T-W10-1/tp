@@ -70,6 +70,14 @@ public class FindCommandTest {
     }
 
     @Test
+    public void helpAndUsage_describeCaseInsensitiveTags() {
+        assertTrue(FindCommand.HELP_PAGE.text().contains("whole tag; matching is case-insensitive"));
+        assertTrue(FindCommand.MESSAGE_USAGE.contains("any tag (case-insensitive)"));
+        assertFalse(FindCommand.HELP_PAGE.text().contains("case-sensitive"));
+        assertFalse(FindCommand.MESSAGE_USAGE.contains("case-sensitive"));
+    }
+
+    @Test
     public void equals() {
         NameContainsKeywordsPredicate firstPredicate =
                 new NameContainsKeywordsPredicate(List.of("first"));
