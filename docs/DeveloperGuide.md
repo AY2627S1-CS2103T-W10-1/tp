@@ -308,8 +308,7 @@ arguments of `depart --edit`. The command word is `depart` for all four catalogu
 The previous `depart CONTACT_ID --set DEPARTMENT` form is replaced by `edit CONTACT_ID --department DEPARTMENT`.
 
 Department names are case-sensitive and must contain 2-50 characters using only letters, numbers, spaces, `-`, or `&`.
-All department inputs are trimmed before format validation and catalogue lookup; spaces inside quoted names
-are preserved. `Department` stores the trimmed name, including when loading existing catalogue and contact data.
+All department inputs are trimmed before format validation and catalogue lookup; spaces inside quoted names are preserved, while leading and trailing whitespace is discarded. `Department` stores the trimmed name, including when loading existing catalogue and contact data.
 Reject empty or invalid names, duplicate catalogue additions, an unknown rename source, and a rename target
 that already belongs to another catalogue entry. Reject missing arguments, extra arguments, and combined
 catalogue operations without modifying the catalogue or contacts.
@@ -614,29 +613,34 @@ bypassing command parsing. These alternative paths are omitted from the successf
 
 ### Undoing a deletion
 
-`undo` restores the contact most recently removed with `delete` in the current session. Only `delete` is recorded,
-so `undo` does not revert `add`, `edit`, `clear` or any other command, and there is no `redo`.
+`undo` restores the most recent contact or department deletion in the current session. Contact deletions are
+created by `delete INDEX`, while department deletions are created by `depart --delete DEPARTMENT`. Both deletion
+types share one chronological history and are restored in reverse order. `undo` does not revert `add`, `edit`,
+`depart --add`, `depart --edit`, or `clear`, and there is no `redo`.
 
-`ModelManager` keeps the deletion history in a `deletedPersons` list, used as a stack. The history is held in memory
-only. It is not written to the data file, so it is empty every time the app starts. `Model` exposes it through these
+`ModelManager` keeps a shared deletion history containing deleted contacts and deleted departments. The history
+is held in memory only. It is not written to the data file, so it is empty every time the app starts. `Model` exposes it through these
 operations:
 
-* `Model#deletePerson(Person)` — Removes the person and pushes it onto the history.
-* `Model#hasDeletedPerson()` — Returns true if the history is not empty.
-* `Model#getLastDeletedPerson()` — Returns the most recent deletion without removing it from the history.
-* `Model#restoreLastDeletedPerson()` — Adds the most recent deletion back and pops it from the history.
+* `Model#deletePerson(Person)` — Removes a contact and records the deletion.
+* `Model#hasDeletedPerson()` / `Model#getLastDeletedPerson()` — Inspect the most recent contact deletion when applicable.
+* `Model#getLastDeletedDepartment()` — Inspects the most recent department deletion when applicable.
+* `Model#restoreLastDeletedPerson()` / `Model#restoreLastDeletedDepartment()` — Restore the corresponding deletion and consume its history entry.
 
-`DeleteCommand` is the only caller of `deletePerson`, so it records deletions without any extra code. Its success
-message ends with `Use 'undo' to restore.`
+`DeleteCommand` records contact deletions, while the department deletion operation records department deletions.
+Both are handled by the shared history used by `UndoCommand`. Delete success feedback ends with
+`Use 'undo' to restore.`
 
 Given below is an example usage scenario.
 
-Step 1. The user executes `delete 2`. `ModelManager` removes that contact and pushes it onto `deletedPersons`.
+Step 1. The user executes `delete 1`. The deleted contact is recorded in the shared history.
 
-Step 2. The user executes `delete 1`. That contact is pushed on top of the contact deleted in step 1.
+Step 2. The user executes `depart --delete Engineering`. The deleted department and its affected assignments
+are recorded after the contact deletion.
 
-Step 3. The user executes `undo`, which restores the contact deleted in step 2 and pops it. A second `undo` restores
-the contact deleted in step 1. A third `undo` fails with `There are no deletions to undo in this session.`
+Step 3. The user executes `undo`, which restores the deleted department first because it is the most recent
+deletion. A second `undo` restores the deleted contact. A third `undo` fails with
+`There are no deletions to undo in this session.`
 
 The following sequence diagram shows how `undo` goes through the `Logic` and `Model` components:
 
@@ -647,22 +651,14 @@ The following sequence diagram shows how `undo` goes through the `Logic` and `Mo
 
 How `undo` works:
 
-1. `AddressBookParser` passes the rest of the input to `UndoCommandParser`. If there is any argument (e.g. `undo 2`),
-   the parser throws a `ParseException` with the usage message.
-1. `UndoCommand#execute` checks `Model#hasDeletedPerson()`. If the history is empty, it throws a `CommandException`
-   saying there is nothing to undo.
-1. It reads the most recent deletion with `Model#getLastDeletedPerson()` and checks `Model#hasPerson(...)`. A contact
-   with the same name, phone and email (`Person#isSamePerson`) may have been added since the deletion. If so, it
-   throws a `CommandException` that names the existing contact. The deletion stays in the history, so the user can
-   `edit` or `delete` that contact and run `undo` again.
-1. Otherwise, `Model#restoreLastDeletedPerson()` calls `Model#addPerson`. This appends the same `Person` object to the
-   end of the stored list, so its department, tags and other fields are unchanged. `addPerson` also shows the full
-   list, which clears any `find` filter and `sort` order. The deletion is popped only after the add succeeds, so a
-   failed add does not lose it.
-1. `LogicManager` saves the address book, as it does after other commands that change it.
-
-`clear` replaces the address book through `Model#setAddressBook`, which does not touch `deletedPersons`. After `clear`,
-`undo` can still restore contacts that were deleted individually before it, but not the contacts that `clear` removed.
+1. `AddressBookParser` passes the input to `UndoCommandParser`, which rejects arguments.
+2. `UndoCommand#execute` checks the most recent entry in the shared deletion history.
+3. For a department deletion, it checks that the department name is not already registered, restores the
+   department and eligible assignments, and consumes the history entry only after success.
+4. For a contact deletion, it checks the contact-information and duplicate constraints, restores the contact,
+   and consumes the history entry only after success.
+5. `LogicManager` saves the address book after a successful restoration. A failed restoration leaves the
+   data and deletion history unchanged.
 
 #### Design considerations:
 
@@ -865,54 +861,111 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
   Use case ends.
 
 
-**Use case: UC5 - Manage departments**
+**Use case: UC5a - List departments**
 
 **MSS**
 
-1. User requests to list, add, rename, or delete a department in the shared catalogue.
-2. sudoContact validates the request and any supplied department names.
-3. sudoContact retrieves the catalogue, adds the department, renames it and updates associated contacts,
-   or deletes it and clears its assignments from contacts and deletion history.
-4. sudoContact displays the catalogue or confirms the addition, rename, or deletion.
+1. User enters `depart --list`.
+2. sudoContact validates the command.
+3. sudoContact displays every registered department, including unused departments.
 
    Use case ends.
 
 **Extensions**
 
-* 2a. The request has an invalid format or missing or extra arguments.
-
-  * 2a1. sudoContact shows an error and indicates the accepted command formats.
-
-  Use case ends.
-
-* 2b. A supplied department name is empty or violates the name constraints.
-
-  * 2b1. sudoContact shows an error explaining the name constraints.
-
-  Use case ends.
-
-* 2c. The department to be added already exists.
-
-  * 2c1. sudoContact informs the user that the department is already registered.
-
-  Use case ends.
-
-* 2d. The department to be renamed or deleted does not exist.
-
-  * 2d1. sudoContact informs the user that the department does not exist and suggests listing
-    or adding departments.
-
-  Use case ends.
-
-* 2e. The new name belongs to another registered department.
-
-  * 2e1. sudoContact informs the user that the target name is already registered.
-
-  Use case ends.
-
-* 3a. The user requests the department list, but the catalogue is empty.
+* 3a. The catalogue is empty.
 
   * 3a1. sudoContact informs the user that no departments have been registered.
+
+  Use case ends.
+
+
+**Use case: UC5b - Add a department**
+
+**MSS**
+
+1. User enters `depart --add DEPARTMENT`.
+2. sudoContact validates the name and checks that it is not already registered.
+3. sudoContact adds the department, saves the data and confirms the addition.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. The command format or department name is invalid.
+
+  * 2a1. sudoContact displays an error and does not modify the catalogue.
+
+  Use case ends.
+
+* 2b. The department already exists.
+
+  * 2b1. sudoContact informs the user that it is already registered.
+
+  Use case ends.
+
+
+**Use case: UC5c - Rename a department**
+
+**MSS**
+
+1. User enters `depart --edit OLD_NAME NEW_NAME`.
+2. sudoContact validates both names and checks the source and target catalogue entries.
+3. sudoContact renames the department and updates all associated contacts, including hidden contacts.
+4. sudoContact saves the data and confirms the rename.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. The command format or either name is invalid.
+
+  * 2a1. sudoContact displays an error and does not modify the catalogue or contacts.
+
+  Use case ends.
+
+* 2b. The source does not exist or the target is already registered.
+
+  * 2b1. sudoContact displays the corresponding error and leaves the data unchanged.
+
+  Use case ends.
+
+
+**Use case: UC5d - Delete a department**
+
+**MSS**
+
+1. User enters `depart --delete DEPARTMENT`.
+2. sudoContact validates the name and checks that the department exists.
+3. sudoContact removes the department and clears its assignments from current contacts and deletion history.
+4. sudoContact records the deletion for `undo`, saves the data and confirms the deletion.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. The command format, name or existence check fails.
+
+  * 2a1. sudoContact displays an error and leaves the catalogue, contacts and deletion history unchanged.
+
+  Use case ends.
+
+
+**Use case: UC5e - Assign a department to a contact**
+
+**MSS**
+
+1. User enters `edit CONTACT_ID --department DEPARTMENT`.
+2. sudoContact validates the displayed contact ID and checks that the department is registered.
+3. sudoContact updates the selected contact, saves the data and confirms the edit.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. The contact ID, department name or membership is invalid.
+
+  * 2a1. sudoContact displays an error and leaves the contact unchanged.
 
   Use case ends.
 
