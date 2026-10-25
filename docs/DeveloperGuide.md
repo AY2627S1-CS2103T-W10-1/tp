@@ -388,7 +388,7 @@ The old `depart CONTACT_ID --set DEPARTMENT` form is not supported.
 Names are case-sensitive and contain 2-50 characters from ASCII letters (`A-Z`, `a-z`), digits (`0-9`),
 spaces, `-`, and `&`; names consisting only of whitespace are invalid. Names containing spaces must be
 one quoted argument, using matching single or double quotes, e.g. `depart --edit Engineering "Customer Support"`.
-Quotes are removed before validation; spaces inside quotes are preserved and count towards the length limit.
+Leading and trailing whitespace is trimmed after quotes are removed; internal spaces are preserved and count towards the length limit.
 A closing quote must be followed by whitespace or the end of input. An unquoted name starting with `--`
 is treated as an invalid option-like argument. To use such a name, quote it.
 Renaming to the source's exact current name is allowed; renaming to another existing entry is not.
