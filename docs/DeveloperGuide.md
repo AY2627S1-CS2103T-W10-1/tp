@@ -386,8 +386,8 @@ are rejected. Use ordinary ASCII hyphens and separate the option and arguments w
 The old `depart CONTACT_ID --set DEPARTMENT` form is not supported.
 
 Names are case-sensitive and contain 2-50 characters from ASCII letters (`A-Z`, `a-z`), digits (`0-9`),
-spaces, `-`, and `&`; names consisting only of whitespace are invalid. Names containing spaces must be
-one quoted argument, using matching single or double quotes, e.g. `depart --edit Engineering "Customer Support"`.
+spaces, `-`, and `&`; names consisting only of whitespace are invalid. Names containing spaces must be one quoted argument, using matching single or double quotes, e.g. `depart --edit Engineering "Customer Support"`.
+Unlike `add` and `edit`, an unquoted multi-word department name is treated as multiple arguments and is rejected.
 Leading and trailing whitespace is trimmed after quotes are removed; internal spaces are preserved and count towards the length limit.
 A closing quote must be followed by whitespace or the end of input. An unquoted name starting with `--`
 is treated as an invalid option-like argument. To use such a name, quote it.
@@ -664,10 +664,11 @@ How `undo` works:
 
 **Aspect: What `undo` records:**
 
-* **Alternative 1 (current choice):** Only the person removed by each `delete`.
-  * Pros: Uses little memory. `undo` always brings back a deleted contact, even if other commands ran after the
-    deletion.
-  * Cons: Only `delete` can be undone. Each command that should become undoable needs its own reverse logic.
+* **Alternative 1 (current choice):** Store contact and department deletions in one shared history.
+  * Pros: Uses little memory and preserves the chronological order across `delete INDEX` and
+    `depart --delete DEPARTMENT`. `undo` restores the most recent deletion without reverting unrelated commands.
+  * Cons: Only contact and department deletions can be undone. Each additional undoable command needs its own
+    deletion record and restoration logic.
 
 * **Alternative 2:** A copy of the entire address book after every command that changes it, as in AB3's proposed
   `VersionedAddressBook`.
@@ -680,7 +681,8 @@ How `undo` works:
 * **Alternative 1 (current choice):** In `ModelManager`.
   * Pros: Each `Model` has its own history, so tests do not share state. `ModelManager#equals` compares the history,
     so `CommandTestUtil.assertCommandSuccess` checks it too.
-  * Cons: `Model` gains three methods, which every `Model` stub in the tests must implement.
+  * Cons: `Model` exposes separate operations for inspecting and restoring contact and department deletions,
+    which every `Model` stub in the tests must implement.
 
 * **Alternative 2:** In a static field of `DeleteCommand` or `UndoCommand`.
   * Pros: `Model` does not change.
@@ -861,7 +863,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
   Use case ends.
 
 
-**Use case: UC5a - List departments**
+****Use case: UC5a - List departments**
 
 **MSS**
 
