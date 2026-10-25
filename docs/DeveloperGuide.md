@@ -424,10 +424,17 @@ Invalid command format!
 depart --list | depart --add DEPARTMENT | depart --edit OLD_NAME NEW_NAME | depart --delete DEPARTMENT
 ```
 
+### Searching names with quotes
+
+Name search uses `ArgumentTokenizer.splitWords` to remove matching outer quotes before splitting
+the resulting text into whole-word OR keywords. Single and double quotes behave identically;
+quotes inside unquoted words remain literal. Empty input, unmatched quotes and text immediately
+after a closing quote are rejected.
+
 ### Searching contacts by tags (UC6)
 
 The tag-search command is `find --tag TAG [--tag TAG ...]`. Each tag requires its own lowercase `--tag`
-option; the command word is case-insensitive. Tags are case-sensitive and contain 1-30 ASCII letters,
+option; the command word is case-insensitive. Tag matching is case-insensitive; tags contain 1-30 ASCII letters,
 digits, hyphens, or underscores. Surrounding whitespace is ignored, but internal whitespace is invalid.
 Unlike contact-input parsing, tag search does not remove quotes or leading `#` or `/` characters:
 `find --tag "client"` and `find --tag #client` are invalid; use `find --tag client`.
@@ -454,12 +461,16 @@ existing name-search path. After a valid `--tag`, unsupported option text is par
 Quoted empty text is not a missing value: `find --tag ""` produces the invalid-tag message.
 Parsing failures leave the current filter, display order, and contacts unchanged.
 
+Tag search uses `String.equalsIgnoreCase` so users need not remember tag capitalization,
+consistent with name search and tag sorting. Stored tag spelling and tag equality are unchanged;
+case variants may coexist in storage but are equivalent for searching.
+
 #### Matching and execution
 
 For valid tag input, the parser constructs `FindCommand(new TagsMatchPredicate(tags))`.
-`TagsMatchPredicate` keeps an immutable copy of the query and uses `String.equals` to compare complete
+`TagsMatchPredicate` keeps an immutable copy of the query and uses `String.equalsIgnoreCase` to compare complete
 stored tag names. A contact matches if any stored tag equals any requested tag (OR matching); substring
-matches and case-only differences do not match. Contacts with no tags do not match.
+matches do not match; case-only differences do match. Contacts with no tags do not match.
 
 `FindCommand.execute` passes the predicate to `Model.updateFilteredPersonList`. `ModelManager` restores
 the display projection to stored order and applies the new predicate across all stored contacts, replacing
@@ -472,7 +483,7 @@ Contact fields remain unchanged. `FindCommand` retains the normal `LogicManager`
 a save failure is reported after the display filter has been updated.
 
 `FindCommandParserTest` covers repeated options, whitespace, tag length boundaries, invalid tags,
-unsupported options, and mixed name/tag input. `TagsMatchPredicateTest` verifies OR matching, exact case,
+unsupported options, and mixed name/tag input. `TagsMatchPredicateTest` verifies OR matching, case-insensitive comparisons,
 whole-tag matching, and defensive copying. `FindCommandTest` verifies filtered results and feedback.
 
 ### Listing all contacts: design specification
@@ -971,7 +982,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 2.  User enters a `find` command with one or more `--tag TAG` pairs.
 3.  sudoContact validates all specified tags.
 4.  sudoContact searches all contacts for those having any of the specified tags (OR matching),
-    using case-sensitive, whole-tag matching.
+    using case-insensitive, whole-tag matching.
 5.  sudoContact displays each matching contact once.
 6.  sudoContact displays the number of matching contacts.
 
@@ -1195,7 +1206,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * **Partial contact**: A contact with a name but without some optional details, such as a phone number, email address, department, or tags.
 * **Duplicate contact**: An existing contact with the same name and a matching provided phone number or email address as a contact being added, edited, or restored. Missing fields do not match. Comparisons are case-sensitive.
 * **CSV export**: A UTF-8 comma-separated values file containing a header row and one row for each stored contact.
-* **Tag**: An optional label attached to a contact to support categorisation and searching. Tag matching is case-sensitive.
+* **Tag**: An optional label attached to a contact to support categorisation and searching. Tag matching is case-insensitive.
 
 --------------------------------------------------------------------------------------------------------------------
 
