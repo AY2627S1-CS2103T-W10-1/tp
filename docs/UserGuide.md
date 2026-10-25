@@ -162,13 +162,8 @@ Format: `add --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMEN
 * Omit an unknown field entirely. An option with an empty value is rejected.
 * Unknown options, unmatched quotes and repeated options other than `--tag` are rejected.
 * Omitted phone, email, address and department show `Not provided`; omitted tags show `None`.
-* Contacts with the same name are duplicates if either their provided phone numbers **or** email addresses
-  match. Missing fields do not count as matches. Same-name contacts can coexist only when neither provided
-  contact field matches; a different address, department or tag does not distinguish duplicates.
-* Contacts saved under the previous rule remain in their original order, even if the same name and phone
-  or email now conflict. Loading, saving and restarting do not merge or remove these records. New additions,
-  edits and contact restoration with `undo` still use the stricter rule. To edit a conflicting old contact,
-  change its name or contact details so the result does not conflict with any other contact.
+* A contact with the same name as an existing contact, and the same phone number **or** email address, is a
+  duplicate and is rejected. Address, department and tags are not compared.
 
 Short flags also work, and can be mixed with long ones:
 `add -n NAME [-p PHONE] [-e EMAIL] [-d DEPARTMENT] [-a ADDRESS] [-t TAG ...]`.
@@ -328,7 +323,7 @@ Invalid displayed contact data | `Unable to sort contacts because some stored co
 When several input problems occur, an explicit `--descending` token takes precedence, followed by unsupported
 argument structure, missing option/value, and an invalid field. Failed input or invalid sorting data leaves the
 current display order unchanged. Sorting preserves separate contact occurrences rather than deduplicating them;
-the application's existing rules still prevent duplicate contacts from being added or loaded.
+the application's existing rules still prevent duplicate contacts from being added.
 
 Sorting uses the current in-memory contacts; it does not reread the file. If contacts fail to load at startup,
 the application starts with an empty list, so sorting reports `No contacts found to sort.` You can add valid contacts
@@ -449,9 +444,9 @@ Format: `undo`
 * Both deletion types share one history. Repeated calls undo deletions in reverse chronological order.
   `add`, `edit`, `depart --add`, `depart --edit`, and `clear` cannot be undone.
 * History is remembered only until you close the app. Successful undo is saved and shows all contacts in stored order.
-* Undoing a contact deletion appends the restored contact to the list. A same-name contact sharing a provided phone number
-  or email prevents restoration. Missing fields do not match. The history entry is kept so you can resolve
-  every matching contact field or change the existing contact's name and retry.
+* Undoing a contact deletion appends the restored contact to the list. It fails if a
+  [duplicate](#adding-a-contact-with-partial-information-add) of that contact now exists. The deletion stays in the
+  history, so you can edit or delete the duplicate and retry.
 * A restored contact must have a phone number or email address. If a deleted legacy contact has neither,
   `undo` reports `A phone number or email address must be provided.` and leaves data and history unchanged.
   You can recreate that contact using `add` with the required contact information.
