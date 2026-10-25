@@ -617,28 +617,24 @@ bypassing command parsing. These alternative paths are omitted from the successf
 `delete INDEX` and are restored in reverse order. `undo` does not revert `add`, `edit`,
 `depart --add`, `depart --edit`, or `clear`, and there is no `redo`.
 
-`ModelManager` keeps a shared deletion history containing deleted contacts and deleted departments. The history
+`ModelManager` keeps a session-local deletion history containing deleted contacts. The history
 is held in memory only. It is not written to the data file, so it is empty every time the app starts. `Model` exposes it through these
 operations:
 
 * `Model#deletePerson(Person)` — Removes a contact and records the deletion.
 * `Model#hasDeletedPerson()` / `Model#getLastDeletedPerson()` — Inspect the most recent contact deletion when applicable.
-* `Model#getLastDeletedDepartment()` — Inspects the most recent department deletion when applicable.
-* `Model#restoreLastDeletedPerson()` / `Model#restoreLastDeletedDepartment()` — Restore the corresponding deletion and consume its history entry.
+* `Model#restoreLastDeletedPerson()` — Restores the most recent deleted contact and consumes its history entry.
 
-`DeleteCommand` records contact deletions, while the department deletion operation records department deletions.
-Both are handled by the shared history used by `UndoCommand`. Delete success feedback ends with
+`DeleteCommand` records contact deletions in the history used by `UndoCommand`. Delete success feedback ends with
 `Use 'undo' to restore.`
 
 Given below is an example usage scenario.
 
-Step 1. The user executes `delete 1`. The deleted contact is recorded in the shared history.
+Step 1. The user executes `delete 1`. The deleted contact is recorded in the history.
 
-Step 2. The user executes `depart --delete Engineering`. The deleted department and its affected assignments
-are recorded after the contact deletion.
+Step 2. The user executes `undo`, which restores the deleted contact.
 
-Step 3. The user executes `undo`, which restores the deleted department first because it is the most recent
-deletion. A second `undo` restores the deleted contact. A third `undo` fails with
+Step 3. A further `undo` fails with
 `There are no deletions to undo in this session.`
 
 The following sequence diagram shows how `undo` goes through the `Logic` and `Model` components:
