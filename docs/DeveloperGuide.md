@@ -868,7 +868,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 **MSS**
 
 1. User enters `depart --list`.
-2. sudoContact validates the command.
+2. sudoContact validates the command format.
 3. sudoContact displays every registered department, including unused departments.
 
    Use case ends.
