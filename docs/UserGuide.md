@@ -356,7 +356,7 @@ The popup lists each field name beside its value, with how to reach the contact 
 grouped above how they are organised (department, tags). Long values wrap onto multiple lines; scroll to read them.
 Contacts without tags show a dimmed `None` for Tags, and contacts without a department show a dimmed `Not provided`.
 To copy a value, press `Alt+3` until the popup (or \[3\] Details) has the focus, use `j`/`k` (or `Tab`, `↑`/`↓`) to
-select a value, then press `Ctrl+C`.
+select a value, then press `Ctrl+C` (`Cmd+C` on macOS).
 
 Format: `view CONTACT_ID`
 

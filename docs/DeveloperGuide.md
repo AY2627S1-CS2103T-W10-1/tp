@@ -1496,12 +1496,14 @@ add --name "Benson Meier" --phone 92345678 --email benson@example.com --tag vend
 
 1. Details popups
 
+   Run `list` before this group to restore the contacts hidden by the previous empty search.
+
    1. View a contact with a long name/address and multiple tags. Resize the details popup and scroll.
       Expected: all values remain readable without truncation; tags are separated by commas.
       The main result box shows only `Showing details of contact CONTACT_ID: NAME`.
    1. View a contact without tags. Expected: the Tags field shows a dimmed `None`.
    1. View a contact without a department. Expected: the Department field shows a dimmed `Not provided`.
-   1. Press Alt+3 until a popup has the focus, then press `j` and Ctrl+C.
+   1. Press Alt+3 until a popup has the focus, then press `j` and `Ctrl+C` (`Cmd+C` on macOS).
       Expected: the phone number is highlighted and copied to the clipboard.
    1. Run `find Benson`, then `edit 1 --department "R&D Engineering"`. Run `find Benson` again, then `view 1`.
       Expected: Benson's details include `Department: R&D Engineering`; `view` preserves the current filter.
@@ -1510,9 +1512,9 @@ add --name "Benson Meier" --phone 92345678 --email benson@example.com --tag vend
       the refreshed snapshot displays `Department: Sales`.
    1. With Benson's popup open, run `edit 1 --name Benson Renamed`, `find Benson`, then `view 1`.
       Expected: the existing popup refreshes and is titled `Contact details: Benson Renamed`; no second popup opens.
-   1. View another contact. Expected: a second popup opens, offset from the first. Both stay in front of the
-      main window, and the prompt keeps the keyboard focus.
-   1. View the first contact again. Expected: its existing popup updates rather than a third popup opening.
+   1. Close all contact popups, then run `list`, `view 1` and `view 2`. Expected: exactly two popups are open,
+      offset from each other. Both stay in front of the main window, and the prompt keeps the keyboard focus.
+   1. Run `view 1` again. Expected: its existing popup updates rather than a third popup opening.
    1. Press Alt+3 repeatedly. Expected: the focus moves to \[3\] Details, then through each open popup,
       then back to \[3\] Details. Press Esc.
       Expected: the focus returns to the prompt.
@@ -1528,6 +1530,8 @@ add --name "Benson Meier" --phone 92345678 --email benson@example.com --tag vend
    1. Exit the application while several popups are open. Expected: every popup closes with the main window.
 
 1. Data and persistence
+
+   Relaunch from the same folder after the previous group's exit step.
 
    1. Filter contacts, then run a valid `view` command. Compare contact values before and after.
       Expected: contact data, the filter, display order and JSON file remain unchanged.
