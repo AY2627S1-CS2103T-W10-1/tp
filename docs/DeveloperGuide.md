@@ -437,32 +437,33 @@ after a closing quote are rejected.
 
 ### Searching contacts by tags (UC6)
 
-The tag-search command is `find --tag TAG [--tag TAG ...]`. Each tag requires its own lowercase `--tag`
-option; the command word is case-insensitive. Tag matching is case-insensitive; tags contain 1-30 ASCII letters,
-digits, hyphens, or underscores. Surrounding whitespace is ignored, but internal whitespace is invalid.
-Unlike contact-input parsing, tag search does not remove quotes or leading `#` or `/` characters:
-`find --tag "client"` and `find --tag #client` are invalid; use `find --tag client`.
+The tag-search command is `find --tag TAG [TAG ...] [--tag TAG ...]`. The option is lowercase and may be
+repeated; as with `add` and `edit`, several tags may follow one option. The command word is case-insensitive.
+Tag matching is case-insensitive; tags contain 1-30 ASCII letters, digits, hyphens, or underscores.
+`ParserUtil.parseTag` trims surrounding whitespace and removes leading `#` or `/` characters. Matching quotes
+are removed by the shared tokenizer. A tag that looks like an option must be quoted, so
+`find --tag "--tag"` searches for the literal tag `--tag` rather than introducing another option.
 
 #### Parsing and validation
 
-`AddressBookParser` delegates `find` to `FindCommandParser`. The parser recognizes standalone `--tag`
-tokens and treats the trimmed text between consecutive options as one tag value. It rejects text before
-the first `--tag`, preventing a combined name-and-tag search. It validates values from left to right using
-`Tag.isValidTagName`, reporting the first failure before constructing a command.
+`AddressBookParser` delegates `find` to `FindCommandParser`. The parser uses the shared quote-aware
+`ArgumentTokenizer`, with each word after `--tag` treated as a tag value. It rejects text before the first
+`--tag`, preventing a combined name-and-tag search. Values are validated from left to right through
+`ParserUtil.parseTag`, keeping search input normalization and validation aligned with `add` and `edit`.
+Normalized duplicate query tags are removed before constructing the command.
 
 | Condition | Feedback |
 | --- | --- |
 | Missing or whitespace-only value after `--tag` | `Tag cannot be empty: Please provide a valid tag after '--tag'.` |
-| Nonempty tag violates character or length constraints | `Invalid Tag: '[INPUT]' must be 1-30 characters using only letters, numbers, hyphens (-), and underscores (_), with no spaces.` |
-| No standalone `--tag`, but an option-like token is supplied | `Invalid find option: '[INPUT]'. Use find --tag TAG [--tag TAG ...] or find KEYWORD [MORE_KEYWORDS].` |
+| Tag exceeds 30 characters after normalization | `Invalid tag: Must contain 1-30 characters.` |
+| Tag otherwise violates the shared character constraints | `Tags must be 1-30 characters using only letters, numbers, hyphens (-), and underscores (_), with no spaces.` |
+| No standalone `--tag`, but an option-like token is supplied | `Invalid find option: '[INPUT]'. Use find --tag TAG [TAG ...] [--tag TAG ...] or find KEYWORD [MORE_KEYWORDS].` |
 | No arguments, or text before the first standalone `--tag` | `Invalid command format!` followed by a newline and `FindCommand.MESSAGE_USAGE`. |
 
-`[INPUT]` is the failing trimmed tag value or option token. Without a standalone `--tag`, a token beginning
-with `-`, an en dash, or an em dash is treated as an unsupported option; otherwise parsing follows the
-existing name-search path. After a valid `--tag`, unsupported option text is part of the value:
-`find --tag client --unknown` fails tag validation because the value contains a space.
-`find --tag --unknown` is a valid query for the literal tag `--unknown`, since hyphens are allowed.
-Quoted empty text is not a missing value: `find --tag ""` produces the invalid-tag message.
+Without a standalone `--tag`, a token beginning with `-`, an en dash, or an em dash is treated as an
+unsupported option; otherwise parsing follows the existing name-search path. After a valid `--tag`, an
+unquoted word beginning with `--` is also treated as an option and rejected if unknown. Quoting makes it a
+tag value instead. Empty quoted text and an option without a value produce the missing-tag message.
 Parsing failures leave the current filter, display order, and contacts unchanged.
 
 Tag search uses `String.equalsIgnoreCase` so users need not remember tag capitalization,
@@ -1033,7 +1034,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 **MSS:**
 
 1.  User requests to search for contacts with one or more tags.
-2.  User enters a `find` command with one or more `--tag TAG` pairs.
+2.  User enters a `find --tag` command with one or more tag values.
 3.  sudoContact validates all specified tags.
 4.  sudoContact searches all contacts for those having any of the specified tags (OR matching),
     using case-insensitive, whole-tag matching.
@@ -1044,9 +1045,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **Extensions:**
 
-* 3a. A specified tag contains invalid characters, internal spaces, or more than 30 characters.
+* 3a. A specified tag contains invalid characters or is longer than 30 characters after normalization.
 
-    * 3a1. sudoContact displays `Invalid Tag: '[INPUT]' must be 1-30 characters using only letters, numbers, hyphens (-), and underscores (_), with no spaces.`
+    * 3a1. sudoContact displays the corresponding shared tag-validation error used by `add` and `edit`.
 
       Use case ends.
 
@@ -1059,7 +1060,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * 3c. No valid `--tag` option is present and an option-like argument is supplied
   (e.g. `find --tags friends`, `find --TAG friends`, or `find -tag friends`).
 
-    * 3c1. sudoContact displays `Invalid find option: '[INPUT]'. Use find --tag TAG [--tag TAG ...] or find KEYWORD [MORE_KEYWORDS].`
+    * 3c1. sudoContact displays `Invalid find option: '[INPUT]'. Use find --tag TAG [TAG ...] [--tag TAG ...] or find KEYWORD [MORE_KEYWORDS].`
 
       Use case ends.
 

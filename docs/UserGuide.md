@@ -389,23 +389,28 @@ Examples:
 
 ### Locating contacts by tags: `find --tag`
 
-Format: `find --tag TAG [--tag TAG ...]`
+Format: `find --tag TAG [TAG ...] [--tag TAG ...]`
 
 * Command words are case-insensitive: `find`, `FIND`, and `FiNd` are equivalent.
 * The option must be lowercase `--tag`; `--TAG` is invalid. Tag matching is case-insensitive:
   `friends` matches `Friends`. Original tag spelling is preserved in stored data and display.
 * Matches contacts with **any** of the specified tags, ignoring case and matching whole tags.
 * Each matching contact is displayed once, even if several tags match or a tag is repeated.
-* Tags must contain 1–30 letters, numbers, hyphens (`-`), or underscores (`_`), without spaces.
+* As with `add` and `edit`, several tags can follow one `--tag`, the option can be repeated, and identical
+  inputs are deduplicated. Leading `#` or `/` characters are removed before searching.
+* Tags must contain 1–30 letters, numbers, hyphens (`-`), or underscores (`_`), without spaces. Quote a tag
+  that is itself an option-like value, e.g. `find --tag "--tag"` searches for the tag `--tag`.
 * A missing value displays `Tag cannot be empty: Please provide a valid tag after '--tag'.`
-* An invalid value displays `Invalid Tag: '[INPUT]' must be 1-30 characters using only letters, numbers, hyphens (-), and underscores (_), with no spaces.`
+* A tag longer than 30 characters displays `Invalid tag: Must contain 1-30 characters.` Other invalid tags display
+  `Tags must be 1-30 characters using only letters, numbers, hyphens (-), and underscores (_), with no spaces.`
 * No matches displays `No contacts found with the specified tag(s).`
 
 Example: `find --tag client --tag important`
 
 For `depart --add`, `depart --edit` and `depart --delete`, each department name containing spaces
 must be enclosed in matching single or double quotes, e.g. `depart --add "Customer Support"`.
-Tag-search values are unquoted single tags; `find --tag "friends"` is invalid.
+Matching quotes around tag-search values are optional, except when needed to prevent a value such as `--tag`
+from being interpreted as an option.
 
 ### Locating persons by name: `find`
 
