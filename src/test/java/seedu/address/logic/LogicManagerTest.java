@@ -240,7 +240,7 @@ public class LogicManagerTest {
     }
 
     @Test
-    public void execute_viewCommand_savesUnchangedContactsAndPreservesFilter() throws Exception {
+    public void execute_viewCommand_doesNotCreateStorageAndPreservesFilter() throws Exception {
         model.addPerson(AMY);
         model.addPerson(new PersonBuilder().withName("Bob").build());
         model.updateFilteredPersonList(AMY::equals);
@@ -255,11 +255,11 @@ public class LogicManagerTest {
         assertTrue(result.getContactDetails().orElseThrow().contains("Name: Amy Bee\n"));
         assertEquals(storedBefore, model.getAddressBook().getPersonList());
         assertEquals(displayedBefore, model.getFilteredPersonList());
-        assertEquals(model.getAddressBook(), new JsonAddressBookStorage(dataPath).readAddressBook().orElseThrow());
+        assertFalse(Files.exists(dataPath));
     }
 
     @Test
-    public void execute_viewCommand_reportsStandardSaveErrorWhenStorageCannotWrite() throws Exception {
+    public void execute_viewCommand_succeedsWhenStorageCannotWrite() throws Exception {
         model.addPerson(AMY);
         JsonAddressBookStorage addressBookStorage =
                 new JsonAddressBookStorage(temporaryFolder.resolve("blockedAddressBook.json")) {
@@ -272,9 +272,29 @@ public class LogicManagerTest {
                 new JsonUserPrefsStorage(temporaryFolder.resolve("blockedUserPrefs.json")));
         logic = new LogicManager(model, storage);
 
-        assertThrows(CommandException.class, String.format(LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT,
-                DUMMY_AD_EXCEPTION.getMessage()), () -> logic.execute("view 1"));
+        CommandResult result = logic.execute("view 1");
+        assertEquals("Showing details of contact 1: Amy Bee", result.getFeedbackToUser());
+        assertTrue(result.getContactDetails().orElseThrow().contains("Name: Amy Bee\n"));
         assertEquals(List.of(AMY), model.getAddressBook().getPersonList());
+    }
+
+    @Test
+    public void execute_viewCommand_preservesExistingFileAndSortedDisplay() throws Exception {
+        model.addPerson(new PersonBuilder(AMY).withTags("zeta").build());
+        model.addPerson(new PersonBuilder().withName("Bob").withTags("alpha").build());
+        logic.execute("sort --by tags");
+        List<Person> storedBefore = List.copyOf(model.getAddressBook().getPersonList());
+        List<Person> displayedBefore = List.copyOf(model.getFilteredPersonList());
+        Path dataPath = temporaryFolder.resolve("addressBook.json");
+        String existing = "existing data that must not be replaced by a read-only command";
+        Files.writeString(dataPath, existing);
+
+        CommandResult result = logic.execute("view 1");
+
+        assertTrue(result.getContactDetails().orElseThrow().startsWith("Name: Bob\n"));
+        assertEquals(existing, Files.readString(dataPath));
+        assertEquals(storedBefore, model.getAddressBook().getPersonList());
+        assertEquals(displayedBefore, model.getFilteredPersonList());
     }
 
     @Test

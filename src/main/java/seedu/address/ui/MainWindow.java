@@ -108,7 +108,8 @@ public class MainWindow extends UiPart<Stage> {
         trackFocusedPane();
 
         helpWindow = new HelpWindow();
-        contactDetailsWindows = new ContactDetailsWindows(primaryStage, logic.getPersonList(), this::addPaneShortcuts);
+        contactDetailsWindows = new ContactDetailsWindows(primaryStage, logic.getPersonList(),
+                this::addPaneShortcuts, () -> focusInMainWindow(() -> commandBox.focus()));
     }
 
     public Stage getPrimaryStage() {

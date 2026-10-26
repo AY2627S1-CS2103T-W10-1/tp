@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 import seedu.address.commons.core.LogsCenter;
@@ -44,7 +45,6 @@ public class ExportCommand extends Command {
     public static final String MESSAGE_USAGE = "export -c|--csv [FILENAME]\n"
             + "Exports all stored contacts as UTF-8 CSV. Default filename: contacts.csv.\n"
             + "Example: export --csv email-list.csv";
-    public static final String MESSAGE_INVALID_FILE_NAME = "Invalid file name: please provide a valid .csv file name.";
     public static final String MESSAGE_EMPTY_LIST = "No contacts found to export.";
     public static final String MESSAGE_SUCCESS = "Exported %1$d contacts to %2$s.";
     public static final String MESSAGE_ALREADY_EXISTS =
@@ -66,7 +66,8 @@ public class ExportCommand extends Command {
      */
     public ExportCommand(String fileName, CsvContactExporter exporter) {
         this.fileName = requireNonNull(fileName);
-        checkArgument(CsvContactExporter.isValidFileName(fileName), MESSAGE_INVALID_FILE_NAME);
+        Optional<String> fileNameError = CsvContactExporter.getFileNameError(fileName);
+        checkArgument(fileNameError.isEmpty(), fileNameError.orElse(""));
         this.exporter = requireNonNull(exporter);
     }
 

@@ -364,12 +364,14 @@ Format: `view CONTACT_ID`
 * Surrounding spaces are ignored. Missing contact IDs, zero, negative numbers, decimals and extra arguments are rejected.
 * A contact ID outside the displayed list produces an error showing the valid range.
 * An empty displayed list produces `There is no contact to view in the currently displayed list.`
-* Viewing leaves contact data and the current filter unchanged and uses the same automatic saving flow as other commands.
+* Viewing is read-only: it preserves contact data, the current filter and display order without saving the JSON file.
+  It still works if the contact file cannot currently be written.
 * Each contact gets its own popup, so you can view several contacts and compare them side by side.
   Viewing a contact that already has a popup updates that popup instead of opening another one,
   even if you have since edited the contact's name, phone or email.
 * The command prompt keeps the keyboard focus after `view`, so you can keep typing. Press `Alt+3` to move to
-  [3] Details and then into the popups, `q` to close the focused popup, and `Esc` to return to the prompt.
+  [3] Details and then into the popups. Unmodified `q` closes only the focused popup and returns focus to the
+  command prompt; `Esc` returns to the prompt without closing the popup.
 * A popup shows a snapshot. Run `view CONTACT_ID` again after editing, deleting or filtering to refresh it.
   Closing a popup does not exit sudoContact; exiting sudoContact closes every popup.
 * You can also double-click a contact in the contact list, or select it and press `Enter`, as described in
@@ -545,18 +547,27 @@ Examples:
 
 Success: `Exported 3 contacts to contacts.csv.` (the count reflects your stored contacts).
 An empty address book reports `No contacts found to export.` and creates no file.
-Invalid arguments report the command format or an invalid filename. If the folder is unavailable,
+Invalid syntax reports the command format. Invalid filenames identify the violated rule:
+
+| Input | Feedback |
+| --- | --- |
+| `export --csv Team.CSV` | `Invalid file name: the extension must be lowercase .csv.` |
+| `export --csv con.csv` | `Invalid file name: 'con' is a reserved device name. Choose another name.` |
+| `export --csv ../x.csv` | `Invalid file name: folder paths are not allowed. Provide a filename only.` |
+
+Missing filename stems, surrounding whitespace, reserved characters and control characters also produce
+specific correction messages. If the folder is unavailable,
 unwritable or out of space, the app reports that it cannot create the CSV; choose a writable launch folder
 or free space and retry. Export is a copy for external use; it does not replace the app's JSON data file.
 
 ### Saving the data
 
 sudoContact automatically saves contact changes after successful commands; no separate save command is needed.
-The JSON save is skipped for `sort`, `export`, `help`/`?`, `depart --list`, and `clear` without `--confirm`.
+The JSON save is skipped for `view`, `sort`, `export`, `help`/`?`, `depart --list`, and `clear` without `--confirm`.
 `sort` changes only the displayed order; it does not write the contact file or persist the sort order.
 `export` writes a separate CSV copy; it does not modify or save the JSON contact file.
-Help and department listing only display information; unconfirmed `clear` only displays its warning.
-`clear --confirm` does save the cleared data. `list`/`ls`, `find` and `view` retain the normal JSON-save behavior.
+Viewing, help and department listing only display information; unconfirmed `clear` only displays its warning.
+`clear --confirm` does save the cleared data. `list`/`ls` and `find` retain the normal JSON-save behavior.
 Departments and tags are contact data and are saved normally when changed.
 
 ### Editing the data file

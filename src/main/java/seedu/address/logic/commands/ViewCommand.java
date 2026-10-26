@@ -27,7 +27,8 @@ public class ViewCommand extends Command {
             "Usage: view INDEX",
             "",
             "INDEX is a positive, one-based position in the currently displayed list.",
-            "Preserves the active filter and display order.",
+            "Preserves the active filter and display order without saving contact data.",
+            "Press unmodified q in the details popup to close it and return to the command prompt.",
             "",
             "Examples:",
             "  view 2"));
@@ -88,6 +89,11 @@ public class ViewCommand extends Command {
                 + "Department: " + person.getDepartment().map(department -> department.value)
                         .orElse("Not provided") + "\n"
                 + "Tags: " + (tags.isEmpty() ? "None" : tags);
+    }
+
+    @Override
+    public boolean requiresStorageSave() {
+        return false;
     }
 
     @Override

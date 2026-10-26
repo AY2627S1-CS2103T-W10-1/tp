@@ -30,6 +30,7 @@ public class ContactDetailsWindows {
 
     private final Stage owner;
     private final Consumer<Scene> sceneSetup;
+    private final Runnable returnToPrompt;
     /** Open popups, oldest first. */
     private final List<ContactDetailsWindow> openWindows = new ArrayList<>();
 
@@ -41,6 +42,15 @@ public class ContactDetailsWindows {
      * @param sceneSetup Applied to each new popup's scene, e.g. to share the main window's shortcuts.
      */
     public ContactDetailsWindows(Stage owner, ObservableList<Person> persons, Consumer<Scene> sceneSetup) {
+        this(owner, persons, sceneSetup, owner::requestFocus);
+    }
+
+    /**
+     * Creates popups that return keyboard focus to the command prompt when dismissed with q.
+     */
+    public ContactDetailsWindows(Stage owner, ObservableList<Person> persons, Consumer<Scene> sceneSetup,
+            Runnable returnToPrompt) {
+        this.returnToPrompt = requireNonNull(returnToPrompt);
         this.owner = requireNonNull(owner);
         this.sceneSetup = requireNonNull(sceneSetup);
         requireNonNull(persons).addListener((ListChangeListener<Person>) this::followEdits);
@@ -112,7 +122,7 @@ public class ContactDetailsWindows {
     }
 
     private ContactDetailsWindow open() {
-        ContactDetailsWindow window = new ContactDetailsWindow(owner);
+        ContactDetailsWindow window = new ContactDetailsWindow(owner, returnToPrompt);
         Stage stage = window.getRoot();
         sceneSetup.accept(stage.getScene());
 

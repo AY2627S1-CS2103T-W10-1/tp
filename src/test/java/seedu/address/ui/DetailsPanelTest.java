@@ -74,6 +74,9 @@ public class DetailsPanelTest {
             panel.focus();
             assertEquals(values.get(0), scene.getFocusOwner());
             assertEquals("Amy Bee", values.get(0).getSelectedText());
+            values.get(0).selectRange(0, 3);
+            panel.focus();
+            assertEquals("Amy Bee", values.get(0).getSelectedText());
 
             press(scene, KeyCode.J, false);
             press(scene, KeyCode.TAB, false);

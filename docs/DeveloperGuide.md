@@ -24,6 +24,9 @@ He Qianyi used OpenAI Codex to assist with updating and verifying the UI class d
 He Qianyi used OpenAI Codex to assist with diagnostic logging for contact viewing and CSV export.
 He Qianyi used OpenAI Codex to assist with iterative email validation, long-input regression tests,
 contact-workflow glossary updates and alpha-review documentation corrections.
+He Qianyi used OpenAI Codex to assist with alpha-bug fixes for read-only contact viewing, specific CSV
+filename feedback, return-to-prompt focus after popup dismissal, deterministic detail-value selection,
+regression tests and matching documentation.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -141,7 +144,9 @@ How the `Logic` component works:
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
 1. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
    Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
-1. `LogicManager` saves the canonical address book if `Command.requiresStorageSave()` returns true. `SortCommand` returns false because ordering is display-only; unconfirmed `ClearCommand` also returns false.
+1. `LogicManager` saves the canonical address book if `Command.requiresStorageSave()` returns true.
+   Read-only `ViewCommand` and display-only `SortCommand` return false, as do `ExportCommand`, `HelpCommand`,
+   department listing and unconfirmed `ClearCommand`.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
@@ -203,8 +208,10 @@ reads all stored contacts, writes the CSV through `CsvContactExporter`, and skip
 
 `AddressBookParser` dispatches `export` to `ExportCommandParser`. The parser requires `-c` or `--csv`, accepts
 one optional basename (with matching quotes for spaces), and defaults to `contacts.csv`.
-`CsvContactExporter.isValidFileName` rejects paths, invalid characters and reserved Windows device names
-so the command has the same filename policy on all supported platforms. The filename policy follows
+`CsvContactExporter.getFileNameError` returns a correction for the first violated rule: a missing stem,
+surrounding whitespace, a folder path, reserved/control characters, a non-lowercase `.csv` extension or a
+reserved Windows device name. `isValidFileName` delegates to the same validation, so parsing, command
+construction and file writing keep one filename policy on all supported platforms. The filename policy follows
 [Windows filename restrictions](https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file).
 
 `ExportCommand` snapshots `model.getAddressBook().getPersonList()` rather than the filtered list.
@@ -583,7 +590,7 @@ after confirmed deletion.
 ### Viewing contact details
 
 The sequence below shows a successful `view 1` request for a nonempty displayed list. It resolves the
-displayed index and completes the normal JSON save before returning the snapshot to the contact's details popup.
+displayed index and returns the snapshot to the contact's details popup without saving JSON contact data.
 
 ![Successful contact-details sequence](images/ViewContactSequenceDiagram.png)
 
@@ -600,9 +607,15 @@ payload. `MainWindow` displays only the short feedback in the main result box an
 read-only, wrapping, scrollable text area. Each successful `view` updates the contact's popup with a snapshot, or
 opens a popup if the contact has none; later model changes do not silently change a displayed snapshot.
 
-`view` follows the existing `LogicManager` save flow, like `list` and `find`, while preserving contact data
-and the current filter. Standard save errors are reported before a new details result reaches the UI. Contacts
-are validated and loaded into the model at startup, so `view` does not re-read contact data from disk.
+`ViewCommand.requiresStorageSave()` returns false. `LogicManager` returns the details result without calling
+`Storage.saveAddressBook`, preserving contact data, the current filter and display order. Viewing therefore
+succeeds even when the JSON destination cannot be written, and cannot overwrite an externally changed file.
+Contacts are validated and loaded into the model at startup, so `view` does not re-read contact data from disk.
+
+The existing popup handles only unmodified `q` as dismissal; modified keys remain available to the focused
+value. Details navigation selects the target value explicitly, including when its window is still gaining
+native focus or the same value was already focused. `MainWindow` supplies a return-to-prompt callback through `ContactDetailsWindows` so dismissal restores
+focus to `CommandBox`, even if a contact row or another pane previously held focus. Other popups remain open.
 
 Department display reads `Person.getDepartment()` from the Department implementation tracked by issue #65.
 The optional value is shown in full, or as `Department: Not provided` when absent. The `view` command uses
@@ -1334,7 +1347,9 @@ For the department assignment examples below, register the required names first 
    1. Press Alt+3 repeatedly. Expected: the focus moves to [3] Details, then through each open popup,
       then back to [3] Details. Press Esc.
       Expected: the focus returns to the prompt.
-   1. Press `q` in a popup. Expected: only that popup closes, and the main window regains the focus.
+   1. Focus [2] Contacts, move into a popup with Alt+3 and press unmodified `q`.
+      Expected: only that popup closes and the command prompt receives focus, ready for another command.
+      Shift/Ctrl/Alt/Meta+q does not close the popup.
    1. Close a contact's popup, then view that contact again. Expected: a popup reopens with the current details.
    1. Click a row in [2], then move with `j`/`k`.
       Expected: [3] Details shows each selected contact at once, and no popup opens.
@@ -1346,9 +1361,11 @@ For the department assignment examples below, register the required names first 
 1. Data and persistence
 
    1. Filter contacts, then run a valid `view` command. Compare contact values before and after.
-      Expected: contact data and the filter remain unchanged; the normal saving flow persists all contacts.
-   1. Run `view` when the save location cannot be written.
-      Expected: the standard save error appears, with no new popup or snapshot update.
+      Expected: contact data, the filter, display order and JSON file remain unchanged.
+   1. Run `view` when the save location cannot be written (for example, configure a directory as the JSON path).
+      Expected: the details popup opens or refreshes normally, without a save error or a write attempt.
+   1. With contacts already loaded, change the JSON file externally and run `view`.
+      Expected: the current in-memory contact is displayed; the external file is neither read nor overwritten.
 
 ### Deleting a person
 

@@ -82,9 +82,9 @@ public class DashboardUiTest {
     }
 
     @Test
-    public void enterOnContact_saveFails_showsErrorWithoutPopup() throws Exception {
+    public void enterOnContact_storageCannotWrite_showsDetailsWithoutSaving() throws Exception {
         FxTestUtil.run(() -> {
-            // A folder in place of the data file makes every save, and so every view, fail.
+            // A folder in place of the data file prevents saves, but read-only viewing must succeed.
             MainWindow main = showMainWindow(testFolder);
             Scene scene = main.getPrimaryStage().getScene();
             TextArea feedback = (TextArea) scene.lookup("#resultDisplay");
@@ -93,8 +93,8 @@ public class DashboardUiTest {
             press(scene.lookup("#commandTextField"), KeyCode.DIGIT2, true);
             press(contacts, KeyCode.ENTER, false);
 
-            assertTrue(feedback.getStyleClass().contains(ResultDisplay.ERROR_STYLE_CLASS));
-            assertTrue(main.getContactDetailsWindows().getOpenWindows().isEmpty());
+            assertEquals("Showing details of contact 1: Alice Pauline", feedback.getText());
+            assertEquals(1, main.getContactDetailsWindows().getOpenWindows().size());
             assertTrue(main.getPrimaryStage().isShowing());
         });
     }
@@ -130,6 +130,31 @@ public class DashboardUiTest {
 
             press(bensonScene.getFocusOwner(), KeyCode.ESCAPE, false);
             assertSame(input, scene.getFocusOwner());
+        });
+    }
+
+    @Test
+    public void closePopupFromContactsPane_returnsToPromptAndKeepsOtherPopup() throws Exception {
+        FxTestUtil.run(() -> {
+            MainWindow main = showMainWindow();
+            Scene scene = main.getPrimaryStage().getScene();
+            TextField input = (TextField) scene.lookup("#commandTextField");
+            enter(input, "view 1");
+            enter(input, "view 2");
+            ContactDetailsWindow alice = main.getContactDetailsWindows().getOpenWindows().getFirst();
+            ContactDetailsWindow benson = main.getContactDetailsWindows().getOpenWindows().getLast();
+            press(input, KeyCode.DIGIT2, true);
+            assertSame(scene.lookup("#personListView"), scene.getFocusOwner());
+            alice.focus();
+
+            press(alice.getRoot().getScene().getFocusOwner(), KeyCode.Q, false);
+
+            assertEquals(1, main.getContactDetailsWindows().getOpenWindows().size());
+            assertSame(benson, main.getContactDetailsWindows().getOpenWindows().getFirst());
+            assertSame(input, scene.getFocusOwner());
+            assertTrue(benson.getRoot().isShowing());
+            enter(input, "view 1");
+            assertEquals(2, main.getContactDetailsWindows().getOpenWindows().size());
         });
     }
 
