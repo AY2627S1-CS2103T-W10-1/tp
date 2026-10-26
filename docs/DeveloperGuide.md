@@ -27,6 +27,8 @@ contact-workflow glossary updates and alpha-review documentation corrections.
 He Qianyi used OpenAI Codex to assist with alpha-bug fixes for read-only contact viewing, specific CSV
 filename feedback, return-to-prompt focus after popup dismissal, deterministic detail-value selection,
 regression tests and matching documentation.
+He Qianyi used OpenAI Codex to assist with the Week 11 UG/DG review, contact-workflow use cases,
+reproducible manual testing instructions, documentation links, diagrams and current product screenshots.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -53,7 +55,7 @@ The following provides a quick overview of the main components and their interac
 
 **Main components of the architecture**
 
-**`Main`** (consisting of classes [`Main`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/Main.java) and [`MainApp`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/MainApp.java)) is in charge of the app launch and shut down.
+**`Main`** (consisting of classes [`Main`](https://github.com/AY2627S1-CS2103T-W10-1/tp/blob/master/src/main/java/seedu/address/Main.java) and [`MainApp`](https://github.com/AY2627S1-CS2103T-W10-1/tp/blob/master/src/main/java/seedu/address/MainApp.java)) is in charge of the app launch and shut down.
 * At app launch, it initializes the other components in the correct sequence, and connects them up with each other.
 * At shut down, it shuts down the other components and invokes cleanup methods where necessary.
 
@@ -85,20 +87,20 @@ The sections below give more details of each component.
 
 ### UI component
 
-The **API** of this component is specified in [`Ui.java`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/ui/Ui.java)
+The **API** of this component is specified in [`Ui.java`](https://github.com/AY2627S1-CS2103T-W10-1/tp/blob/master/src/main/java/seedu/address/ui/Ui.java)
 
 ![Structure of the UI Component](images/UiClassDiagram.png)
 
 The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `DepartmentPanel`, `PersonListPanel`, `DetailsPanel`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
 
-`MainWindow` lays its parts out as numbered panes, in the style of a terminal dashboard: [1] `DepartmentPanel`
-(each registered department with its number of contacts), [2] `PersonListPanel` (one table row per contact, which
-grows taller when its tags wrap), [3] a docked `DetailsPanel`, and [4] the `ResultDisplay` above the `CommandBox`
+`MainWindow` lays its parts out as numbered panes, in the style of a terminal dashboard: \[1\] `DepartmentPanel`
+(each registered department with its number of contacts), \[2\] `PersonListPanel` (one table row per contact, which
+grows taller when its tags wrap), \[3\] a docked `DetailsPanel`, and \[4\] the `ResultDisplay` above the `CommandBox`
 prompt. Alt+1 to Alt+4 (or Esc for the prompt) move the keyboard focus between them, and the pane with the focus
 is outlined. `DepartmentPanel` and `StatusBarFooter` read the unfiltered `Logic.getPersonList()` and
 `Logic.getDepartmentList()`, so they stay up to date with every change.
 
-Contact details appear in two places. The docked [3] pane follows the selection in [2]: selecting a row with a
+Contact details appear in two places. The docked \[3\] pane follows the selection in \[2\]: selecting a row with a
 click or j/k formats that contact with `ViewCommand.formatDetails(Person)` and shows it at once, without running a
 command, so glancing through contacts stays instant. To compare contacts side by side, details can also pop out
 into windows managed by `ContactDetailsWindows`. A successful `view` command returns the
@@ -110,11 +112,11 @@ switches to the edited `Person`, and viewing a renamed contact still refreshes i
 popup hosts a `DetailsPanel`, which turns every `Field: value` line of the snapshot into a grey field name beside a
 read-only value that can be selected with j/k or Tab and copied. Several contacts can therefore be compared side by
 side, while viewing the same contact again never duplicates its popup. Popups are owned by the main stage, so they
-stay in front of it, and the keyboard focus stays at the prompt after `view`. Pressing Enter on a row in [2], or
+stay in front of it, and the keyboard focus stays at the prompt after `view`. Pressing Enter on a row in \[2\], or
 double-clicking it, runs `view` with that row's contact ID. Repeated Alt+3 presses step through the docked pane and
 then each popup, `q` closes the focused popup, and every popup is hidden when the application exits.
 
-The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/ui/MainWindow.java).
+The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/AY2627S1-CS2103T-W10-1/tp/blob/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/AY2627S1-CS2103T-W10-1/tp/blob/master/src/main/java/seedu/address/ui/MainWindow.java).
 
 The `UI` component,
 
@@ -125,7 +127,7 @@ The `UI` component,
 
 ### Logic component
 
-**API** : [`Logic.java`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/logic/Logic.java)
+**API** : [`Logic.java`](https://github.com/AY2627S1-CS2103T-W10-1/tp/blob/master/src/main/java/seedu/address/logic/Logic.java)
 
 Here's a (partial) class diagram of the `Logic` component:
 
@@ -158,7 +160,7 @@ How the parsing works:
 * All `XYZCommandParser` classes, such as `AddCommandParser` and `DeleteCommandParser`, implement the `Parser` interface so they can be treated similarly where appropriate, for example during testing.
 
 ### Model component
-**API** : [`Model.java`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/model/Model.java)
+**API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-W10-1/tp/blob/master/src/main/java/seedu/address/model/Model.java)
 
 <img src="images/ModelClassDiagram.png" width="450" />
 
@@ -180,7 +182,7 @@ The `Model` component,
 
 ### Storage component
 
-**API** : [`Storage.java`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/storage/Storage.java)
+**API** : [`Storage.java`](https://github.com/AY2627S1-CS2103T-W10-1/tp/blob/master/src/main/java/seedu/address/storage/Storage.java)
 
 <img src="images/StorageClassDiagram.png" width="550" />
 
@@ -308,7 +310,7 @@ an unrelated addition and repeated restarts, plus strict add/edit/contact-undo r
 rename/delete/undo on the restored data. Rejected operations retain stored bytes and contact undo history.
 
 `AddCommand` returns full labelled feedback, sorted tags and missing-field placeholders. In the contact
-table, `PersonCard` shows a dimmed `—` for missing fields and for no tags, while the [3] Details pane and
+table, `PersonCard` shows a dimmed `—` for missing fields and for no tags, while the \[3\] Details pane and
 popups show the same `Not provided` and `None` placeholders as `AddCommand`. `LogicManager` retains the
 existing save failure behaviour: it reports the error instead of returning an addition-success result.
 The model change and filter/sort reset occur before saving. If saving fails, the contact addition or edit
@@ -589,7 +591,8 @@ the parser accepts only blank arguments or the exact `--confirm` flag. All other
 `ClearCommand` stores an immutable confirmation flag. Without confirmation, it counts the canonical
 address book's contacts and returns a warning; contacts, display filtering and sorting, and deletion
 history remain unchanged. Its `requiresStorageSave()` override returns false in this case.
-With confirmation, it resets the address book and allows `LogicManager` to save the empty book.
+With confirmation, it resets the address book, including the department catalogue, and allows
+`LogicManager` to save the empty book.
 Clearing does not add contacts to individual-deletion history, so it cannot be undone.
 Earlier individual deletions remain available to `undo`.
 
@@ -614,7 +617,8 @@ The command formats all currently supported fields as labelled, untruncated line
 and returns a `CommandResult` with separate short feedback, the viewed `Person`, and an optional `contactDetails`
 payload. `MainWindow` displays only the short feedback in the main result box and forwards the person and payload to
 `ContactDetailsWindows`, which shows them in that contact's owner-linked `ContactDetailsWindow` popup containing a
-read-only, wrapping, scrollable text area. Each successful `view` updates the contact's popup with a snapshot, or
+read-only, wrapping field grid with selectable values inside a scroll pane. Each successful `view` updates
+the contact's popup with a snapshot, or
 opens a popup if the contact has none; later model changes do not silently change a displayed snapshot.
 
 `ViewCommand.requiresStorageSave()` returns false. `LogicManager` returns the details result without calling
@@ -735,10 +739,21 @@ How `undo` works:
   * Cons: A new command object is created for every input, so the history would have to be static. It would then be
     shared by every `Model`, including those in different tests.
 
-### \[Proposed\] Data archiving
+### Command history and error feedback
 
-_{Explain here how the data archiving feature will be implemented}_
+`CommandBox` owns a session-local `CommandHistory`, separate from the model and JSON storage.
+On submission it records the exact nonblank input before execution, including failed commands and duplicates.
+It clears the command field after success and retains it after a parse or execution error.
 
+Unmodified Up/Down keys are handled before the text field's default behavior. `previous(currentInput)` saves
+the draft when leaving the newest position; `next()` restores that draft after the newest stored command.
+Navigation stops at the ends. Editing a recalled command does not change the stored entry, and browsing
+never executes commands. History is discarded when the app closes.
+
+`MainWindow.executeCommand` passes errors to `CommandErrorFormatter.format`, which retains the original
+error and appends up to two examples from the matching `HelpPage` when examples are not already present.
+Unknown commands direct the user to `help`.
+The command box receives its error style while preserving the submitted input for correction.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -765,10 +780,15 @@ _{Explain here how the data archiving feature will be implemented}_
 * prefers typing to mouse interactions
 * is reasonably comfortable using CLI apps
 
-**Value proposition**: sudoContact is a lightweight address book that strips away clunky GUIs. It allows you to search, update and route VIP contact data instantly using standard Unix syntax. SudoContact can instantly pipe a filtered list of investors directly into a csv for quick sharing.
+**Value proposition**: sudoContact helps secretaries maintain professional contacts using short commands,
+a shared department catalogue, tag searches and full contact details. It stores contacts locally and exports
+all stored contacts to CSV for sharing; filtering the displayed list does not limit an export.
 
 
 ### User stories
+
+The stories for hiding private details and sorting by name are future requirements; they are not available
+in the current product. CSV export always includes all stored contacts.
 
 Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unlikely to have) - `*`
 
@@ -790,8 +810,6 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* *`  | user                                      | generate a .csv of the contact list          | Easily copy and paste their email address to quickly send out an email blast |
 | `* *`    | user                                      | hide private contact details                 | minimize chance of someone else seeing them by accident                      |
 | `*`      | user with many persons in the address book | sort persons by name                         | locate a person easily                                                       |
-
-*{More to be added}*
 
 ### Use cases
 
@@ -1082,34 +1100,34 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 **MSS**
 
 1. User displays a list of contacts (UC1), which may be filtered or sorted.
-2. User enters `view CONTACT_ID`, using the contact ID (one-based row number) in the currently displayed list.
-3. sudoContact identifies the contact using that contact ID.
-4. sudoContact displays all available details of that contact, including
-   fields not shown in the list.
+2. User enters `view CONTACT_ID`, using the one-based row number in that displayed list.
+3. sudoContact identifies the contact from the current in-memory list.
+4. sudoContact opens or refreshes that contact's popup with its full details and shows a short confirmation.
 
    Use case ends.
 
 **Extensions**
 
-* 1a. The displayed list is empty.
+* 2a. The command format or contact ID is invalid.
 
-  * 1a1. sudoContact informs the user that there is no contact to view.
-
-  Use case ends.
-
-* 2a. The command format or contact ID is invalid, or the contact ID is outside
-  the currently displayed list.
-
-  * 2a1. sudoContact displays an error and indicates the required format
-    or valid contact ID range.
+  * 2a1. sudoContact reports the required format and positive-integer constraint without changing data.
 
   Use case resumes at step 2.
 
-* 3a. The selected contact's stored data cannot be read.
+* 3a. The displayed list is empty.
 
-  * 3a1. sudoContact reports that the contact details cannot be displayed.
+  * 3a1. sudoContact reports that there is no contact to view.
 
   Use case ends.
+
+* 3b. The contact ID exceeds the displayed list's size.
+
+  * 3b1. sudoContact reports the valid contact ID range without opening or updating a popup.
+
+  Use case resumes at step 2.
+
+Viewing preserves contacts, filtering and sorting and skips the JSON save. A disk read/write failure is
+not an extension of this use case; startup loading and mutating-command saves handle those failures.
 
 **Use case: UC8 - Add a contact with partial information**
 
@@ -1122,8 +1140,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
    alone does not prevent the contact from being added; omitted fields do not match.
 3. sudoContact saves the new contact with the supplied information, leaving
    omitted optional fields unprovided.
-4. sudoContact confirms that the contact was added and shows omitted fields
-   as `Not provided` or, for tags, `None`.
+4. sudoContact confirms that the contact was added and displays the full contact list in stored order.
+   Missing values appear as `—` in the table; feedback and full details use `Not provided` or, for tags, `None`.
 
    Use case ends.
 
@@ -1151,8 +1169,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 3a. sudoContact cannot save the new contact.
 
-  * 3a1. sudoContact reports the failure without confirming that the
-    contact was added.
+  * 3a1. sudoContact reports the save failure without confirming persistence. The contact remains in
+    memory; the change is not rolled back. After resolving the storage problem, the user runs `list` to
+    retry saving before exiting.
 
   Use case ends.
 
@@ -1163,7 +1182,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 1. User enters `export -c|--csv [FILENAME]`.
 2. sudoContact validates the supplied filename, or selects `contacts.csv`
    if no filename was supplied.
-3. sudoContact retrieves all stored contacts.
+3. sudoContact snapshots all contacts from the current in-memory address book, including hidden contacts.
 4. sudoContact creates a UTF-8 CSV file with a header row and a separate
    row for each contact. It escapes values containing commas or quotation
    marks.
@@ -1185,16 +1204,16 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case ends.
 
-* 3b. Contact data cannot be read.
+* 4a. A file or directory already exists at the chosen destination.
 
-  * 3b1. sudoContact reports that the export could not be completed.
+  * 4a1. sudoContact asks for a different filename and preserves the existing destination.
 
-  Use case ends.
+  Use case resumes at step 1.
 
-* 4a. The CSV file cannot be created or written.
+* 4b. The CSV file cannot be created or written.
 
-  * 4a1. sudoContact reports the file error without confirming a
-    successful export.
+  * 4b1. sudoContact reports the file error without confirming a successful export and removes its
+    temporary file. Contacts, display state and the JSON data file remain unchanged.
 
   Use case ends.
 
@@ -1202,34 +1221,32 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **MSS**
 
-1. User enters `help`.
-2. sudoContact displays the available commands and their usage.
-3. User enters `help COMMAND` to learn more about a specific command.
-4. sudoContact identifies the requested command and displays its usage.
+1. User requests the command overview with `help` or `?`.
+2. sudoContact opens the Help window with command names, aliases and short descriptions.
+3. User requests detailed help with `help COMMAND` or `? COMMAND`.
+4. sudoContact shows that command's syntax, options, examples and behavior notes in the same window.
 
    Use case ends.
 
 **Extensions**
 
-* 1a. User enters `help COMMAND` directly.
+* 1a. User requests a specific command directly instead of the overview.
 
-  Use case resumes at step 4.
+  Use case proceeds at step 4.
 
-* 2a. User only needs the list of available commands.
-
-  Use case ends.
-
-* 4a. The specified command does not exist.
-
-  * 4a1. sudoContact reports that the requested command is unrecognized.
+* 2a. User only needs the overview.
 
   Use case ends.
 
-*{More to be added}*
+* 3a. The requested command is unknown or too many arguments are supplied.
+
+  * 3a1. sudoContact reports the error in the main window and leaves any open help page unchanged.
+
+  Use case resumes at step 3.
 
 ### Non-Functional Requirements
 
-1.  Should work on any _mainstream OS_ as long as it has Java `25` or above installed.
+1.  Should work on any _mainstream OS_ with Java `25` installed.
 2.  Should be able to hold up to 1000 persons without noticeable sluggishness in performance for typical usage.
 3.  The system should maintain responsiveness with command execution times of under 1 second when handling a dataset of up to 1,000 records under typical usage conditions.
 4.  The system should provide smooth scrolling when displaying a dataset of up to 1,000 records under typical usage conditions.
@@ -1237,8 +1254,6 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 6.  Contact data must be stored locally in a human-editable text file (e.g., JSON). If the file is missing, malformed, or corrupted at startup, the application must show a clear diagnostic message and either recover safely or exit without an unhandled exception.
 7.  After a successful add, edit, or delete command, the updated contact list must be restored when the application is closed and reopened.
 8.  If saving contact data fails, the application must report the failure and leave the last successfully saved data file intact.
-
-*{More to be added}*
 
 ### Glossary
 
@@ -1261,7 +1276,42 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 ## **Appendix: Instructions for manual testing**
 
-Given below are instructions to test the app manually.
+Use a separate writable folder and a copy of the JAR for each independent test section. Do not use a
+folder containing contacts you want to keep. Run `java -version` to verify Java 25, then launch with
+`java -jar "sudoContact.jar"` from that folder (substitute the actual downloaded filename).
+Unless a section gives another fixture, a fresh folder starts with the built-in sample contacts.
+
+The examples below complement the UG; vary the inputs during exploratory testing. Where a test checks
+file contents, close the app before editing files and preserve a backup before simulating corruption.
+
+### Listing and searching
+
+Use a fresh disposable folder with the built-in sample contacts.
+
+1. Enter `find Alex`. Expected: only Alex Yeoh is displayed. Enter `ls`.
+   Expected: all six sample contacts reappear in stored order.
+1. Enter `sort --by tags`, then `list`. Expected: `list` restores stored order, and indices match that order.
+1. Enter `find --tag friends --tag colleagues`. Expected: Alex Yeoh, Bernice Yu and Roy Balakrishnan appear;
+   Bernice appears once even though more than one requested tag matches.
+1. Compare `find --tag friends` and `find --tag FRIENDS`. Expected: both display Alex Yeoh and Bernice Yu;
+   tag matching ignores case. Enter `find --tag NoSuchTag`. Expected: the no-matches message and an empty list.
+1. Try `find --tag`, `find --TAG friends` and `list extra`. Expected: specific validation/format errors;
+   no contacts are changed. Enter `list` to restore the display.
+
+### Command help and history
+
+1. Enter `help`. Expected: an overview of command names, aliases and short descriptions appears.
+   Enter `help export`. Expected: the same window shows export syntax, options and examples.
+1. Enter `help ls` and `? sort`. Expected: the corresponding manuals appear. Enter `help missing` or
+   `help list extra`. Expected: an error in the main window, while the last valid help page remains.
+1. Focus Help and press unmodified `q`. Expected: Help closes. Open it through the Help menu or F1.
+   Expected: the overview reopens, rather than the previous command-specific page.
+1. With the command prompt focused, submit `list`, then the invalid command `help missing`.
+   Press Up twice. Expected: the failed command and then `list` are recalled without being executed.
+1. Press Down until the newest draft is restored. Type `find Alex` without submitting, press Up and then Down.
+   Expected: the exact draft `find Alex` is restored. Browsing stops at each end; it does not wrap.
+1. Exit and relaunch from the same folder. Press Up in the prompt.
+   Expected: the previous session's history is unavailable; contacts and saved preferences remain.
 
 ### Clearing contacts with confirmation
 
@@ -1273,8 +1323,8 @@ Use disposable data and record the full stored contact count before testing.
    including hidden contacts; the displayed search result remains unchanged.
 1. Enter `clear 1`, `clear --CONFIRM`, `clear --confirm extra`, and `clear --confirm --confirm`.
    Expected: each produces an invalid command format error; no contacts are deleted.
-1. Enter `clear --confirm`. Expected: all contacts disappear, including hidden contacts.
-   Restart and verify that the address book is empty.
+1. Enter `clear --confirm`. Expected: all contacts and registered departments disappear, including hidden
+   contacts and unused department entries. Restart and verify both collections are empty.
 1. With no earlier individual deletions in the session, enter `undo` after a confirmed clear.
    Expected: there are no deletions to undo. Separately, delete one contact before clearing and
    verify that `undo` restores only that earlier individual deletion.
@@ -1282,9 +1332,9 @@ Use disposable data and record the full stored contact count before testing.
 
 ### Exporting contacts as CSV
 
-Use a disposable launch folder with sample contacts, and a filename that does not already exist.
+Use a fresh disposable launch folder with the built-in sample contacts and no CSV files.
 
-1. Enter `find Benson`, then `export --csv team.csv`. Expected: feedback reports the full stored contact
+1. Enter `find Alex`, then `export --csv team.csv`. Expected: feedback reports the full stored contact
    count; the displayed search stays unchanged. Open `team.csv` as UTF-8 text and check the six-column
    header, all stored contacts, quoted addresses containing commas, empty departments and tag cells.
 1. Enter `export --csv team.csv` again. Expected: an existing-file error; the original CSV is unchanged.
@@ -1292,8 +1342,8 @@ Use a disposable launch folder with sample contacts, and a filename that does no
 1. Enter `export --csv "my contacts.csv"`. Expected: the file with spaces in its name is created.
 1. Enter `export --csv ../contacts.csv`, `export --csv NUL.csv`, `export --csv ''`, `export --csv a.txt`,
    `export --json` and `export --csv a.csv b.csv`. Expected: an error and no new export file.
-1. Add a contact with address `北京, "总部"`, then export to an unused filename. Expected: the Unicode
-   address is intact, surrounded by quotes, with each inner quote doubled.
+1. Enter `add --name "Csv Probe" --email csv@example.com --address '北京, "总部"'`, then export to an unused
+   filename. Expected: the Unicode address is intact, surrounded by quotes, with each inner quote doubled.
 1. In a disposable address book, enter `clear --confirm`, then export to an unused filename. Expected:
    `No contacts found to export.`; no file is created. An empty *search result* with stored contacts should
    still export those contacts successfully.
@@ -1308,21 +1358,14 @@ testers are expected to do more *exploratory* testing.
 
 ### Launch and shutdown
 
-1. Initial launch
-
-   1. Download the JAR file and copy it into an empty folder.
-
-   1. Double-click the JAR file.<br>
-      Expected: The GUI opens with a set of sample contacts. The window size may not be optimal.
-
-1. Saving window preferences
-
-   1. Resize the window to an optimal size. Move the window to a different location. Close the window.
-
-   1. Relaunch the app by double-clicking the JAR file.<br>
-       Expected: The most recent window size and location are retained.
-
-1. _{ more test cases …​ }_
+1. Copy the JAR to an empty writable folder, open a terminal there and check `java -version` reports Java 25.
+   Launch with `java -jar "sudoContact.jar"`. Expected: the four-pane sudoContact window opens with sample contacts.
+1. Resize and move the main window, then enter `exit`. Relaunch with the same terminal command from the same
+   folder. Expected: the saved window size and location are restored.
+1. Open Help and two contact-details popups, then exit through the main window.
+   Expected: every application window closes.
+1. Start a second disposable instance from another folder. Expected: it uses that folder's separate data
+   and preferences, rather than the first folder's contacts.
 
 ### Department catalogue and assignments
 
@@ -1358,10 +1401,14 @@ For the department assignment examples below, register the required names first 
 
 ### Adding and completing a partial contact
 
+Start in a separate disposable folder with no contact named Dana Lim, Chen or Bob Lee.
+Register Engineering using `depart --add Engineering` before the assignment steps below.
+
 1. Try `add --name "Dana Lim"` and `add --name "Dana Lim" --address Main Road`.
    Expected: both fail with `A phone number or email address must be provided.`, without changing contacts or storage.
 1. Add `add --name "Dana Lim" --email dana@example.com` to an address book that has no Dana Lim contact.
-   Expected: successful addition, phone/address/department show `Not provided`, email is shown, tags show `None`.
+   Expected: the table shows `—` for missing fields. Addition feedback and `view` show `Not provided`
+   for phone/address/department and `None` for tags; email is present.
 1. Restart the app. Expected: Dana Lim is still present with the same omitted fields.
 1. Run `find Dana`, then `edit 1 -p 91234567 -e dana@example.com -a Main Road --department Engineering`.
    Expected: the contact has the supplied details; restart preserves all fields.
@@ -1382,6 +1429,16 @@ For the department assignment examples below, register the required names first 
    Expected: equivalent partial-contact support; omitted fields remain unprovided.
 
 ### Viewing a contact's details
+
+In a separate disposable folder, prepare the following fixture (one command per line):
+
+```text
+clear --confirm
+depart --add "R&D Engineering"
+depart --add Sales
+add --name "Betsy Crowe" --phone 91234567 --email betsy@example.com
+add --name "Benson Meier" --phone 92345678 --email benson@example.com --tag vendor client
+```
 
 1. Displayed-list contact IDs
 
@@ -1411,16 +1468,16 @@ For the department assignment examples below, register the required names first 
    1. View another contact. Expected: a second popup opens, offset from the first. Both stay in front of the
       main window, and the prompt keeps the keyboard focus.
    1. View the first contact again. Expected: its existing popup updates rather than a third popup opening.
-   1. Press Alt+3 repeatedly. Expected: the focus moves to [3] Details, then through each open popup,
-      then back to [3] Details. Press Esc.
+   1. Press Alt+3 repeatedly. Expected: the focus moves to \[3\] Details, then through each open popup,
+      then back to \[3\] Details. Press Esc.
       Expected: the focus returns to the prompt.
-   1. Focus [2] Contacts, move into a popup with Alt+3 and press unmodified `q`.
+   1. Focus \[2\] Contacts, move into a popup with Alt+3 and press unmodified `q`.
       Expected: only that popup closes and the command prompt receives focus, ready for another command.
       Shift/Ctrl/Alt/Meta+q does not close the popup.
    1. Close a contact's popup, then view that contact again. Expected: a popup reopens with the current details.
-   1. Click a row in [2], then move with `j`/`k`.
-      Expected: [3] Details shows each selected contact at once, and no popup opens.
-   1. Select a row in [2] with Alt+2 and `j`/`k`, then press Enter. Separately, double-click another row.
+   1. Click a row in \[2\], then move with `j`/`k`.
+      Expected: \[3\] Details shows each selected contact at once, and no popup opens.
+   1. Select a row in \[2\] with Alt+2 and `j`/`k`, then press Enter. Separately, double-click another row.
       Expected: each gives the same result as running `view` with that row's contact ID.
    1. Edit the viewed contact. Expected: the snapshot stays unchanged until another `view` command is run.
    1. Exit the application while several popups are open. Expected: every popup closes with the main window.
@@ -1449,15 +1506,22 @@ For the department assignment examples below, register the required names first 
    1. Other incorrect delete commands to try: `delete`, `delete x`, `...` (where x is larger than the list size)<br>
       Expected: Similar to previous.
 
-1. _{ more test cases …​ }_
-
 ### Saving data
 
-1. Dealing with missing/corrupted data files
-
-   1. _{Explain how to simulate missing or corrupted data files and state the expected behavior.}_
-
-1. _{ more test cases …​ }_
+1. Missing data file: in a fresh disposable folder, launch without `data/addressbook.json`.
+   Expected: sample contacts appear. Run a valid `add` and restart; the saved contacts are restored.
+1. Invalid data file: close the app, back up the JSON file and replace its contents with `{`.
+   Restart. Expected: an empty address book and a loading warning in the terminal/log; the invalid file is
+   still present. `view 1` reports an empty list, and `sort --by tags` reports no contacts without replacing it.
+1. Restore the valid backup while the app is closed, then relaunch.
+   Expected: every contact and department loads from the restored file.
+1. Save failure: in a separate disposable folder, replace the configured JSON file with a directory of the
+   same name while the app is closed, then launch and run `add --name "Save Probe" --email probe@example.com`.
+   Expected: a save error, but the new contact remains in the current in-memory list. Exit without assuming
+   persistence. Restore a writable file destination and repeat to check successful save/reload.
+1. With valid contacts loaded, make the JSON destination unwritable and run `view 1`.
+   Expected: viewing still succeeds because it is read-only. After restoring write access, run `list`
+   to persist the current model and restart to verify the data.
 
 ### Sorting contacts
 
