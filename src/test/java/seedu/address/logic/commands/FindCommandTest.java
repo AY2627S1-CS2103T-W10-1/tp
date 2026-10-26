@@ -51,12 +51,30 @@ public class FindCommandTest {
 
     @Test
     public void execute_unmatchedTag_displaysNoMatchesMessage() throws Exception {
-        for (String tag : List.of("missing", "friend", "Alice", "FRIENDS", "OWESMONEY")) {
+        for (String tag : List.of("missing", "friend", "Alice")) {
             Command command = new AddressBookParser().parseCommand("find --tag " + tag);
             expectedModel.updateFilteredPersonList(new TagsMatchPredicate(List.of(tag)));
             assertCommandSuccess(command, model, FindCommand.MESSAGE_NO_TAG_MATCHES, expectedModel);
             assertEquals(List.of(), model.getFilteredPersonList());
         }
+    }
+
+    @Test
+    public void execute_tagCaseVariants_matchSameContacts() throws Exception {
+        for (String tag : List.of("owesMoney", "OWESMONEY", "OwEsMoNeY")) {
+            Command command = new AddressBookParser().parseCommand("find --tag " + tag);
+            expectedModel.updateFilteredPersonList(new TagsMatchPredicate(List.of("owesMoney")));
+            assertCommandSuccess(command, model, String.format(MESSAGE_PERSONS_LISTED_OVERVIEW, 1), expectedModel);
+            assertEquals(List.of(BENSON), model.getFilteredPersonList());
+        }
+    }
+
+    @Test
+    public void helpAndUsage_describeCaseInsensitiveTags() {
+        assertTrue(FindCommand.HELP_PAGE.text().contains("whole tag; matching is case-insensitive"));
+        assertTrue(FindCommand.MESSAGE_USAGE.contains("any tag (case-insensitive)"));
+        assertFalse(FindCommand.HELP_PAGE.text().contains("case-sensitive"));
+        assertFalse(FindCommand.MESSAGE_USAGE.contains("case-sensitive"));
     }
 
     @Test

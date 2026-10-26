@@ -335,8 +335,7 @@ arguments of `depart --edit`. The command word is `depart` for all four catalogu
 The previous `depart CONTACT_ID --set DEPARTMENT` form is replaced by `edit CONTACT_ID --department DEPARTMENT`.
 
 Department names are case-sensitive and must contain 2-50 characters using only letters, numbers, spaces, `-`, or `&`.
-All department inputs are trimmed before format validation and catalogue lookup; spaces inside quoted names
-are preserved. `Department` stores the trimmed name, including when loading existing catalogue and contact data.
+All department inputs are trimmed before format validation and catalogue lookup; spaces inside quoted names are preserved, while leading and trailing whitespace is discarded. `Department` stores the trimmed name, including when loading existing catalogue and contact data.
 Reject empty or invalid names, duplicate catalogue additions, an unknown rename source, and a rename target
 that already belongs to another catalogue entry. Reject missing arguments, extra arguments, and combined
 catalogue operations without modifying the catalogue or contacts.
@@ -414,9 +413,9 @@ are rejected. Use ordinary ASCII hyphens and separate the option and arguments w
 The old `depart CONTACT_ID --set DEPARTMENT` form is not supported.
 
 Names are case-sensitive and contain 2-50 characters from ASCII letters (`A-Z`, `a-z`), digits (`0-9`),
-spaces, `-`, and `&`; names consisting only of whitespace are invalid. Names containing spaces must be
-one quoted argument, using matching single or double quotes, e.g. `depart --edit Engineering "Customer Support"`.
-Quotes are removed before validation; spaces inside quotes are preserved and count towards the length limit.
+spaces, `-`, and `&`; names consisting only of whitespace are invalid. Names containing spaces must be one quoted argument, using matching single or double quotes, e.g. `depart --edit Engineering "Customer Support"`.
+Unlike `add` and `edit`, an unquoted multi-word department name is treated as multiple arguments and is rejected.
+Leading and trailing whitespace is trimmed after quotes are removed; internal spaces are preserved and count towards the length limit.
 A closing quote must be followed by whitespace or the end of input. An unquoted name starting with `--`
 is treated as an invalid option-like argument. To use such a name, quote it.
 Renaming to the source's exact current name is allowed; renaming to another existing entry is not.
@@ -456,10 +455,17 @@ Invalid command format!
 depart --list | depart --add DEPARTMENT | depart --edit OLD_NAME NEW_NAME | depart --delete DEPARTMENT
 ```
 
+### Searching names with quotes
+
+Name search uses `ArgumentTokenizer.splitWords` to remove matching outer quotes before splitting
+the resulting text into whole-word OR keywords. Single and double quotes behave identically;
+quotes inside unquoted words remain literal. Empty input, unmatched quotes and text immediately
+after a closing quote are rejected.
+
 ### Searching contacts by tags (UC6)
 
 The tag-search command is `find --tag TAG [--tag TAG ...]`. Each tag requires its own lowercase `--tag`
-option; the command word is case-insensitive. Tags are case-sensitive and contain 1-30 ASCII letters,
+option; the command word is case-insensitive. Tag matching is case-insensitive; tags contain 1-30 ASCII letters,
 digits, hyphens, or underscores. Surrounding whitespace is ignored, but internal whitespace is invalid.
 Unlike contact-input parsing, tag search does not remove quotes or leading `#` or `/` characters:
 `find --tag "client"` and `find --tag #client` are invalid; use `find --tag client`.
@@ -486,12 +492,16 @@ existing name-search path. After a valid `--tag`, unsupported option text is par
 Quoted empty text is not a missing value: `find --tag ""` produces the invalid-tag message.
 Parsing failures leave the current filter, display order, and contacts unchanged.
 
+Tag search uses `String.equalsIgnoreCase` so users need not remember tag capitalization,
+consistent with name search and tag sorting. Stored tag spelling and tag equality are unchanged;
+case variants may coexist in storage but are equivalent for searching.
+
 #### Matching and execution
 
 For valid tag input, the parser constructs `FindCommand(new TagsMatchPredicate(tags))`.
-`TagsMatchPredicate` keeps an immutable copy of the query and uses `String.equals` to compare complete
+`TagsMatchPredicate` keeps an immutable copy of the query and uses `String.equalsIgnoreCase` to compare complete
 stored tag names. A contact matches if any stored tag equals any requested tag (OR matching); substring
-matches and case-only differences do not match. Contacts with no tags do not match.
+matches do not match; case-only differences do match. Contacts with no tags do not match.
 
 `FindCommand.execute` passes the predicate to `Model.updateFilteredPersonList`. `ModelManager` restores
 the display projection to stored order and applies the new predicate across all stored contacts, replacing
@@ -504,7 +514,7 @@ Contact fields remain unchanged. `FindCommand` retains the normal `LogicManager`
 a save failure is reported after the display filter has been updated.
 
 `FindCommandParserTest` covers repeated options, whitespace, tag length boundaries, invalid tags,
-unsupported options, and mixed name/tag input. `TagsMatchPredicateTest` verifies OR matching, exact case,
+unsupported options, and mixed name/tag input. `TagsMatchPredicateTest` verifies OR matching, case-insensitive comparisons,
 whole-tag matching, and defensive copying. `FindCommandTest` verifies filtered results and feedback.
 
 ### Listing all contacts: design specification
@@ -902,54 +912,111 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
   Use case ends.
 
 
-**Use case: UC5 - Manage departments**
+**Use case: UC5a - List departments**
 
 **MSS**
 
-1. User requests to list, add, rename, or delete a department in the shared catalogue.
-2. sudoContact validates the request and any supplied department names.
-3. sudoContact retrieves the catalogue, adds the department, renames it and updates associated contacts,
-   or deletes it and clears its assignments from contacts and deletion history.
-4. sudoContact displays the catalogue or confirms the addition, rename, or deletion.
+1. User enters `depart --list`.
+2. sudoContact validates the command format.
+3. sudoContact displays every registered department, including unused departments.
 
    Use case ends.
 
 **Extensions**
 
-* 2a. The request has an invalid format or missing or extra arguments.
-
-  * 2a1. sudoContact shows an error and indicates the accepted command formats.
-
-  Use case ends.
-
-* 2b. A supplied department name is empty or violates the name constraints.
-
-  * 2b1. sudoContact shows an error explaining the name constraints.
-
-  Use case ends.
-
-* 2c. The department to be added already exists.
-
-  * 2c1. sudoContact informs the user that the department is already registered.
-
-  Use case ends.
-
-* 2d. The department to be renamed or deleted does not exist.
-
-  * 2d1. sudoContact informs the user that the department does not exist and suggests listing
-    or adding departments.
-
-  Use case ends.
-
-* 2e. The new name belongs to another registered department.
-
-  * 2e1. sudoContact informs the user that the target name is already registered.
-
-  Use case ends.
-
-* 3a. The user requests the department list, but the catalogue is empty.
+* 3a. The catalogue is empty.
 
   * 3a1. sudoContact informs the user that no departments have been registered.
+
+  Use case ends.
+
+
+**Use case: UC5b - Add a department**
+
+**MSS**
+
+1. User enters `depart --add DEPARTMENT`.
+2. sudoContact validates the name and checks that it is not already registered.
+3. sudoContact adds the department, saves the data and confirms the addition.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. The command format or department name is invalid.
+
+  * 2a1. sudoContact displays an error and does not modify the catalogue.
+
+  Use case ends.
+
+* 2b. The department already exists.
+
+  * 2b1. sudoContact informs the user that it is already registered.
+
+  Use case ends.
+
+
+**Use case: UC5c - Rename a department**
+
+**MSS**
+
+1. User enters `depart --edit OLD_NAME NEW_NAME`.
+2. sudoContact validates both names and checks the source and target catalogue entries.
+3. sudoContact renames the department and updates all associated contacts, including hidden contacts.
+4. sudoContact saves the data and confirms the rename.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. The command format or either name is invalid.
+
+  * 2a1. sudoContact displays an error and does not modify the catalogue or contacts.
+
+  Use case ends.
+
+* 2b. The source does not exist or the target is already registered.
+
+  * 2b1. sudoContact displays the corresponding error and leaves the data unchanged.
+
+  Use case ends.
+
+
+**Use case: UC5d - Delete a department**
+
+**MSS**
+
+1. User enters `depart --delete DEPARTMENT`.
+2. sudoContact validates the name and checks that the department exists.
+3. sudoContact removes the department and clears its assignments from current contacts and deletion history.
+4. sudoContact records the deletion for `undo`, saves the data and confirms the deletion.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. The command format, name or existence check fails.
+
+  * 2a1. sudoContact displays an error and leaves the catalogue, contacts and deletion history unchanged.
+
+  Use case ends.
+
+
+**Use case: UC5e - Assign a department to a contact**
+
+**MSS**
+
+1. User enters `edit CONTACT_ID --department DEPARTMENT`.
+2. sudoContact validates the displayed contact ID and checks that the department is registered.
+3. sudoContact updates the selected contact, saves the data and confirms the edit.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. The contact ID, department name or membership is invalid.
+
+  * 2a1. sudoContact displays an error and leaves the contact unchanged.
 
   Use case ends.
 
@@ -962,7 +1029,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 2.  User enters a `find` command with one or more `--tag TAG` pairs.
 3.  sudoContact validates all specified tags.
 4.  sudoContact searches all contacts for those having any of the specified tags (OR matching),
-    using case-sensitive, whole-tag matching.
+    using case-insensitive, whole-tag matching.
 5.  sudoContact displays each matching contact once.
 6.  sudoContact displays the number of matching contacts.
 
@@ -1188,7 +1255,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * **Omitted contact detail**: An unknown optional field not supplied when adding a contact. Absent phone, email, address and department show `Not provided`; no tags shows `None`. Explicitly supplied empty phone/email/address values are rejected.
 * **Duplicate contact**: An existing contact with the same name and a matching provided phone number or email address as a contact being added, edited, or restored. Missing fields do not match. Comparisons are case-sensitive.
 * **CSV export**: A UTF-8 comma-separated values file containing a header row and one row for each stored contact.
-* **Tag**: An optional label attached to a contact to support categorisation and searching. Tag matching is case-sensitive.
+* **Tag**: An optional label attached to a contact to support categorisation and searching. Tag matching is case-insensitive.
 
 --------------------------------------------------------------------------------------------------------------------
 

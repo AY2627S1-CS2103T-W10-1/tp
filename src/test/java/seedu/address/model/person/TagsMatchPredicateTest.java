@@ -22,7 +22,7 @@ public class TagsMatchPredicateTest {
     public void test_noWholeTagMatches_returnsFalse() {
         TagsMatchPredicate predicate = new TagsMatchPredicate(List.of("friend"));
         assertFalse(predicate.test(new PersonBuilder().withTags("friends").build()));
-        assertFalse(predicate.test(new PersonBuilder().withTags("FRIEND").build()));
+        assertTrue(predicate.test(new PersonBuilder().withTags("FRIEND").build()));
         assertFalse(predicate.test(new PersonBuilder().withName("friend").withTags().build()));
         assertFalse(new TagsMatchPredicate(List.of()).test(new PersonBuilder().withTags("friend").build()));
     }

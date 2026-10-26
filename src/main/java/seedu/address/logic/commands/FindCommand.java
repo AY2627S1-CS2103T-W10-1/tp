@@ -12,7 +12,7 @@ import seedu.address.model.person.Person;
 import seedu.address.model.person.TagsMatchPredicate;
 
 /**
- * Finds persons by case-insensitive name keywords or case-sensitive tags.
+ * Finds persons by case-insensitive name keywords or case-insensitive tags.
  */
 public class FindCommand extends Command {
 
@@ -25,7 +25,7 @@ public class FindCommand extends Command {
             "       find --tag TAG [--tag TAG ...]",
             "",
             "Options:",
-            "  --tag  Match any specified tag exactly; matching is case-sensitive.",
+            "  --tag  Match any specified whole tag; matching is case-insensitive.",
             "         This command has no short tag option.",
             "",
             "Name searches match any keyword, ignoring case.",
@@ -41,7 +41,7 @@ public class FindCommand extends Command {
             + "the specified keywords (case-insensitive) and displays them as a list with index numbers.\n"
             + "Parameters: KEYWORD [MORE_KEYWORDS]...\n"
             + "Example: " + COMMAND_WORD + " alice bob charlie\n"
-            + "Or find contacts matching any tag (case-sensitive): find --tag TAG [--tag TAG ...]\n"
+            + "Or find contacts matching any tag (case-insensitive): find --tag TAG [--tag TAG ...]\n"
             + "Example: find --tag client --tag important";
 
     private final Predicate<Person> predicate;

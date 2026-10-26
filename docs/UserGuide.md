@@ -69,7 +69,7 @@ sudoContact is a **desktop application for managing contacts, optimized for use 
   For example, `-n John` sets the name, but `-nJohn` does not. Text such as `Blk 5 -apt 3` inside a value is kept
   as part of the value.
 
-* Quotes are optional. Wrap a value in matching single or double quotes only when it contains a flag as a
+* For `add` and `edit`, quotes are optional. Wrap a value in matching single or double quotes only when it contains a flag as a
   separate word, or a word starting with `--`.<br>
   For example, `edit 1 -a Blk 5 -t 3` sets the address to `Blk 5` and adds the tag `3`, while
   `edit 1 -a "Blk 5 -t 3"` sets the address to `Blk 5 -t 3`. A quote inside a word, as in `O'Brien`, needs no
@@ -415,9 +415,9 @@ Examples:
 Format: `find --tag TAG [--tag TAG ...]`
 
 * Command words are case-insensitive: `find`, `FIND`, and `FiNd` are equivalent.
-* The option must be lowercase `--tag`; `--TAG` is invalid. Tag values are case-sensitive:
-  `friends` does not match `Friends`.
-* Matches contacts with **any** of the specified tags, respecting case and matching whole tags.
+* The option must be lowercase `--tag`; `--TAG` is invalid. Tag matching is case-insensitive:
+  `friends` matches `Friends`. Original tag spelling is preserved in stored data and display.
+* Matches contacts with **any** of the specified tags, ignoring case and matching whole tags.
 * Each matching contact is displayed once, even if several tags match or a tag is repeated.
 * Tags must contain 1–30 letters, numbers, hyphens (`-`), or underscores (`_`), without spaces.
 * A missing value displays `Tag cannot be empty: Please provide a valid tag after '--tag'.`
@@ -426,6 +426,10 @@ Format: `find --tag TAG [--tag TAG ...]`
 
 Example: `find --tag client --tag important`
 
+For `depart --add`, `depart --edit` and `depart --delete`, each department name containing spaces
+must be enclosed in matching single or double quotes, e.g. `depart --add "Customer Support"`.
+Tag-search values are unquoted single tags; `find --tag "friends"` is invalid.
+
 ### Locating persons by name: `find`
 
 Finds persons whose names contain any of the given keywords.
@@ -433,6 +437,9 @@ Finds persons whose names contain any of the given keywords.
 Format: `find KEYWORD [MORE_KEYWORDS]`
 
 * The search is case-insensitive; for example, `hans` matches `Hans`.
+* Matching single or double quotes around name keywords are optional: `find "Alex Yeoh"`
+  and `find 'Alex Yeoh'` behave like `find Alex Yeoh`. Quotes do not request an exact phrase match.
+  Empty quoted input and unmatched quotes are rejected.
 * Keyword order does not matter; for example, `Hans Bo` matches `Bo Hans`.
 * The search considers only names.
 * Only full words match; for example, `Han` does not match `Hans`.

@@ -55,7 +55,14 @@ public class FindCommandParser implements Parser<FindCommand> {
             return new FindCommand(new TagsMatchPredicate(tags));
         }
 
-        String[] nameKeywords = trimmedArgs.split("\\s+");
+        String normalizedNames = ArgumentTokenizer.splitWords(trimmedArgs).stream()
+                .map(ArgumentTokenizer.Word::text)
+                .collect(java.util.stream.Collectors.joining(" ")).trim();
+        if (normalizedNames.isEmpty()) {
+            throw new ParseException(
+                    String.format(MESSAGE_INVALID_COMMAND_FORMAT, FindCommand.MESSAGE_USAGE));
+        }
+        String[] nameKeywords = normalizedNames.split("\\s+");
         for (String keyword : nameKeywords) {
             // Option-like input must not silently fall back to a name search.
             if (keyword.startsWith("-") || keyword.startsWith("\u2013") || keyword.startsWith("\u2014")) {
