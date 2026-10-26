@@ -21,7 +21,8 @@ OpenAI Codex assisted He Qianyi with the Feature 11 CSV export implementation, t
 He Qianyi is responsible for reviewing and understanding these changes.
 He Qianyi used OpenAI Codex to assist with updating and verifying the UI class diagram and the UML sequence diagrams for contact viewing, partial-contact addition and CSV export.
 
-He Qianyi used OpenAI Codex to assist with diagnostic logging for contact viewing and CSV export.
+He Qianyi used OpenAI Codex to assist with diagnostic logging for contact viewing and CSV export,
+including review fixes and regression tests to keep private input and feedback out of application logs.
 He Qianyi used OpenAI Codex to assist with iterative email validation, long-input regression tests,
 contact-workflow glossary updates and alpha-review documentation corrections.
 He Qianyi used OpenAI Codex to assist with alpha-bug fixes for read-only contact viewing, specific CSV

@@ -39,6 +39,7 @@ import seedu.address.model.person.Person;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
+import seedu.address.testutil.LogCapture;
 import seedu.address.testutil.PersonBuilder;
 
 public class LogicManagerTest {
@@ -207,6 +208,28 @@ public class LogicManagerTest {
             assertEquals(String.format("Exported 1 contacts to %s.", fileName), result.getFeedbackToUser());
             assertEquals(2, Files.readAllLines(csvPath).size());
             assertEquals(List.of(AMY), model.getAddressBook().getPersonList());
+        } finally {
+            Files.deleteIfExists(csvPath);
+        }
+    }
+
+    @Test
+    public void execute_export_doesNotLogFilenameOrContactFieldsAtAnyLevel() throws Exception {
+        model.addPerson(AMY);
+        String fileName = "confidential-" + UUID.randomUUID() + ".csv";
+        Path csvPath = Path.of(fileName).toAbsolutePath();
+        try (LogCapture logs = new LogCapture()) {
+            assertEquals("Exported 1 contacts to " + fileName + ".",
+                    logic.execute("export --csv " + fileName).getFeedbackToUser());
+            assertTrue(Files.readString(csvPath).contains(AMY.getEmail().value));
+            assertThrows(CommandException.class, () -> logic.execute("export -c " + fileName));
+            assertThrows(ParseException.class, () -> logic.execute(fileName));
+            String output = logs.getOutput();
+            assertFalse(output.contains(fileName), output);
+            assertFalse(output.contains(AMY.getName().fullName), output);
+            assertFalse(output.contains(AMY.getEmail().value), output);
+            assertTrue(output.contains("CSV export completed: 1 contacts written."), output);
+            assertTrue(output.contains("destination file already exists"), output);
         } finally {
             Files.deleteIfExists(csvPath);
         }
