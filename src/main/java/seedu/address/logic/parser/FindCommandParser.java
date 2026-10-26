@@ -76,12 +76,9 @@ public class FindCommandParser implements Parser<FindCommand> {
     }
 
     private static ParseException toFindParseException(ParseException exception) {
-        String message = exception.getMessage();
-        if (message != null && message.startsWith("Unknown option: ")) {
-            String option = message.substring("Unknown option: ".length());
-            return new ParseException(String.format(MESSAGE_UNKNOWN_OPTION, option));
-        }
-        return exception;
+        // Quote structure was already validated by splitWords, so tokenize can only reject an unknown option here.
+        String option = exception.getMessage().substring("Unknown option: ".length());
+        return new ParseException(String.format(MESSAGE_UNKNOWN_OPTION, option));
     }
 
 }
