@@ -624,31 +624,48 @@ bypassing command parsing. These alternative paths are omitted from the successf
 
 ### Undoing a deletion
 
-`undo` restores the contact most recently removed with `delete` in the current session. Only `delete` is recorded,
-so `undo` does not revert `add`, `edit`, `clear` or any other command, and there is no `redo`.
+`undo` restores the most recent deletion in the current session: a contact removed with `delete`, or a department
+removed with `depart --delete`. Only these two commands are recorded, so `undo` does not revert `add`, `edit`,
+`depart --add`, `depart --edit`, `clear` or any other command, and there is no `redo`.
 
-`ModelManager` keeps the deletion history in a `deletedPersons` list, used as a stack. The history is held in memory
-only. It is not written to the data file, so it is empty every time the app starts. `Model` exposes it through these
-operations:
+`ModelManager` keeps the deletion history in memory only. It is not written to the data file, so it is empty every
+time the app starts. The history uses two lists, each used as a stack:
 
-* `Model#deletePerson(Person)` — Removes the person and pushes it onto the history.
-* `Model#hasDeletedPerson()` — Returns true if the history is not empty.
-* `Model#getLastDeletedPerson()` — Returns the most recent deletion without removing it from the history.
-* `Model#restoreLastDeletedPerson()` — Adds the most recent deletion back and pops it from the history.
+* `deletedPersons` holds every contact removed with `delete`.
+* `deletionOrder` records every deletion in order, so contact and department deletions share one history. A contact
+  deletion is recorded as `null`. A department deletion is recorded as a `DepartmentDeletion`, which holds the
+  department and the contacts whose assignment it cleared.
 
-`DeleteCommand` is the only caller of `deletePerson`, so it records deletions without any extra code. Its success
-message ends with `Use 'undo' to restore.`
+`Model` exposes the history through these operations:
+
+* `Model#deletePerson(Person)` — Removes the person and pushes it onto both lists.
+* `Model#hasDeletedPerson()` — Returns true if `deletedPersons` is not empty.
+* `Model#getLastDeletedPerson()` — Returns the most recent contact deletion without removing it from the history.
+* `Model#restoreLastDeletedPerson()` — Adds the most recent contact deletion back and pops it from both lists.
+* `Model#deleteDepartment(Department)` — Removes the department, clears its assignments and pushes a
+  `DepartmentDeletion` onto `deletionOrder`.
+* `Model#getLastDeletedDepartment()` — Returns the department if the most recent deletion was a department deletion,
+  or `null` otherwise.
+* `Model#restoreLastDeletedDepartment()` — Restores the most recent department deletion and pops it.
+
+`DeleteCommand` is the only caller of `deletePerson`, and `DepartCommand` is the only caller of `deleteDepartment`,
+so both record deletions without any extra code. The success message of `delete` ends with `Use 'undo' to restore.`
 
 Given below is an example usage scenario.
 
-Step 1. The user executes `delete 2`. `ModelManager` removes that contact and pushes it onto `deletedPersons`.
+Step 1. The user executes `delete 2`, which removes a contact in the Engineering department. `ModelManager` pushes
+that contact onto `deletedPersons` and records the deletion in `deletionOrder`.
 
-Step 2. The user executes `delete 1`. That contact is pushed on top of the contact deleted in step 1.
+Step 2. The user executes `depart --delete Engineering`. `ModelManager` clears Engineering from every contact that has
+it, including the contact deleted in step 1, and pushes a `DepartmentDeletion` onto `deletionOrder`.
 
-Step 3. The user executes `undo`, which restores the contact deleted in step 2 and pops it. A second `undo` restores
-the contact deleted in step 1. A third `undo` fails with `There are no deletions to undo in this session.`
+Step 3. The user executes `undo`. The most recent deletion is the department, so `undo` restores Engineering and its
+assignments, including the one on the contact deleted in step 1. A second `undo` restores that contact with its
+Engineering assignment. A third `undo` fails with `There are no deletions to undo in this session.`
 
-The following sequence diagram shows how `undo` goes through the `Logic` and `Model` components:
+The following sequence diagram shows how `undo` restores a deleted contact through the `Logic` and `Model`
+components. It leaves out the `Model#getLastDeletedDepartment()` call that runs first, which returns `null` when the
+most recent deletion is a contact:
 
 ![Interactions Inside the Logic and Model Components for the `undo` Command](images/UndoDeleteSequenceDiagram.png)
 
@@ -659,29 +676,45 @@ How `undo` works:
 
 1. `AddressBookParser` passes the rest of the input to `UndoCommandParser`. If there is any argument (e.g. `undo 2`),
    the parser throws a `ParseException` with the usage message.
-1. `UndoCommand#execute` checks `Model#hasDeletedPerson()`. If the history is empty, it throws a `CommandException`
-   saying there is nothing to undo.
-1. It reads the most recent deletion with `Model#getLastDeletedPerson()` and checks `Model#hasPerson(...)`. A contact
-   with the same name, phone and email (`Person#isSamePerson`) may have been added since the deletion. If so, it
-   throws a `CommandException` that names the existing contact. The deletion stays in the history, so the user can
-   `edit` or `delete` that contact and run `undo` again.
-1. Otherwise, `Model#restoreLastDeletedPerson()` calls `Model#addPerson`. This appends the same `Person` object to the
-   end of the stored list, so its department, tags and other fields are unchanged. `addPerson` also shows the full
+1. `UndoCommand#execute` calls `Model#getLastDeletedDepartment()`. If the most recent deletion was a department
+   deletion, it checks `Model#hasDepartment(...)`. If that name has been registered again, it throws a
+   `CommandException` and leaves the history unchanged. Otherwise, `Model#restoreLastDeletedDepartment()` adds the
+   department back to the catalogue and reassigns it to the contacts it was cleared from that still have no
+   department, including those in `deletedPersons`. It then pops the deletion and shows the full list.
+   [Department management](#department-management-design-specification) explains how later edits to those contacts
+   are tracked.
+1. Otherwise, the most recent deletion is a contact deletion, or there is none. `UndoCommand#execute` checks
+   `Model#hasDeletedPerson()`. If the history is empty, it throws a `CommandException` saying there is nothing to
+   undo.
+1. It reads the most recent contact deletion with `Model#getLastDeletedPerson()`. If that contact has neither a phone
+   number nor an email address, which only happens with legacy data, it throws a `CommandException` and leaves the
+   history unchanged.
+1. It checks `Model#hasPerson(...)` for a [duplicate contact](#glossary) already in the list: one with the same name
+   and a matching provided phone number or email address (`Person#isSamePerson`). If one exists, it throws a
+   `CommandException` that names it. One matching field is enough, so a contact with a different email, or no email,
+   still blocks `undo` if its phone matches. The deletion stays in the history, so the user can `edit` or `delete`
+   that contact and run `undo` again.
+1. Otherwise, `Model#restoreLastDeletedPerson()` calls `Model#addPerson`. This appends the `Person` held in
+   `deletedPersons` to the end of the stored list, so its tags and other fields are unchanged. Its department reflects
+   any `depart --edit` or `depart --delete` run since the deletion. `addPerson` also shows the full
    list, which clears any `find` filter and `sort` order. The deletion is popped only after the add succeeds, so a
    failed add does not lose it.
 1. `LogicManager` saves the address book, as it does after other commands that change it.
 
-`clear` replaces the address book through `Model#setAddressBook`, which does not touch `deletedPersons`. After `clear`,
-`undo` can still restore contacts that were deleted individually before it, but not the contacts that `clear` removed.
+`clear` replaces the address book through `Model#setAddressBook`, which does not touch the deletion history. After
+`clear`, `undo` can still restore contacts and departments that were deleted individually before it, but not the
+contacts that `clear` removed.
 
 #### Design considerations:
 
 **Aspect: What `undo` records:**
 
-* **Alternative 1 (current choice):** Only the person removed by each `delete`.
-  * Pros: Uses little memory. `undo` always brings back a deleted contact, even if other commands ran after the
-    deletion.
-  * Cons: Only `delete` can be undone. Each command that should become undoable needs its own reverse logic.
+* **Alternative 1 (current choice):** Only what each `delete` or `depart --delete` removed: the contact, or the
+  department and the contacts it was cleared from.
+  * Pros: Uses little memory. `undo` always brings back a deleted contact or department, even if other commands ran
+    after the deletion.
+  * Cons: Only these two commands can be undone. Each command that should become undoable needs its own reverse
+    logic, as `depart --delete` did.
 
 * **Alternative 2:** A copy of the entire address book after every command that changes it, as in AB3's proposed
   `VersionedAddressBook`.
@@ -694,7 +727,7 @@ How `undo` works:
 * **Alternative 1 (current choice):** In `ModelManager`.
   * Pros: Each `Model` has its own history, so tests do not share state. `ModelManager#equals` compares the history,
     so `CommandTestUtil.assertCommandSuccess` checks it too.
-  * Cons: `Model` gains three methods, which every `Model` stub in the tests must implement.
+  * Cons: `Model` gains five methods, which every `Model` stub in the tests must implement.
 
 * **Alternative 2:** In a static field of `DeleteCommand` or `UndoCommand`.
   * Pros: `Model` does not change.
@@ -843,9 +876,12 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 **MSS**
 
 1. User requests to undo a deletion.
-2. sudoContact restores the most recently deleted contact that has
-   not yet been restored in the current session, including its details.
-3. sudoContact displays the restored contact's details.
+2. sudoContact restores the most recently deleted contact or department
+   that has not yet been restored in the current session. A restored
+   contact keeps its details; a restored department is reassigned to
+   the contacts it was removed from that still have no department.
+3. sudoContact displays the restored contact's details or the restored
+   department's name.
 
    Use case ends.
 
@@ -870,6 +906,14 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
   * 2a1. sudoContact rejects the restoration and identifies the
     existing contact that prevents it.
   * 2a2. sudoContact retains the deleted contact for a later
+    undo attempt.
+
+  Use case ends.
+
+* 2b. A department with the same name has been registered again.
+
+  * 2b1. sudoContact rejects the restoration and names the department.
+  * 2b2. sudoContact retains the deleted department for a later
     undo attempt.
 
   Use case ends.
