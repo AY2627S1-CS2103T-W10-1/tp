@@ -965,6 +965,13 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case ends.
 
+* 3a. sudoContact cannot save the updated address book.
+
+  * 3a1. sudoContact reports the save error instead of confirming the addition.
+  * 3a2. The new department remains in memory because the change is not rolled back.
+
+  Use case ends.
+
 
 **Use case: UC5c - Rename a department**
 
@@ -991,6 +998,14 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case ends.
 
+* 4a. sudoContact cannot save the updated address book.
+
+  * 4a1. sudoContact reports the save error instead of confirming the rename.
+  * 4a2. The renamed department and updated contact assignments remain in memory because the change is not
+    rolled back.
+
+  Use case ends.
+
 
 **Use case: UC5d - Delete a department**
 
@@ -1008,6 +1023,14 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * 2a. The command format, name or existence check fails.
 
   * 2a1. sudoContact displays an error and leaves the catalogue, contacts and deletion history unchanged.
+
+  Use case ends.
+
+* 4a. sudoContact cannot save the updated address book.
+
+  * 4a1. sudoContact reports the save error instead of confirming the deletion.
+  * 4a2. The deleted catalogue entry, cleared assignments and undo record remain changed in memory because the
+    operation is not rolled back.
 
   Use case ends.
 
@@ -1030,6 +1053,13 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case ends.
 
+* 3a. sudoContact cannot save the updated address book.
+
+  * 3a1. sudoContact reports the save error instead of confirming the edit.
+  * 3a2. The contact's updated department remains in memory because the change is not rolled back.
+
+  Use case ends.
+
 
 **Use case:** UC6 - Search contacts by tags
 
@@ -1040,7 +1070,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 3.  sudoContact validates all specified tags.
 4.  sudoContact searches all contacts for those having any of the specified tags (OR matching),
     using case-insensitive, whole-tag matching.
-5.  sudoContact displays each matching contact once.
+5.  sudoContact displays each matching contact once, even if it matches multiple specified tags or the same
+    tag was specified more than once.
 6.  sudoContact displays the number of matching contacts.
 
     Use case ends.
@@ -1078,14 +1109,6 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
     * 4a1. sudoContact displays `No contacts found with the specified tag(s).`
 
       Use case ends.
-
-* 4b. Multiple tags are specified and a contact matches more than one of them,
-  or the same tag is specified more than once.
-
-    * 4b1. sudoContact displays the matching contact only once.
-
-      Use case resumes at step 5.
-
 
 **Use case: UC7 - View one contact's full details**
 
