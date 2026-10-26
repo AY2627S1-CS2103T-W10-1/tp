@@ -88,4 +88,24 @@ public class FindCommandParserTest {
         assertParseSuccess(parser, " \n Alice \n \t Bob  \t", expectedFindCommand);
     }
 
+    @Test
+    public void parse_quotedNames_returnsSameKeywords() {
+        FindCommand expected = new FindCommand(new NameContainsKeywordsPredicate(List.of("Alex", "Yeoh")));
+        assertParseSuccess(parser, "\"Alex Yeoh\"", expected);
+        assertParseSuccess(parser, "'Alex Yeoh'", expected);
+        assertParseSuccess(parser, "\"Alex\" Yeoh", expected);
+    }
+
+    @Test
+    public void parse_emptyQuotedName_throwsParseException() {
+        assertParseFailure(parser, "\"\"",
+                String.format(MESSAGE_INVALID_COMMAND_FORMAT, FindCommand.MESSAGE_USAGE));
+    }
+
+    @Test
+    public void parse_unmatchedNameQuote_throwsParseException() {
+        assertParseFailure(parser, "\"Alex",
+                String.format(ArgumentTokenizer.MESSAGE_UNMATCHED_QUOTE, "\"Alex"));
+    }
+
 }
