@@ -49,28 +49,38 @@ deactivate AddressBookParser
 LogicManager -> UndoCommand : execute(m)
 activate UndoCommand
 
-alt Most recent deletion is a contact
-    UndoCommand -> Model : hasDeletedPerson()
-    activate Model
-    Model --> UndoCommand : true
-    deactivate Model
+UndoCommand -> Model : hasDeletedPerson()
+activate Model
 
-    UndoCommand -> Model : getLastDeletedPerson()
-    activate Model
-    Model --> UndoCommand : p
-    deactivate Model
+Model --> UndoCommand : true
+deactivate Model
 
-    UndoCommand -> Model : hasPerson(p)
-    activate Model
-    Model --> UndoCommand : false
-    deactivate Model
+UndoCommand -> Model : getLastDeletedPerson()
+activate Model
 
-    UndoCommand -> Model : restoreLastDeletedPerson()
-    activate Model
-    Model -> Model : addPerson(p)
-    Model --> UndoCommand
-    deactivate Model
-end
+Model --> UndoCommand : p
+deactivate Model
+
+UndoCommand -> Model : hasPerson(p)
+activate Model
+
+Model --> UndoCommand : false
+deactivate Model
+
+UndoCommand -> Model : restoreLastDeletedPerson()
+activate Model
+
+Model -> Model : addPerson(p)
+
+Model --> UndoCommand
+deactivate Model
+
+create CommandResult
+UndoCommand -> CommandResult
+activate CommandResult
+
+CommandResult --> UndoCommand
+deactivate CommandResult
 
 UndoCommand --> LogicManager : r
 deactivate UndoCommand
