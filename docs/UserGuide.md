@@ -68,7 +68,7 @@ sudoContact is a **desktop application for managing contacts, optimized for use 
   For example, `-n John` sets the name, but `-nJohn` does not. Text such as `Blk 5 -apt 3` inside a value is kept
   as part of the value.
 
-* Quotes are optional. Wrap a value in matching single or double quotes only when it contains a flag as a
+* For `add` and `edit`, quotes are optional. Wrap a value in matching single or double quotes only when it contains a flag as a
   separate word, or a word starting with `--`.<br>
   For example, `edit 1 -a Blk 5 -t 3` sets the address to `Blk 5` and adds the tag `3`, while
   `edit 1 -a "Blk 5 -t 3"` sets the address to `Blk 5 -t 3`. A quote inside a word, as in `O'Brien`, needs no
@@ -162,13 +162,8 @@ Format: `add --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMEN
 * Omit an unknown field entirely. An option with an empty value is rejected.
 * Unknown options, unmatched quotes and repeated options other than `--tag` are rejected.
 * Omitted phone, email, address and department show `Not provided`; omitted tags show `None`.
-* Contacts with the same name are duplicates if either their provided phone numbers **or** email addresses
-  match. Missing fields do not count as matches. Same-name contacts can coexist only when neither provided
-  contact field matches; a different address, department or tag does not distinguish duplicates.
-* Contacts saved under the previous rule remain in their original order, even if the same name and phone
-  or email now conflict. Loading, saving and restarting do not merge or remove these records. New additions,
-  edits and contact restoration with `undo` still use the stricter rule. To edit a conflicting old contact,
-  change its name or contact details so the result does not conflict with any other contact.
+* A contact with the same name as an existing contact, and the same phone number **or** email address, is a
+  duplicate and is rejected. Address, department and tags are not compared.
 
 Short flags also work, and can be mixed with long ones:
 `add -n NAME [-p PHONE] [-e EMAIL] [-d DEPARTMENT] [-a ADDRESS] [-t TAG ...]`.
@@ -328,7 +323,7 @@ Invalid displayed contact data | `Unable to sort contacts because some stored co
 When several input problems occur, an explicit `--descending` token takes precedence, followed by unsupported
 argument structure, missing option/value, and an invalid field. Failed input or invalid sorting data leaves the
 current display order unchanged. Sorting preserves separate contact occurrences rather than deduplicating them;
-the application's existing rules still prevent duplicate contacts from being added or loaded.
+the application's existing rules still prevent duplicate contacts from being added.
 
 Sorting uses the current in-memory contacts; it does not reread the file. If contacts fail to load at startup,
 the application starts with an empty list, so sorting reports `No contacts found to sort.` You can add valid contacts
@@ -397,9 +392,9 @@ Examples:
 Format: `find --tag TAG [--tag TAG ...]`
 
 * Command words are case-insensitive: `find`, `FIND`, and `FiNd` are equivalent.
-* The option must be lowercase `--tag`; `--TAG` is invalid. Tag values are case-sensitive:
-  `friends` does not match `Friends`.
-* Matches contacts with **any** of the specified tags, respecting case and matching whole tags.
+* The option must be lowercase `--tag`; `--TAG` is invalid. Tag matching is case-insensitive:
+  `friends` matches `Friends`. Original tag spelling is preserved in stored data and display.
+* Matches contacts with **any** of the specified tags, ignoring case and matching whole tags.
 * Each matching contact is displayed once, even if several tags match or a tag is repeated.
 * Tags must contain 1–30 letters, numbers, hyphens (`-`), or underscores (`_`), without spaces.
 * A missing value displays `Tag cannot be empty: Please provide a valid tag after '--tag'.`
@@ -408,6 +403,10 @@ Format: `find --tag TAG [--tag TAG ...]`
 
 Example: `find --tag client --tag important`
 
+For `depart --add`, `depart --edit` and `depart --delete`, each department name containing spaces
+must be enclosed in matching single or double quotes, e.g. `depart --add "Customer Support"`.
+Tag-search values are unquoted single tags; `find --tag "friends"` is invalid.
+
 ### Locating persons by name: `find`
 
 Finds persons whose names contain any of the given keywords.
@@ -415,6 +414,9 @@ Finds persons whose names contain any of the given keywords.
 Format: `find KEYWORD [MORE_KEYWORDS]`
 
 * The search is case-insensitive; for example, `hans` matches `Hans`.
+* Matching single or double quotes around name keywords are optional: `find "Alex Yeoh"`
+  and `find 'Alex Yeoh'` behave like `find Alex Yeoh`. Quotes do not request an exact phrase match.
+  Empty quoted input and unmatched quotes are rejected.
 * Keyword order does not matter; for example, `Hans Bo` matches `Bo Hans`.
 * The search considers only names.
 * Only full words match; for example, `Han` does not match `Hans`.
@@ -449,9 +451,9 @@ Format: `undo`
 * Both deletion types share one history. Repeated calls undo deletions in reverse chronological order.
   `add`, `edit`, `depart --add`, `depart --edit`, and `clear` cannot be undone.
 * History is remembered only until you close the app. Successful undo is saved and shows all contacts in stored order.
-* Undoing a contact deletion appends the restored contact to the list. A same-name contact sharing a provided phone number
-  or email prevents restoration. Missing fields do not match. The history entry is kept so you can resolve
-  every matching contact field or change the existing contact's name and retry.
+* Undoing a contact deletion appends the restored contact to the list. It fails if a
+  [duplicate](#adding-a-contact-with-partial-information-add) of that contact now exists. The deletion stays in the
+  history, so you can edit or delete the duplicate and retry.
 * A restored contact must have a phone number or email address. If a deleted legacy contact has neither,
   `undo` reports `A phone number or email address must be provided.` and leaves data and history unchanged.
   You can recreate that contact using `add` with the required contact information.
