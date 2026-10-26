@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
@@ -99,7 +100,13 @@ public class ExportCommandUiTest {
 
     private Stage showWindow(ModelManager model) {
         Path dataPath = testFolder.resolve("contacts.json");
-        StorageManager storage = new StorageManager(new JsonAddressBookStorage(dataPath),
+        JsonAddressBookStorage addressBookStorage = new JsonAddressBookStorage(dataPath);
+        try {
+            addressBookStorage.saveAddressBook(model.getAddressBook());
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
+        StorageManager storage = new StorageManager(addressBookStorage,
                 new JsonUserPrefsStorage(testFolder.resolve("preferences.json")));
         Stage stage = new Stage();
         MainWindow main = new MainWindow(stage, new LogicManager(model, storage), dataPath);

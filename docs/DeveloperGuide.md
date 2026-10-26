@@ -486,8 +486,8 @@ query tags or multiple matching tags do not duplicate contacts in the results.
 
 A successful search reports `[COUNT] person(s) listed!`. If no contacts match, it displays an empty list and
 `No contacts found with the specified tag(s).`; this is a valid search result, not a validation error.
-Contact fields remain unchanged. `FindCommand` retains the normal `LogicManager` storage-save flow;
-a save failure is reported after the display filter has been updated.
+Contact fields remain unchanged. `FindCommand.requiresStorageSave()` returns false because searching changes
+only the displayed filter, so `LogicManager` returns the result without rewriting the address book data file.
 
 `FindCommandParserTest` covers repeated options, whitespace, tag length boundaries, invalid tags,
 unsupported options, and mixed name/tag input. `TagsMatchPredicateTest` verifies OR matching, case-insensitive comparisons,
