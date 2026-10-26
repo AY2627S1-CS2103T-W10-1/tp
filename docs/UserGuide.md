@@ -398,11 +398,11 @@ Format: `find --tag TAG [TAG ...] [--tag TAG ...]`
 * Each matching contact is displayed once, even if several tags match or a tag is repeated.
 * As with `add` and `edit`, several tags can follow one `--tag`, the option can be repeated, and identical
   inputs are deduplicated. Leading `#` or `/` characters are removed before searching.
-* Tags must contain 1–30 letters, numbers, hyphens (`-`), or underscores (`_`), without spaces. Quote a tag
-  that is itself an option-like value, e.g. `find --tag "--tag"` searches for the tag `--tag`.
+* Tags use letters, numbers, hyphens (`-`), or underscores (`_`), without spaces. New tags are limited to
+  30 characters, but search also accepts longer tags retained from older data files. Quote a tag that is itself
+  an option-like value, e.g. `find --tag "--tag"` searches for the tag `--tag`.
 * A missing value displays `Tag cannot be empty: Please provide a valid tag after '--tag'.`
-* A tag longer than 30 characters displays `Invalid tag: Must contain 1-30 characters.` Other invalid tags display
-  `Tags must be 1-30 characters using only letters, numbers, hyphens (-), and underscores (_), with no spaces.`
+* An invalid search value displays `Tags must use only letters, numbers, hyphens (-), and underscores (_), with no spaces.`
 * No matches displays `No contacts found with the specified tag(s).`
 
 Example: `find --tag client --tag important`

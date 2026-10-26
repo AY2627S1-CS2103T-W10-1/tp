@@ -53,6 +53,9 @@ public class FindCommandParserTest {
         String longestTag = "a".repeat(30);
         assertParseSuccess(parser, "--tag " + longestTag,
                 new FindCommand(new TagsMatchPredicate(List.of(longestTag))));
+        String legacyLongTag = "a".repeat(31);
+        assertParseSuccess(parser, "--tag " + legacyLongTag,
+                new FindCommand(new TagsMatchPredicate(List.of(legacyLongTag))));
     }
 
     @Test
@@ -74,9 +77,8 @@ public class FindCommandParserTest {
 
     @Test
     public void parse_invalidTag_throwsParseException() {
-        assertParseFailure(parser, "--tag bad!", Tag.MESSAGE_CONSTRAINTS);
-        assertParseFailure(parser, "--tag client --tag bad!", Tag.MESSAGE_CONSTRAINTS);
-        assertParseFailure(parser, "--tag " + "a".repeat(31), ParserUtil.MESSAGE_INVALID_TAG);
+        assertParseFailure(parser, "--tag bad!", Tag.MESSAGE_CHARACTER_CONSTRAINTS);
+        assertParseFailure(parser, "--tag client --tag bad!", Tag.MESSAGE_CHARACTER_CONSTRAINTS);
         assertParseFailure(parser, "Alice --tag client",
                 String.format(MESSAGE_INVALID_COMMAND_FORMAT, FindCommand.MESSAGE_USAGE));
     }

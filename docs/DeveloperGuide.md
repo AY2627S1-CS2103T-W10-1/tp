@@ -252,8 +252,9 @@ nonempty invalid data still causes a loading error. Existing fully populated dat
 tags as 1–30 characters with the team-specified hyphen/underscore support and leading `#`/`/` normalization.
 Keeping these rules in `ParserUtil`, rather than in one command's parser, keeps the two commands consistent.
 Storage retains compatibility with previously valid short phone numbers (`Phone.isValidPhone` still accepts
-3 or more digits) and longer tags through `Tag.fromStoredValue`; normal tag validation uses the shared 1–30
-character limit, including tag searches. This avoids a migration of old contact data.
+3 or more digits) and longer tags through `Tag.fromStoredValue`; normal `add` and `edit` validation uses the
+shared 1–30 character limit. Tag search accepts those longer stored values so legacy tags remain discoverable.
+This avoids a migration of old contact data.
 Tag search and matching reuse the teammate's implementation.
 
 `Person.isSamePerson` requires the same name and at least one matching provided phone number or email
@@ -439,8 +440,9 @@ after a closing quote are rejected.
 
 The tag-search command is `find --tag TAG [TAG ...] [--tag TAG ...]`. The option is lowercase and may be
 repeated; as with `add` and `edit`, several tags may follow one option. The command word is case-insensitive.
-Tag matching is case-insensitive; tags contain 1-30 ASCII letters, digits, hyphens, or underscores.
-`ParserUtil.parseTag` trims surrounding whitespace and removes leading `#` or `/` characters. Matching quotes
+Tag matching is case-insensitive; tags contain ASCII letters, digits, hyphens, or underscores. New tags are
+limited to 30 characters, while search accepts longer legacy tags retained during storage loading.
+`ParserUtil.parseTagForSearch` trims surrounding whitespace and removes leading `#` or `/` characters. Matching quotes
 are removed by the shared tokenizer. A tag that looks like an option must be quoted, so
 `find --tag "--tag"` searches for the literal tag `--tag` rather than introducing another option.
 
@@ -449,14 +451,14 @@ are removed by the shared tokenizer. A tag that looks like an option must be quo
 `AddressBookParser` delegates `find` to `FindCommandParser`. The parser uses the shared quote-aware
 `ArgumentTokenizer`, with each word after `--tag` treated as a tag value. It rejects text before the first
 `--tag`, preventing a combined name-and-tag search. Values are validated from left to right through
-`ParserUtil.parseTag`, keeping search input normalization and validation aligned with `add` and `edit`.
+`ParserUtil.parseTagForSearch`, keeping normalization and character validation aligned with `add` and `edit`
+while allowing the longer values accepted by `Tag.fromStoredValue`.
 Normalized duplicate query tags are removed before constructing the command.
 
 | Condition | Feedback |
 | --- | --- |
 | Missing or whitespace-only value after `--tag` | `Tag cannot be empty: Please provide a valid tag after '--tag'.` |
-| Tag exceeds 30 characters after normalization | `Invalid tag: Must contain 1-30 characters.` |
-| Tag otherwise violates the shared character constraints | `Tags must be 1-30 characters using only letters, numbers, hyphens (-), and underscores (_), with no spaces.` |
+| Tag violates the shared character constraints | `Tags must use only letters, numbers, hyphens (-), and underscores (_), with no spaces.` |
 | No standalone `--tag`, but an option-like token is supplied | `Invalid find option: '[INPUT]'. Use find --tag TAG [TAG ...] [--tag TAG ...] or find KEYWORD [MORE_KEYWORDS].` |
 | No arguments, or text before the first standalone `--tag` | `Invalid command format!` followed by a newline and `FindCommand.MESSAGE_USAGE`. |
 
@@ -983,7 +985,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case ends.
 
-* 2b. The source does not exist or the target is already registered.
+* 2b. The source does not exist or the target name belongs to another registered department.
 
   * 2b1. sudoContact displays the corresponding error and leaves the data unchanged.
 
@@ -1045,9 +1047,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **Extensions:**
 
-* 3a. A specified tag contains invalid characters or is longer than 30 characters after normalization.
+* 3a. A specified tag contains invalid characters.
 
-    * 3a1. sudoContact displays the corresponding shared tag-validation error used by `add` and `edit`.
+    * 3a1. sudoContact displays `Tags must use only letters, numbers, hyphens (-), and underscores (_), with no spaces.`
 
       Use case ends.
 

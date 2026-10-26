@@ -124,7 +124,7 @@ public class ParserUtil {
      */
     public static Tag parseTag(String tag) throws ParseException {
         requireNonNull(tag);
-        String normalizedTag = tag.trim().replaceFirst("^[#/]+", "");
+        String normalizedTag = normalizeTag(tag);
         if (normalizedTag.length() > TAG_MAX_LENGTH) {
             throw new ParseException(MESSAGE_INVALID_TAG);
         }
@@ -132,6 +132,23 @@ public class ParserUtil {
             throw new ParseException(Tag.MESSAGE_CONSTRAINTS);
         }
         return new Tag(normalizedTag);
+    }
+
+    /**
+     * Parses a tag used for searching. Search input follows the normal tag normalization and character rules,
+     * while accepting legacy stored tags that exceed the current 30-character input limit.
+     */
+    public static Tag parseTagForSearch(String tag) throws ParseException {
+        requireNonNull(tag);
+        String normalizedTag = normalizeTag(tag);
+        if (!Tag.isValidStoredTagName(normalizedTag)) {
+            throw new ParseException(Tag.MESSAGE_CHARACTER_CONSTRAINTS);
+        }
+        return Tag.fromStoredValue(normalizedTag);
+    }
+
+    private static String normalizeTag(String tag) {
+        return tag.trim().replaceFirst("^[#/]+", "");
     }
 
     /**

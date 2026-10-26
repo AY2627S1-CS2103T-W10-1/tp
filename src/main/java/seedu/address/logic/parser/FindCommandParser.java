@@ -49,7 +49,7 @@ public class FindCommandParser implements Parser<FindCommand> {
             }
             List<String> tags = new ArrayList<>();
             for (String rawTag : rawTags) {
-                String normalizedTag = ParserUtil.parseTag(rawTag).tagName;
+                String normalizedTag = ParserUtil.parseTagForSearch(rawTag).tagName;
                 if (!tags.contains(normalizedTag)) {
                     tags.add(normalizedTag);
                 }
