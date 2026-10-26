@@ -86,12 +86,30 @@ The **API** of this component is specified in [`Ui.java`](https://github.com/se-
 
 ![Structure of the UI Component](images/UiClassDiagram.png)
 
-The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
+The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `DepartmentPanel`, `PersonListPanel`, `DetailsPanel`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
 
-`MainWindow` also creates and retains one `ContactDetailsWindow`, which extends `UiPart<Stage>`.
-A successful `view` command supplies a details snapshot through `CommandResult`; `MainWindow` passes it to
-`ContactDetailsWindow.showDetails(String)`, reusing the same window for subsequent views. The details window
-is owned by the main stage and is hidden when the application exits.
+`MainWindow` lays its parts out as numbered panes, in the style of a terminal dashboard: [1] `DepartmentPanel`
+(each registered department with its number of contacts), [2] `PersonListPanel` (one table row per contact, which
+grows taller when its tags wrap), [3] a docked `DetailsPanel`, and [4] the `ResultDisplay` above the `CommandBox`
+prompt. Alt+1 to Alt+4 (or Esc for the prompt) move the keyboard focus between them, and the pane with the focus
+is outlined. `DepartmentPanel` and `StatusBarFooter` read the unfiltered `Logic.getPersonList()` and
+`Logic.getDepartmentList()`, so they stay up to date with every change.
+
+Contact details appear in two places. The docked [3] pane follows the selection in [2]: selecting a row with a
+click or j/k formats that contact with `ViewCommand.formatDetails(Person)` and shows it at once, without running a
+command, so glancing through contacts stays instant. To compare contacts side by side, details can also pop out
+into windows managed by `ContactDetailsWindows`. A successful `view` command returns the
+viewed `Person` and a details snapshot through `CommandResult`. `ContactDetailsWindows.show(Person, String)` refreshes
+the open `ContactDetailsWindow` (a `UiPart<Stage>`) whose contact `isSamePerson` as the viewed one, or opens a new
+popup cascaded from the main window. An edit can change every field `isSamePerson` compares, so
+`ContactDetailsWindows` also listens to `Logic.getPersonList()`: when a contact is replaced in place, its popup
+switches to the edited `Person`, and viewing a renamed contact still refreshes its popup. Like the docked pane, each
+popup hosts a `DetailsPanel`, which turns every `Field: value` line of the snapshot into a grey field name beside a
+read-only value that can be selected with j/k or Tab and copied. Several contacts can therefore be compared side by
+side, while viewing the same contact again never duplicates its popup. Popups are owned by the main stage, so they
+stay in front of it, and the keyboard focus stays at the prompt after `view`. Pressing Enter on a row in [2], or
+double-clicking it, runs `view` with that row's contact ID. Repeated Alt+3 presses step through the docked pane and
+then each popup, `q` closes the focused popup, and every popup is hidden when the application exits.
 
 The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/ui/MainWindow.java).
 
@@ -282,9 +300,10 @@ and without a department catalogue. It verifies every contact field and ordering
 an unrelated addition and repeated restarts, plus strict add/edit/contact-undo rejection and department
 rename/delete/undo on the restored data. Rejected operations retain stored bytes and contact undo history.
 
-`AddCommand` returns full labelled feedback, sorted tags and missing-field placeholders. `PersonCard` shows
-those same placeholders for missing fields and `None` for no tags. `LogicManager` retains the existing save
-failure behaviour: it reports the error instead of returning an addition-success result.
+`AddCommand` returns full labelled feedback, sorted tags and missing-field placeholders. In the contact
+table, `PersonCard` shows a dimmed `—` for missing fields and for no tags, while the [3] Details pane and
+popups show the same `Not provided` and `None` placeholders as `AddCommand`. `LogicManager` retains the
+existing save failure behaviour: it reports the error instead of returning an addition-success result.
 The model change and filter/sort reset occur before saving. If saving fails, the contact addition or edit
 remains in memory and is not rolled back, so repeating an `add` may fail the duplicate check. After resolving
 the storage error, `list` retries the normal save. The UG describes this recovery before closing the app.
@@ -564,7 +583,7 @@ after confirmed deletion.
 ### Viewing contact details
 
 The sequence below shows a successful `view 1` request for a nonempty displayed list. It resolves the
-displayed index and completes the normal JSON save before returning the snapshot to the reusable details window.
+displayed index and completes the normal JSON save before returning the snapshot to the contact's details popup.
 
 ![Successful contact-details sequence](images/ViewContactSequenceDiagram.png)
 
@@ -575,10 +594,11 @@ position used by `edit`, represented internally by `Index`. It reports an empty 
 before accessing the contact.
 
 The command formats all currently supported fields as labelled, untruncated lines, sorts tags for stable output,
-and returns a `CommandResult` with separate short feedback and an optional `contactDetails` payload.
-`MainWindow` displays only the short feedback in the main result box and forwards the payload to a reusable,
-owner-linked `ContactDetailsWindow` containing a read-only, wrapping, scrollable text area. Each successful
-`view` updates the window with a snapshot; later model changes do not silently change the displayed snapshot.
+and returns a `CommandResult` with separate short feedback, the viewed `Person`, and an optional `contactDetails`
+payload. `MainWindow` displays only the short feedback in the main result box and forwards the person and payload to
+`ContactDetailsWindows`, which shows them in that contact's owner-linked `ContactDetailsWindow` popup containing a
+read-only, wrapping, scrollable text area. Each successful `view` updates the contact's popup with a snapshot, or
+opens a popup if the contact has none; later model changes do not silently change a displayed snapshot.
 
 `view` follows the existing `LogicManager` save flow, like `list` and `find`, while preserving contact data
 and the current filter. Standard save errors are reported before a new details result reaches the UI. Contacts
@@ -1285,36 +1305,50 @@ For the department assignment examples below, register the required names first 
 
 1. Displayed-list contact IDs
 
-   1. Run `list`, then `view 2`. Expected: the second contact's supported fields appear in the details window.
+   1. Run `list`, then `view 2`. Expected: the second contact's supported fields appear in a details popup.
    1. Run `find Betsy`, then `view 1`. Expected: Betsy's details appear, and the filtered list remains unchanged.
    1. Run `view 2` when only one search result is displayed. Expected: an error gives the range `1-1`.
    1. Run `find NoSuchContact`, then `view 1`. Expected: an error says there is no contact to view.
    1. Try `view`, `view 0`, `view -1`, `view 1.5`, `view 1 2`, and `view 2147483648`.
       Expected: each reports that the contact ID must be a positive integer and shows the usage.
 
-1. Details window
+1. Details popups
 
-   1. View a contact with a long name/address and multiple tags. Resize the details window and scroll.
+   1. View a contact with a long name/address and multiple tags. Resize the details popup and scroll.
       Expected: all values remain readable without truncation; tags are separated by commas.
       The main result box shows only `Showing details of contact CONTACT_ID: NAME`.
-   1. View a contact without tags. Expected: `Tags: None`.
-   1. View a contact without a department. Expected: `Department: Not provided`.
+   1. View a contact without tags. Expected: the Tags field shows a dimmed `None`.
+   1. View a contact without a department. Expected: the Department field shows a dimmed `Not provided`.
+   1. Press Alt+3 until a popup has the focus, then press `j` and Ctrl+C.
+      Expected: the phone number is highlighted and copied to the clipboard.
    1. Run `find Benson`, then `edit 1 --department "R&D Engineering"`. Run `find Benson` again, then `view 1`.
       Expected: Benson's details include `Department: R&D Engineering`; `view` preserves the current filter.
    1. Change the selected contact's department with `edit 1 --department Sales`.
       Expected: the details snapshot stays unchanged. Run `find Benson` again, then `view 1`;
       the refreshed snapshot displays `Department: Sales`.
-   1. View another contact. Expected: the existing window updates rather than creating another window.
-   1. Close the details window, then run `view 1`. Expected: the window reopens with the current details.
+   1. With Benson's popup open, run `edit 1 --name Benson Renamed`, `find Benson`, then `view 1`.
+      Expected: the existing popup refreshes and is titled `Contact details: Benson Renamed`; no second popup opens.
+   1. View another contact. Expected: a second popup opens, offset from the first. Both stay in front of the
+      main window, and the prompt keeps the keyboard focus.
+   1. View the first contact again. Expected: its existing popup updates rather than a third popup opening.
+   1. Press Alt+3 repeatedly. Expected: the focus moves to [3] Details, then through each open popup,
+      then back to [3] Details. Press Esc.
+      Expected: the focus returns to the prompt.
+   1. Press `q` in a popup. Expected: only that popup closes, and the main window regains the focus.
+   1. Close a contact's popup, then view that contact again. Expected: a popup reopens with the current details.
+   1. Click a row in [2], then move with `j`/`k`.
+      Expected: [3] Details shows each selected contact at once, and no popup opens.
+   1. Select a row in [2] with Alt+2 and `j`/`k`, then press Enter. Separately, double-click another row.
+      Expected: each gives the same result as running `view` with that row's contact ID.
    1. Edit the viewed contact. Expected: the snapshot stays unchanged until another `view` command is run.
-   1. Exit the application while details are visible. Expected: the details window closes with the main window.
+   1. Exit the application while several popups are open. Expected: every popup closes with the main window.
 
 1. Data and persistence
 
    1. Filter contacts, then run a valid `view` command. Compare contact values before and after.
       Expected: contact data and the filter remain unchanged; the normal saving flow persists all contacts.
    1. Run `view` when the save location cannot be written.
-      Expected: the standard save error appears, with no new details window or snapshot update.
+      Expected: the standard save error appears, with no new popup or snapshot update.
 
 ### Deleting a person
 

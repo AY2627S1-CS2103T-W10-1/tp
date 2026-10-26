@@ -106,6 +106,23 @@ are shown without another examples section. Unknown commands suggest `help` inst
 Examples demonstrate valid syntax; an index, contact, filename, or storage problem may still need to be resolved.
 The failed input stays in the command box so you can correct it.
 
+### Navigating with the keyboard
+
+The main window is split into numbered panes, and every pane can be reached from the keyboard.
+The pane that has the keyboard focus is outlined.
+
+Key | Action
+----|-------
+`Alt+1` | Focus **[1] Departments**, which counts all contacts, contacts with no department, and each department's contacts.
+`Alt+2` | Focus **[2] Contacts**. Move with `↑`/`↓` or `j`/`k`; the selected contact appears in [3] Details. Press `Enter`, or double-click a contact, to open it in its own popup.
+`Alt+3` | Focus **[3] Details**, which shows the selected contact. Press it again to step through the contact details popups; `q` closes the focused popup.
+`Alt+4` or `Esc` | Return to the command prompt in **[4] Output**.
+`F1` | Open the command help.
+
+The contact list shows one row per contact. Fields that were not provided appear as `—`, and addresses are left
+out to keep rows short; click a contact to see every field in [3] Details. The footer shows how many contacts are displayed out of all
+stored contacts, and where the data file is saved.
+
 ### Viewing help: `help`
 
 Opens a scrollable window listing every available command with a short description.
@@ -331,11 +348,14 @@ A missing file follows the existing sample-data behavior.
 
 ### Viewing a contact's details: `view`
 
-Shows the selected contact's name, phone, email, department, address and tags in a separate contact details window.
+Shows the selected contact's name, phone, email, department, address and tags in a contact details popup.
 The main result box shows a brief confirmation, such as `Showing details of contact 1: Amy Bee`.
-Long values in the details window wrap onto multiple lines; scroll to read them. Text can be selected and copied.
-Contacts without tags show `Tags: None`.
-Contacts without a department show `Department: Not provided`.
+To glance at a contact without opening a popup, click it in the contact list; its details appear in [3] Details.
+The popup lists each field name beside its value, with how to reach the contact (name, phone, email, address)
+grouped above how they are organised (department, tags). Long values wrap onto multiple lines; scroll to read them.
+Contacts without tags show a dimmed `None` for Tags, and contacts without a department show a dimmed `Not provided`.
+To copy a value, press `Alt+3` until the popup (or [3] Details) has the focus, use `j`/`k` (or `Tab`, `↑`/`↓`) to
+select a value, then press `Ctrl+C`.
 
 Format: `view CONTACT_ID`
 
@@ -345,8 +365,15 @@ Format: `view CONTACT_ID`
 * A contact ID outside the displayed list produces an error showing the valid range.
 * An empty displayed list produces `There is no contact to view in the currently displayed list.`
 * Viewing leaves contact data and the current filter unchanged and uses the same automatic saving flow as other commands.
-* The window shows a snapshot. Run `view CONTACT_ID` again after editing, deleting or filtering to refresh it.
-  Viewing another contact updates the same window. Closing the window does not exit sudoContact.
+* Each contact gets its own popup, so you can view several contacts and compare them side by side.
+  Viewing a contact that already has a popup updates that popup instead of opening another one,
+  even if you have since edited the contact's name, phone or email.
+* The command prompt keeps the keyboard focus after `view`, so you can keep typing. Press `Alt+3` to move to
+  [3] Details and then into the popups, `q` to close the focused popup, and `Esc` to return to the prompt.
+* A popup shows a snapshot. Run `view CONTACT_ID` again after editing, deleting or filtering to refresh it.
+  Closing a popup does not exit sudoContact; exiting sudoContact closes every popup.
+* You can also double-click a contact in the contact list, or select it and press `Enter`, as described in
+  [Navigating with the keyboard](#navigating-with-the-keyboard).
 
 Examples:
 

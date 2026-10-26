@@ -58,13 +58,14 @@ public class PartialAddUiTest {
             assertEquals(1, model.getFilteredPersonList().size());
             assertTrue(result.getText().contains("Contact added successfully: Alice Tan | Phone: Not provided"));
             PersonCard card = new PersonCard(model.getFilteredPersonList().getFirst(), 1);
-            for (String field : new String[]{"phone", "address"}) {
-                assertEquals("Not provided", ((Label) card.getRoot().lookup("#" + field)).getText());
+            for (String field : new String[]{"phone", "department"}) {
+                Label missing = (Label) card.getRoot().lookup("#" + field);
+                assertEquals(PersonCard.EMPTY_VALUE, missing.getText());
+                assertTrue(missing.getStyleClass().contains(PersonCard.EMPTY_STYLE_CLASS));
             }
             assertEquals("firstalice@example.com", ((Label) card.getRoot().lookup("#email")).getText());
-            assertEquals("Department: Not provided", ((Label) card.getRoot().lookup("#department")).getText());
             FlowPane tags = (FlowPane) card.getRoot().lookup("#tags");
-            assertEquals("None", ((Label) tags.getChildren().getFirst()).getText());
+            assertEquals(PersonCard.EMPTY_VALUE, ((Label) tags.getChildren().getFirst()).getText());
 
             enter(input, "add --name \"Alice Tan\" --email secondalice@example.com");
             assertEquals(2, model.getFilteredPersonList().size());
@@ -92,7 +93,8 @@ public class PartialAddUiTest {
             PersonCard card = new PersonCard(person, 2);
             assertEquals("85355255", ((Label) card.getRoot().lookup("#phone")).getText());
             assertEquals("amy@gmail.com", ((Label) card.getRoot().lookup("#email")).getText());
-            assertEquals("Department: R&D", ((Label) card.getRoot().lookup("#department")).getText());
+            assertEquals("R&D", ((Label) card.getRoot().lookup("#department")).getText());
+            assertFalse(card.getRoot().lookup("#department").getStyleClass().contains(PersonCard.EMPTY_STYLE_CLASS));
             FlowPane tags = (FlowPane) card.getRoot().lookup("#tags");
             assertEquals(2, tags.getChildren().size());
             assertEquals("new-client", ((Label) tags.getChildren().getFirst()).getText());

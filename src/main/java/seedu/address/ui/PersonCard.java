@@ -10,9 +10,15 @@ import javafx.scene.layout.Region;
 import seedu.address.model.person.Person;
 
 /**
- * A UI component that displays information of a {@code Person}.
+ * A UI component that displays a {@code Person} as one row of the contact table.
+ * The address is left out to keep rows short; {@code view} shows every field.
  */
 public class PersonCard extends UiPart<Region> {
+
+    /** Shown in place of a field that was not provided. */
+    public static final String EMPTY_VALUE = "—";
+    public static final String EMPTY_STYLE_CLASS = "cell-empty";
+    public static final String TAG_STYLE_CLASS = "tag";
 
     private static final String FXML = "PersonListCard.fxml";
 
@@ -35,8 +41,6 @@ public class PersonCard extends UiPart<Region> {
     @FXML
     private Label phone;
     @FXML
-    private Label address;
-    @FXML
     private Label email;
     @FXML
     private Label department;
@@ -49,19 +53,36 @@ public class PersonCard extends UiPart<Region> {
     public PersonCard(Person person, int displayedIndex) {
         super(FXML);
         this.person = person;
-        id.setText(displayedIndex + ". ");
+        id.setText(String.valueOf(displayedIndex));
         name.setText(person.getName().fullName);
-        phone.setText(person.getPhone().toString());
-        address.setText(person.getAddress().toString());
-        email.setText(person.getEmail().toString());
-        department.setText(person.getDepartment()
-                .map(value -> "Department: " + value.value)
-                .orElse("Department: Not provided"));
+        showValue(phone, person.getPhone().isProvided(), person.getPhone().value);
+        showValue(email, person.getEmail().isProvided(), person.getEmail().value);
+        showValue(department, person.getDepartment().isPresent(),
+                person.getDepartment().map(value -> value.value).orElse(""));
+
         if (person.getTags().isEmpty()) {
-            tags.getChildren().add(new Label("None"));
+            Label none = new Label(EMPTY_VALUE);
+            none.getStyleClass().add(EMPTY_STYLE_CLASS);
+            tags.getChildren().add(none);
         }
         person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.tagName))
-                .forEach(tag -> tags.getChildren().add(new Label(tag.tagName)));
+                .forEach(tag -> {
+                    Label label = new Label(tag.tagName);
+                    label.getStyleClass().add(TAG_STYLE_CLASS);
+                    // A tag wider than the column is shortened with an ellipsis instead of being cut off.
+                    label.maxWidthProperty().bind(tags.widthProperty());
+                    tags.getChildren().add(label);
+                });
+    }
+
+    /**
+     * Shows {@code value}, or a dimmed placeholder when the field was not provided.
+     */
+    private static void showValue(Label label, boolean isProvided, String value) {
+        label.setText(isProvided ? value : EMPTY_VALUE);
+        if (!isProvided) {
+            label.getStyleClass().add(EMPTY_STYLE_CLASS);
+        }
     }
 }
