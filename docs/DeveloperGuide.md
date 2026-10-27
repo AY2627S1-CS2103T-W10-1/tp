@@ -699,7 +699,10 @@ How `undo` works:
    any `depart --edit` or `depart --delete` run since the deletion. `addPerson` also shows the full
    list, which clears any `find` filter and `sort` order. The deletion is popped only after the add succeeds, so a
    failed add does not lose it.
-1. `LogicManager` saves the address book, as it does after other commands that change it.
+1. `LogicManager` saves the address book, as it does after other commands that change it. As for every command, a
+   failed save is not rolled back: the contact or department stays restored in memory and its deletion stays popped.
+   The save error says the change is still applied and will be saved the next time saving succeeds, so the user does
+   not run `undo` again, which would restore the next earlier deletion.
 
 `clear` replaces the address book through `Model#setAddressBook`, which does not touch the deletion history. After
 `clear`, `undo` can still restore contacts and departments that were deleted individually before it, but not the

@@ -451,6 +451,9 @@ Format: `undo`
 * Both deletion types share one history. Repeated calls undo deletions in reverse chronological order.
   `add`, `edit`, `depart --add`, `depart --edit`, and `clear` cannot be undone.
 * History is remembered only until you close the app. Successful undo is saved and shows all contacts in stored order.
+* If the data file cannot be saved, the error says the change is still applied in the app: the deletion is restored
+  and removed from the history. It is saved the next time saving succeeds, so do not run `undo` again to retry;
+  that restores the next earlier deletion.
 * Undoing a contact deletion appends the restored contact to the list. It fails if a
   [duplicate](#adding-a-contact-with-partial-information-add) of that contact now exists. The deletion stays in the
   history, so you can edit or delete the duplicate and retry.
@@ -542,6 +545,8 @@ You do not need to save manually.
 `sort` changes only the displayed order; it does not write the contact file or persist the sort order.
 `export` writes a separate CSV copy; it does not modify or save the JSON contact file.
 Departments and tags are contact data and are saved normally when changed.
+If saving fails, for example because the data file is read-only, the error says the change is still applied in the app.
+It is saved the next time saving succeeds. Closing the app before then loses the unsaved change.
 
 ### Editing the data file
 
