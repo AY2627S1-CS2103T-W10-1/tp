@@ -154,10 +154,11 @@ Format: `add --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMEN
   `--name "Alice Tan"` and `--name Alice Tan` are the same.
 * Phone numbers must contain 7–15 digits, with no spaces or `+` sign.
 * A supplied email must be valid, such as `alice@example.com`.
-* Department names use the `depart` rules: 2-50 letters, numbers, spaces, hyphens or `&`.
+* Department names use the `depart` rules: 2-50 characters comprising English letters (`A-Z`, `a-z`),
+  numbers, spaces, hyphens or `&`.
   Register the department first with `depart --add DEPARTMENT`; unknown names are rejected.
 * Addresses are optional and must be nonblank when supplied.
-* Tags contain 1–30 letters, numbers, hyphens or underscores. Leading `#` or `/` is removed.
+* Tags contain 1–30 English letters (`A-Z`, `a-z`), numbers, hyphens or underscores. Leading `#` or `/` is removed.
   Repeat `--tag`, or put multiple tags after one flag. Identical tags are deduplicated; display preserves case.
 * Omit an unknown field entirely. An option with an empty value is rejected.
 * Unknown options, unmatched quotes and repeated options other than `--tag` are rejected.
@@ -209,7 +210,8 @@ Manages the shared department catalogue. Choose one operation per command:
 | `depart --add DEPARTMENT` | Registers a new department without assigning contacts. |
 | `depart --edit OLD_NAME NEW_NAME` | Renames a department and updates every associated contact, including hidden contacts. |
 
-* Names are case-sensitive and must contain 2-50 characters using letters, numbers, spaces, `-`, or `&`.
+* Names are case-sensitive and must contain 2-50 characters using English letters (`A-Z`, `a-z`), numbers,
+  spaces, `-`, or `&`.
   `depart`, `add`, and `edit` trim surrounding whitespace before validation and catalogue lookup.
   Spaces inside quoted names are preserved. Existing saved names are normalized on loading.
   Blank names are rejected. Quote names containing spaces, e.g. `depart --add "Customer Support"`.
@@ -410,9 +412,9 @@ Format: `find --tag TAG [TAG ...] [--tag TAG ...]`
 * Each matching contact is displayed once, even if several tags match or a tag is repeated.
 * As with `add` and `edit`, several tags can follow one `--tag`, the option can be repeated, and identical
   inputs are deduplicated. Leading `#` or `/` characters are removed before searching.
-* Tags use letters, numbers, hyphens (`-`), or underscores (`_`), without spaces. New tags are limited to
-  30 characters, but search also accepts longer tags retained from older data files. Quote a tag that is itself
-  an option-like value, e.g. `find --tag "--tag"` searches for the tag `--tag`.
+* Tags use English letters (`A-Z`, `a-z`), numbers, hyphens (`-`), or underscores (`_`), without spaces.
+  New tags are limited to 30 characters, but search also accepts longer tags retained from older data files.
+  Quote a tag that is itself an option-like value, e.g. `find --tag "--tag"` searches for the tag `--tag`.
 * A missing value displays `Tag cannot be empty: Please provide a valid tag after '--tag'.`
 * An invalid search value displays `Tags must use only letters, numbers, hyphens (-), and underscores (_), with no spaces.`
 * No matches displays `No contacts found with the specified tag(s).`
@@ -602,7 +604,7 @@ Action | Format, Examples
 **Clear** | `clear` (warning), `clear --confirm` (delete all)
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit** | `edit INDEX [-n NAME] [-p PHONE_NUMBER] [-e EMAIL] [-a ADDRESS] [-d DEPARTMENT] [-t TAG]…​`<br> e.g., `edit 2 -n James Lee -e jameslee@example.com`
-**Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
+**Find** | `find KEYWORD [MORE_KEYWORDS]` or `find --tag TAG [TAG ...] [--tag TAG ...]`<br> e.g., `find James Jake` or `find --tag friends`
 **Export** | `export -c|--csv [FILENAME]`<br> e.g., `export -c team.csv`
 **View** | `view CONTACT_ID`<br> e.g., `view 2`
 **List** | `list` or `ls`
