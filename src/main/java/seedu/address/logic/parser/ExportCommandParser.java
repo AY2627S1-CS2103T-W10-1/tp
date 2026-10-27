@@ -3,6 +3,8 @@ package seedu.address.logic.parser;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 
+import java.util.Optional;
+
 import seedu.address.logic.commands.ExportCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.storage.CsvContactExporter;
@@ -35,8 +37,9 @@ public class ExportCommandParser implements Parser<ExportCommand> {
         } else if (fileName.chars().anyMatch(Character::isWhitespace) || fileName.startsWith("--")) {
             throw invalidFormat();
         }
-        if (!CsvContactExporter.isValidFileName(fileName)) {
-            throw new ParseException(ExportCommand.MESSAGE_INVALID_FILE_NAME);
+        Optional<String> fileNameError = CsvContactExporter.getFileNameError(fileName);
+        if (fileNameError.isPresent()) {
+            throw new ParseException(fileNameError.orElseThrow());
         }
         return new ExportCommand(fileName);
     }

@@ -39,6 +39,7 @@ import seedu.address.model.person.Person;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
+import seedu.address.testutil.LogCapture;
 import seedu.address.testutil.PersonBuilder;
 
 public class LogicManagerTest {
@@ -237,6 +238,28 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_export_doesNotLogFilenameOrContactFieldsAtAnyLevel() throws Exception {
+        model.addPerson(AMY);
+        String fileName = "confidential-" + UUID.randomUUID() + ".csv";
+        Path csvPath = Path.of(fileName).toAbsolutePath();
+        try (LogCapture logs = new LogCapture()) {
+            assertEquals("Exported 1 contacts to " + fileName + ".",
+                    logic.execute("export --csv " + fileName).getFeedbackToUser());
+            assertTrue(Files.readString(csvPath).contains(AMY.getEmail().value));
+            assertThrows(CommandException.class, () -> logic.execute("export -c " + fileName));
+            assertThrows(ParseException.class, () -> logic.execute(fileName));
+            String output = logs.getOutput();
+            assertFalse(output.contains(fileName), output);
+            assertFalse(output.contains(AMY.getName().fullName), output);
+            assertFalse(output.contains(AMY.getEmail().value), output);
+            assertTrue(output.contains("CSV export completed: 1 contacts written."), output);
+            assertTrue(output.contains("destination file already exists"), output);
+        } finally {
+            Files.deleteIfExists(csvPath);
+        }
+    }
+
+    @Test
     public void execute_exportPartialContacts_preservesMissingFieldsAndFilter() throws Exception {
         logic.execute("add --name Alice --email alice@example.com");
         logic.execute("add --name Bob --phone 91234567 --tag /client");
@@ -264,7 +287,7 @@ public class LogicManagerTest {
     }
 
     @Test
-    public void execute_viewCommand_savesUnchangedContactsAndPreservesFilter() throws Exception {
+    public void execute_viewCommand_doesNotCreateStorageAndPreservesFilter() throws Exception {
         model.addPerson(AMY);
         model.addPerson(new PersonBuilder().withName("Bob").build());
         model.updateFilteredPersonList(AMY::equals);
@@ -279,11 +302,11 @@ public class LogicManagerTest {
         assertTrue(result.getContactDetails().orElseThrow().contains("Name: Amy Bee\n"));
         assertEquals(storedBefore, model.getAddressBook().getPersonList());
         assertEquals(displayedBefore, model.getFilteredPersonList());
-        assertEquals(model.getAddressBook(), new JsonAddressBookStorage(dataPath).readAddressBook().orElseThrow());
+        assertFalse(Files.exists(dataPath));
     }
 
     @Test
-    public void execute_viewCommand_reportsStandardSaveErrorWhenStorageCannotWrite() throws Exception {
+    public void execute_viewCommand_succeedsWhenStorageCannotWrite() throws Exception {
         model.addPerson(AMY);
         JsonAddressBookStorage addressBookStorage =
                 new JsonAddressBookStorage(temporaryFolder.resolve("blockedAddressBook.json")) {
@@ -296,9 +319,29 @@ public class LogicManagerTest {
                 new JsonUserPrefsStorage(temporaryFolder.resolve("blockedUserPrefs.json")));
         logic = new LogicManager(model, storage);
 
-        assertThrows(CommandException.class, String.format(LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT,
-                DUMMY_AD_EXCEPTION.getMessage()), () -> logic.execute("view 1"));
+        CommandResult result = logic.execute("view 1");
+        assertEquals("Showing details of contact 1: Amy Bee", result.getFeedbackToUser());
+        assertTrue(result.getContactDetails().orElseThrow().contains("Name: Amy Bee\n"));
         assertEquals(List.of(AMY), model.getAddressBook().getPersonList());
+    }
+
+    @Test
+    public void execute_viewCommand_preservesExistingFileAndSortedDisplay() throws Exception {
+        model.addPerson(new PersonBuilder(AMY).withTags("zeta").build());
+        model.addPerson(new PersonBuilder().withName("Bob").withTags("alpha").build());
+        logic.execute("sort --by tags");
+        List<Person> storedBefore = List.copyOf(model.getAddressBook().getPersonList());
+        List<Person> displayedBefore = List.copyOf(model.getFilteredPersonList());
+        Path dataPath = temporaryFolder.resolve("addressBook.json");
+        String existing = "existing data that must not be replaced by a read-only command";
+        Files.writeString(dataPath, existing);
+
+        CommandResult result = logic.execute("view 1");
+
+        assertTrue(result.getContactDetails().orElseThrow().startsWith("Name: Bob\n"));
+        assertEquals(existing, Files.readString(dataPath));
+        assertEquals(storedBefore, model.getAddressBook().getPersonList());
+        assertEquals(displayedBefore, model.getFilteredPersonList());
     }
 
     @Test

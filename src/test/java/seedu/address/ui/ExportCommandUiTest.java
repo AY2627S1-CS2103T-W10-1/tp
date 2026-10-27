@@ -98,6 +98,43 @@ public class ExportCommandUiTest {
         }
     }
 
+    @Test
+    public void enterExport_invalidFilenames_reportsSpecificRuleAndPreservesData() throws Exception {
+        FxTestUtil.run(() -> {
+            ModelManager model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
+            AddressBook original = new AddressBook(model.getAddressBook());
+            Stage stage = showWindow(model);
+            TextField input = (TextField) stage.getScene().lookup("#commandTextField");
+            TextArea feedback = (TextArea) stage.getScene().lookup("#resultDisplay");
+            enter(input, "find Benson");
+            String saved;
+            try {
+                saved = Files.readString(testFolder.resolve("contacts.json"));
+            } catch (Exception e) {
+                throw new AssertionError(e);
+            }
+            String[][] cases = {
+                {"Team.CSV", "Invalid file name: the extension must be lowercase .csv."},
+                {"con.csv", "Invalid file name: 'con' is a reserved device name. Choose another name."},
+                {"../x.csv", "Invalid file name: folder paths are not allowed. Provide a filename only."}
+            };
+            for (String[] testCase : cases) {
+                String command = "export --csv " + testCase[0];
+                enter(input, command);
+                assertEquals(testCase[1] + EXPORT_EXAMPLES, feedback.getText());
+                assertEquals(command, input.getText());
+                assertTrue(input.getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS));
+                assertEquals(original, model.getAddressBook());
+                assertEquals(1, model.getFilteredPersonList().size());
+                try {
+                    assertEquals(saved, Files.readString(testFolder.resolve("contacts.json")));
+                } catch (Exception e) {
+                    throw new AssertionError(e);
+                }
+            }
+        });
+    }
+
     private Stage showWindow(ModelManager model) {
         Path dataPath = testFolder.resolve("contacts.json");
         JsonAddressBookStorage addressBookStorage = new JsonAddressBookStorage(dataPath);

@@ -1,8 +1,11 @@
 package seedu.address.model.person;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
+
+import java.time.Duration;
 
 import org.junit.jupiter.api.Test;
 
@@ -64,6 +67,34 @@ public class EmailTest {
         assertTrue(Email.isValidEmail("peter_jack@very-very-very-long-example.com")); // long domain name
         assertTrue(Email.isValidEmail("if.you.dream.it_you.can.do.it@example.com")); // long local part
         assertTrue(Email.isValidEmail("e1234567@u.nus.edu")); // more than one period in domain
+    }
+
+    @Test
+    public void isValidEmail_longInputs_doNotOverflowOrBacktrackExcessively() {
+        assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+            assertTrue(Email.isValidEmail("a.".repeat(10000) + "a@example.com"));
+            assertTrue(Email.isValidEmail("a@" + "a.".repeat(10000) + "bc"));
+            assertTrue(Email.isValidEmail("a".repeat(50000) + "@example.com"));
+            assertFalse(Email.isValidEmail("a.".repeat(10000) + "@example.com"));
+            assertFalse(Email.isValidEmail("a@" + "a.".repeat(10000)));
+            assertFalse(Email.isValidEmail("a@" + "a-".repeat(10000) + "!"));
+        });
+    }
+
+    @Test
+    public void isValidEmail_preservesExistingSeparatorAndFinalLabelRules() {
+        assertTrue(Email.isValidEmail("a_b+c.d-e@a-b.example"));
+        assertTrue(Email.isValidEmail("a@ab-c"));
+        assertTrue(Email.isValidEmail("a@a-bc"));
+        assertFalse(Email.isValidEmail("a@b-c"));
+        assertFalse(Email.isValidEmail("a@b"));
+        assertFalse(Email.isValidEmail("a@a--bc"));
+        assertFalse(Email.isValidEmail("a@a-.bc"));
+        assertFalse(Email.isValidEmail("a@a.-bc"));
+        assertFalse(Email.isValidEmail("a@a..bc"));
+        assertFalse(Email.isValidEmail("a__b@example.com"));
+        assertFalse(Email.isValidEmail("a@éxample.com"));
+        assertFalse(Email.isValidEmail("é@example.com"));
     }
 
     @Test

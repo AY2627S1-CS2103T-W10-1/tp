@@ -97,8 +97,17 @@ public class DetailsPanel extends UiPart<Region> {
         if (values.isEmpty()) {
             detailsScroll.requestFocus();
         } else {
-            values.getFirst().requestFocus();
+            focusValue(values.getFirst());
         }
+    }
+
+    /**
+     * Selects the value even when its window is still gaining native focus or it already owns scene focus.
+     */
+    private void focusValue(TextArea value) {
+        values.forEach(TextArea::deselect);
+        value.requestFocus();
+        value.selectAll();
     }
 
     /**
@@ -160,7 +169,7 @@ public class DetailsPanel extends UiPart<Region> {
         event.consume();
         int target = values.indexOf(field) + offset;
         if (target >= 0 && target < values.size()) {
-            values.get(target).requestFocus();
+            focusValue(values.get(target));
         }
     }
 }

@@ -58,11 +58,49 @@ public class ExportCommandParserTest {
     }
 
     @Test
-    public void parse_invalidFilename_failure() {
-        for (String fileName : new String[]{"\"\"", "''", ".csv", "contacts.txt", "contacts.CSV", "../team.csv",
-            "folder/team.csv", "folder\\team.csv", "a:b.csv", "a?.csv", "a*.csv", "a|b.csv", "a<b.csv",
-            "a>b.csv", "CON.csv", "nul.more.csv", "COM1.csv", "LPT².csv", "\" a.csv\""}) {
-            assertParseFailure(parser, "--csv " + fileName, ExportCommand.MESSAGE_INVALID_FILE_NAME);
+    public void parse_missingFilenameStem_explainsRequiredName() {
+        assertFilenameFailure("Invalid file name: provide a name before the lowercase .csv extension.",
+                "\"\"", "''", ".csv");
+    }
+
+    @Test
+    public void parse_wrongExtension_explainsLowercaseCsv() {
+        assertFilenameFailure("Invalid file name: the extension must be lowercase .csv.",
+                "contacts.txt", "Team.CSV", "a", "abcd");
+    }
+
+    @Test
+    public void parse_path_explainsFilenameOnly() {
+        assertFilenameFailure("Invalid file name: folder paths are not allowed. Provide a filename only.",
+                "../team.csv", "folder/team.csv", "folder\\team.csv", "\"../my contacts.csv\"");
+    }
+
+    @Test
+    public void parse_invalidCharacters_explainsForbiddenCharacters() {
+        assertFilenameFailure("Invalid file name: remove reserved characters (< > : \" | ? *) and control characters.",
+                "a:b.csv", "a?.csv", "a*.csv", "a|b.csv", "a<b.csv", "a>b.csv", "a\u0000.csv",
+                "\"a\t.csv\"", "\"a\n.csv\"", "'a\"b.csv'");
+    }
+
+    @Test
+    public void parse_reservedNames_identifiesReservedStem() {
+        for (String stem : new String[]{"CON", "con", "nul", "COM1", "LPT²", "LPT9", "COM³"}) {
+            assertFilenameFailure("Invalid file name: '" + stem + "' is a reserved device name. Choose another name.",
+                    stem + ".csv", stem + ".more.csv", "\"" + stem + " .csv\"");
+        }
+    }
+
+    @Test
+    public void parse_surroundingWhitespace_explainsTrimming() {
+        assertFilenameFailure("Invalid file name: remove leading or trailing whitespace.",
+                "\" a.csv\"", "'a.csv '", "\"\u2003a.csv\"", "\"a.csv\u2003\"");
+    }
+
+    private void assertFilenameFailure(String message, String... fileNames) {
+        for (String option : new String[]{"--csv", "-c"}) {
+            for (String fileName : fileNames) {
+                assertParseFailure(parser, option + " " + fileName, message);
+            }
         }
     }
 
