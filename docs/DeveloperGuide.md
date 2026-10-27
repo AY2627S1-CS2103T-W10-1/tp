@@ -102,16 +102,18 @@ is outlined. `DepartmentPanel` and `StatusBarFooter` read the unfiltered `Logic.
 `Logic.getDepartmentList()`, so they stay up to date with every change.
 
 Contact details appear in two places. The docked \[3\] pane follows the selection in \[2\]: selecting a row with a
-click or j/k formats that contact with `ViewCommand.formatDetails(Person)` and shows it at once, without running a
+click or j/k passes that contact directly to `DetailsPanel.showDetails(Person)` and shows it at once, without running a
 command, so glancing through contacts stays instant. To compare contacts side by side, details can also pop out
 into windows managed by `ContactDetailsWindows`. A successful `view` command returns the
-viewed `Person` and a details snapshot through `CommandResult`. `ContactDetailsWindows.show(Person, String)` refreshes
+viewed immutable `Person` through `CommandResult`. `ContactDetailsWindows.show(Person)` refreshes
 the open `ContactDetailsWindow` (a `UiPart<Stage>`) whose contact `isSamePerson` as the viewed one, or opens a new
 popup cascaded from the main window. An edit can change every field `isSamePerson` compares, so
 `ContactDetailsWindows` also listens to `Logic.getPersonList()`: when a contact is replaced in place, its popup
 switches to the edited `Person`, and viewing a renamed contact still refreshes its popup. Like the docked pane, each
-popup hosts a `DetailsPanel`, which turns every `Field: value` line of the snapshot into a grey field name beside a
-read-only value that can be selected with j/k or Tab and copied. Several contacts can therefore be compared side by
+popup hosts a `DetailsPanel`, which reads fields directly from the person and displays each grey field name beside a
+read-only value that can be selected with j/k or Tab and copied. Missing-value styling uses field presence rather than
+displayed text, so supplied values such as `None` and `Not provided` retain normal styling. The panel also generates
+a text description for assistive technology. Several contacts can therefore be compared side by
 side, while viewing the same contact again never duplicates its popup. Popups are owned by the main stage, so they
 stay in front of it, and the keyboard focus stays at the prompt after `view`. Pressing Enter on a row in \[2\], or
 double-clicking it, runs `view` with that row's contact ID. Repeated Alt+3 presses step through the docked pane and
@@ -617,11 +619,12 @@ filtering and sorting determine the selected row. `CONTACT_ID` is the same one-b
 position used by `edit`, represented internally by `Index`. It reports an empty list or the valid contact ID range
 before accessing the contact.
 
-The command formats all currently supported fields as labelled, untruncated lines, sorts tags for stable output,
-and returns a `CommandResult` with separate short feedback, the viewed `Person`, and an optional `contactDetails`
-payload. `MainWindow` displays only the short feedback in the main result box and forwards the person and payload to
-`ContactDetailsWindows`, which shows them in that contact's owner-linked `ContactDetailsWindow` popup containing a
-read-only, wrapping field grid with selectable values inside a scroll pane. Each successful `view` updates
+The command returns a `CommandResult` with short feedback and the viewed immutable `Person`.
+`MainWindow` displays the feedback in the main result box and forwards the person to
+`ContactDetailsWindows`, which shows it in that contact's owner-linked `ContactDetailsWindow` popup.
+Its `DetailsPanel` renders all supported fields directly from the person, sorts tags for stable output, and uses
+field presence to style missing values. The read-only, wrapping field grid contains selectable values inside a
+scroll pane. Each successful `view` updates
 the contact's popup with a snapshot, or
 opens a popup if the contact has none; later model changes do not silently change a displayed snapshot.
 
