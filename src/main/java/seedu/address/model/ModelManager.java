@@ -8,6 +8,8 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 
@@ -34,7 +36,24 @@ public class ModelManager implements Model {
     private final List<DepartmentDeletion> deletionOrder = new ArrayList<>();
 
     /** A null entry in deletionOrder represents a contact deletion. */
-    private record DepartmentDeletion(Department department, Map<Person, Boolean> assignments) { }
+    private record DepartmentDeletion(Department department, Map<Person, Boolean> assignments) {
+        // Assignments are keyed by identity to track later edits, so equality compares the contacts by value.
+        @Override
+        public boolean equals(Object other) {
+            return other instanceof DepartmentDeletion otherDeletion
+                    && department.equals(otherDeletion.department)
+                    && assignedPersons().equals(otherDeletion.assignedPersons());
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(department, assignedPersons());
+        }
+
+        private Set<Person> assignedPersons() {
+            return Set.copyOf(assignments.keySet());
+        }
+    }
 
 
     /**
@@ -254,7 +273,8 @@ public class ModelManager implements Model {
         return addressBook.equals(otherModelManager.addressBook)
                 && userPrefs.equals(otherModelManager.userPrefs)
                 && filteredPersons.equals(otherModelManager.filteredPersons)
-                && deletedPersons.equals(otherModelManager.deletedPersons);
+                && deletedPersons.equals(otherModelManager.deletedPersons)
+                && deletionOrder.equals(otherModelManager.deletionOrder);
     }
 
 }

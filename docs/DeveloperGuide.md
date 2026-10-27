@@ -728,8 +728,9 @@ contacts that `clear` removed.
 **Aspect: Where the deletion history is kept:**
 
 * **Alternative 1 (current choice):** In `ModelManager`.
-  * Pros: Each `Model` has its own history, so tests do not share state. `ModelManager#equals` compares the history,
-    so `CommandTestUtil.assertCommandSuccess` checks it too.
+  * Pros: Each `Model` has its own history, so tests do not share state. `ModelManager#equals` compares both lists,
+    so `CommandTestUtil.assertCommandSuccess` checks the order `undo` will follow too. Department deletions are
+    compared by their department and cleared contacts, not by object identity.
   * Cons: `Model` gains five methods, which every `Model` stub in the tests must implement.
 
 * **Alternative 2:** In a static field of `DeleteCommand` or `UndoCommand`.
