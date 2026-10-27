@@ -137,7 +137,13 @@ public class DetailsPanelTest {
 
             panel.showDetails(DETAILS);
             List<TextArea> values = values(grid(panel));
-            press(scene, KeyCode.J, true);
+            // Shift, Ctrl, Alt or Meta with j, and keys other than j/k, are left to the panel.
+            for (int modifier = 0; modifier < 4; modifier++) {
+                Event.fireEvent(panel.getRoot(), new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.J,
+                        modifier == 0, modifier == 1, modifier == 2, modifier == 3));
+                assertEquals(panel.getRoot(), scene.getFocusOwner());
+            }
+            press(scene, KeyCode.A, false);
             assertEquals(panel.getRoot(), scene.getFocusOwner());
 
             press(scene, KeyCode.J, false);
