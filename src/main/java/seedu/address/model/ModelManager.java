@@ -222,6 +222,13 @@ public class ModelManager implements Model {
         updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
     }
 
+    @Override
+    public void discardLastDeletion() {
+        if (deletionOrder.removeLast() == null) {
+            deletedPersons.removeLast();
+        }
+    }
+
     private Person withDepartment(Person person, Department department) {
         return new Person(person.getName(), person.getPhone(), person.getEmail(), person.getAddress(),
                 person.getTags(), department);

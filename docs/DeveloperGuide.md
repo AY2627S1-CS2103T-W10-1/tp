@@ -647,6 +647,8 @@ time the app starts. The history uses two lists, each used as a stack:
 * `Model#getLastDeletedDepartment()` — Returns the department if the most recent deletion was a department deletion,
   or `null` otherwise.
 * `Model#restoreLastDeletedDepartment()` — Restores the most recent department deletion and pops it.
+* `Model#discardLastDeletion()` — Pops the most recent deletion from `deletionOrder`, and from `deletedPersons` if it
+  is a contact deletion, without restoring anything.
 
 `DeleteCommand` is the only caller of `deletePerson`, and `DepartCommand` is the only caller of `deleteDepartment`,
 so both record deletions without any extra code. The success message of `delete` ends with `Use 'undo' to restore.`
@@ -674,8 +676,9 @@ most recent deletion is a contact:
 
 How `undo` works:
 
-1. `AddressBookParser` passes the rest of the input to `UndoCommandParser`. If there is any argument (e.g. `undo 2`),
-   the parser throws a `ParseException` with the usage message.
+1. `AddressBookParser` passes the rest of the input to `UndoCommandParser`. The only accepted argument is
+   `--discard-latest`, described below. Any other argument (e.g. `undo 2`) makes the parser throw a `ParseException`
+   with the usage message.
 1. `UndoCommand#execute` calls `Model#getLastDeletedDepartment()`. If the most recent deletion was a department
    deletion, it checks `Model#hasDepartment(...)`. If that name has been registered again, it throws a
    `CommandException` and leaves the history unchanged. Otherwise, `Model#restoreLastDeletedDepartment()` adds the
@@ -704,6 +707,13 @@ How `undo` works:
    The save error says the change is still applied and will be saved the next time saving succeeds, so the user does
    not run `undo` again, which would restore the next earlier deletion.
 
+`undo --discard-latest` lets the user get past a deletion they do not want back, or one that `undo` cannot restore,
+such as a legacy contact with no phone number or email address. `UndoCommandParser` creates an `UndoCommand` in
+discard mode. `UndoCommand#execute` finds the most recent deletion with the same `Model` queries as above, throwing a
+`CommandException` if there is none. It names that deletion in the result and calls `Model#discardLastDeletion()`.
+Nothing is restored, so contacts whose department a discarded department deletion cleared stay without it.
+`UndoCommand#requiresStorageSave()` returns false in this mode, because only the in-memory history changes.
+
 `clear` replaces the address book through `Model#setAddressBook`, which does not touch the deletion history. After
 `clear`, `undo` can still restore contacts and departments that were deleted individually before it, but not the
 contacts that `clear` removed.
@@ -731,12 +741,23 @@ contacts that `clear` removed.
   * Pros: Each `Model` has its own history, so tests do not share state. `ModelManager#equals` compares both lists,
     so `CommandTestUtil.assertCommandSuccess` checks the order `undo` will follow too. Department deletions are
     compared by their department and cleared contacts, not by object identity.
-  * Cons: `Model` gains five methods, which every `Model` stub in the tests must implement.
+  * Cons: `Model` gains six methods, which every `Model` stub in the tests must implement.
 
 * **Alternative 2:** In a static field of `DeleteCommand` or `UndoCommand`.
   * Pros: `Model` does not change.
   * Cons: A new command object is created for every input, so the history would have to be static. It would then be
     shared by every `Model`, including those in different tests.
+
+**Aspect: Getting past a deletion that `undo` cannot or should not restore:**
+
+* **Alternative 1 (current choice):** `undo --discard-latest` drops the most recent deletion without restoring it.
+  * Pros: The user decides what is dropped, and the result names it. The rest of the history keeps its order.
+  * Cons: A discarded deletion cannot be brought back.
+
+* **Alternative 2:** `undo` skips deletions it cannot restore and restores the most recent one it can.
+  * Pros: No new option.
+  * Cons: Deletions are restored out of order without the user asking, and the blocked deletion stays on top of the
+    history.
 
 ### \[Proposed\] Data archiving
 
@@ -1455,6 +1476,23 @@ For the department assignment examples below, register the required names first 
       Expected: Similar to previous.
 
 1. _{ more test cases …​ }_
+
+### Undoing and discarding deletions
+
+1. Prerequisites: List all contacts using the `list` command, with at least two contacts in the list.
+
+1. Test case: `delete 1`, `delete 1`, then `undo --discard-latest`<br>
+   Expected: The status message names the second deleted contact and says it can no longer be restored.
+   The contact list does not change.
+
+1. Test case: `undo`<br>
+   Expected: The first deleted contact is restored at the end of the list.
+
+1. Test case: `undo --discard-latest` with no deletions left in the session<br>
+   Expected: `There are no deletions to undo in this session.`
+
+1. Other incorrect commands to try: `undo 2`, `undo --discard`, `undo -d`<br>
+   Expected: An invalid command format error with the `undo` usage message.
 
 ### Saving data
 

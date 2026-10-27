@@ -131,6 +131,24 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_undoDiscardLatest_doesNotSaveEvenWhenStorageCannotWrite() throws Exception {
+        model.addPerson(AMY);
+        model.deletePerson(AMY);
+        JsonAddressBookStorage blockedStorage =
+                new JsonAddressBookStorage(temporaryFolder.resolve("blocked.json")) {
+                    @Override
+                    public void saveAddressBook(ReadOnlyAddressBook addressBook) {
+                        throw new AssertionError("Discarding undo history must not save the address book");
+                    }
+                };
+        logic = new LogicManager(model, new StorageManager(blockedStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))));
+        logic.execute("undo --discard-latest");
+        assertFalse(model.hasDeletedPerson());
+        assertEquals(List.of(), model.getAddressBook().getPersonList());
+    }
+
+    @Test
     public void execute_unconfirmedOrInvalidClear_doesNotSaveOrChangeContacts() throws Exception {
         model.addPerson(AMY);
         JsonAddressBookStorage blockedStorage =

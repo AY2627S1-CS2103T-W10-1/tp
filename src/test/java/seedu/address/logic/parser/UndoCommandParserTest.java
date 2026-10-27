@@ -19,7 +19,18 @@ public class UndoCommandParserTest {
     }
 
     @Test
+    public void parse_discardLatest_returnsDiscardingUndoCommand() {
+        assertParseSuccess(parser, "--discard-latest", new UndoCommand(true));
+        assertParseSuccess(parser, "  --discard-latest  ", new UndoCommand(true));
+    }
+
+    @Test
     public void parse_nonEmptyArgs_throwsParseException() {
-        assertParseFailure(parser, "2", String.format(MESSAGE_INVALID_COMMAND_FORMAT, UndoCommand.MESSAGE_USAGE));
+        String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, UndoCommand.MESSAGE_USAGE);
+        assertParseFailure(parser, "2", expectedMessage);
+        assertParseFailure(parser, "--discard", expectedMessage);
+        assertParseFailure(parser, "-d", expectedMessage);
+        assertParseFailure(parser, "--DISCARD-LATEST", expectedMessage);
+        assertParseFailure(parser, "--discard-latest 2", expectedMessage);
     }
 }

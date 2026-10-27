@@ -2,6 +2,7 @@ package seedu.address.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 import static seedu.address.testutil.Assert.assertThrows;
@@ -107,6 +108,33 @@ public class ModelManagerTest {
         modelManager.addPerson(ALICE);
         assertThrows(DuplicatePersonException.class, () -> modelManager.restoreLastDeletedPerson());
         assertEquals(ALICE, modelManager.getLastDeletedPerson());
+    }
+
+    @Test
+    public void discardLastDeletion_contactDeletion_dropsPersonWithoutRestoring() {
+        modelManager.addPerson(ALICE);
+        modelManager.deletePerson(ALICE);
+        modelManager.discardLastDeletion();
+        assertFalse(modelManager.hasPerson(ALICE));
+        assertFalse(modelManager.hasDeletedPerson());
+    }
+
+    @Test
+    public void discardLastDeletion_departmentDeletion_keepsEarlierContactDeletion() {
+        Department engineering = new Department("Engineering");
+        modelManager.addPerson(ALICE);
+        modelManager.deletePerson(ALICE);
+        modelManager.addDepartment(engineering);
+        modelManager.deleteDepartment(engineering);
+        modelManager.discardLastDeletion();
+        assertFalse(modelManager.hasDepartment(engineering));
+        assertNull(modelManager.getLastDeletedDepartment());
+        assertEquals(ALICE, modelManager.getLastDeletedPerson());
+    }
+
+    @Test
+    public void discardLastDeletion_noDeletion_throwsNoSuchElementException() {
+        assertThrows(NoSuchElementException.class, () -> modelManager.discardLastDeletion());
     }
 
     @Test

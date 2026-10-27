@@ -444,9 +444,10 @@ Examples:
 
 ### Undoing a deletion: `undo`
 
-Restores the most recent contact deletion (`delete INDEX`) or department deletion (`depart --delete NAME`).
+Restores the most recent contact deletion (`delete INDEX`) or department deletion (`depart --delete NAME`),
+or discards it from the history without restoring it.
 
-Format: `undo`
+Format: `undo [--discard-latest]`
 
 * Both deletion types share one history. Repeated calls undo deletions in reverse chronological order.
   `add`, `edit`, `depart --add`, `depart --edit`, and `clear` cannot be undone.
@@ -467,7 +468,11 @@ Format: `undo`
   `Cannot restore the deleted department because it already exists: NAME`. No data or history is changed.
   Rename the conflicting entry with `depart --edit` before retrying.
 * Department restoration reports `Restored deleted department: NAME`.
-* `undo` takes no parameters. With no history, it reports `There are no deletions to undo in this session.`
+* `undo --discard-latest` removes the most recent deletion from the history without restoring it, so the next
+  `undo` acts on the deletion before it. Use it when you do not want that deletion back, or it cannot be restored.
+  The discarded deletion can no longer be restored. Nothing is saved, because your contacts do not change.
+* `undo` accepts only `--discard-latest`. With no history, both forms report
+  `There are no deletions to undo in this session.`
 
 Examples:
 
@@ -476,6 +481,8 @@ Examples:
   A second `undo` restores the deleted contact with its original Engineering assignment.
 * `depart --delete Engineering`, `delete 1`, then `undo` restores the contact without a department.
   A second `undo` restores Engineering and the contact's original assignment.
+* `delete 1`, `delete 1`, then `undo --discard-latest` drops the second deletion without restoring it.
+  `undo` then restores the first deleted contact.
 
 ### Clearing all entries: `clear`
 
@@ -590,5 +597,5 @@ Action | Format, Examples
 **List** | `list` or `ls`
 **Depart** | `depart --list`, `depart --add DEPARTMENT`, `depart --edit OLD_NAME NEW_NAME`, or `depart --delete DEPARTMENT`<br> e.g., `depart --edit Engineering "Research & Development"`
 **Sort** | `sort -b FIELD` or `sort --by FIELD`, where `FIELD` is `department`, `dept`, `tag`, or `tags`
-**Undo** | `undo`
+**Undo** | `undo` (restore), `undo --discard-latest` (drop without restoring)
 **Help** | `help [COMMAND]` or `? [COMMAND]`
