@@ -242,7 +242,9 @@ public class MainWindow extends UiPart<Stage> {
         detailsPanelPlaceholder.getChildren().add(detailsPanel.getRoot());
         // Selecting a contact shows it at once; view, Enter and double-click pop it out into a window instead.
         personListPanel.selectedPersonProperty().addListener((unused, oldPerson, newPerson) -> {
-            if (newPerson != null) {
+            if (newPerson == null) {
+                detailsPanel.clearDetails();
+            } else {
                 detailsPanel.showDetails(ViewCommand.formatDetails(newPerson));
             }
         });

@@ -368,6 +368,8 @@ A missing file follows the existing sample-data behavior.
 Shows the selected contact's name, phone, email, department, address and tags in a contact details popup.
 The main result box shows a brief confirmation, such as `Showing details of contact 1: Amy Bee`.
 To glance at a contact without opening a popup, click it in the contact list; its details appear in \[3\] Details.
+When no contact is selected, \[3\] shows a hint instead of contact details. This includes after a successful
+`clear --confirm`; if clearing fails to save, the selected contact and its details remain available.
 The popup lists each field name beside its value, with how to reach the contact (name, phone, email, address)
 grouped above how they are organised (department, tags). Long values wrap onto multiple lines; scroll to read them.
 Contacts without tags show a dimmed `None` for Tags, and contacts without a department show a dimmed `Not provided`.

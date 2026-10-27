@@ -103,7 +103,11 @@ is outlined. `DepartmentPanel` and `StatusBarFooter` read the unfiltered `Logic.
 
 Contact details appear in two places. The docked \[3\] pane follows the selection in \[2\]: selecting a row with a
 click or j/k formats that contact with `ViewCommand.formatDetails(Person)` and shows it at once, without running a
-command, so glancing through contacts stays instant. To compare contacts side by side, details can also pop out
+command, so glancing through contacts stays instant. When selection becomes null, the listener calls
+`DetailsPanel.clearDetails()` to restore the placeholder, remove accessible contact text, and reset value
+navigation and scrolling. The constructor uses the same reset operation. A successful `clear --confirm`
+therefore empties the docked pane; a failed save preserves the selection and its details.
+To compare contacts side by side, details can also pop out
 into windows managed by `ContactDetailsWindows`. A successful `view` command returns the
 viewed `Person` and a details snapshot through `CommandResult`. `ContactDetailsWindows.show(Person, String)` refreshes
 the open `ContactDetailsWindow` (a `UiPart<Stage>`) whose contact `isSamePerson` as the viewed one, or opens a new
@@ -1556,6 +1560,11 @@ Register Engineering using `depart --add Engineering` before the assignment step
    Expected: equivalent partial-contact support; omitted fields remain unprovided.
 
 ### Viewing a contact's details
+
+1. Select a contact in \[2\] and confirm its fields appear in the docked \[3\] pane. Using disposable data,
+   run `clear --confirm`. Expected: the contact list is empty, no contact is selected, and \[3\] shows its
+   empty-selection hint with no old fields. `Alt+3` focuses the empty pane; j/k cannot reach old values.
+   If saving is blocked instead, clearing fails and the selected contact's details remain visible.
 
 In a separate disposable folder, prepare the following fixture (one command per line):
 

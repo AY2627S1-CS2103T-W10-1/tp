@@ -47,15 +47,27 @@ public class DetailsPanel extends UiPart<Region> {
     private GridPane contactDetails;
 
     /**
-     * Creates a details panel that shows a hint until the first contact is displayed.
+     * Creates a details panel that shows a hint while no contact is selected.
      */
     public DetailsPanel() {
         super(FXML);
+        clearDetails();
+        detailsScroll.addEventFilter(KeyEvent.KEY_PRESSED, this::handlePanelNavigation);
+    }
+
+    /**
+     * Restores the empty-selection hint and removes displayed and accessible contact details.
+     * Resets keyboard navigation and scroll position without moving keyboard focus.
+     */
+    public void clearDetails() {
+        contactDetails.getChildren().clear();
+        values.clear();
+        contactDetails.setAccessibleText(null);
+        detailsScroll.setVvalue(0);
         Label placeholder = new Label(PLACEHOLDER);
         placeholder.setWrapText(true);
         placeholder.getStyleClass().add(LABEL_STYLE_CLASS);
         contactDetails.add(placeholder, 0, 0, 2, 1);
-        detailsScroll.addEventFilter(KeyEvent.KEY_PRESSED, this::handlePanelNavigation);
     }
 
     /**
