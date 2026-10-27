@@ -15,11 +15,12 @@ public class ClearCommand extends Command {
 
     /** Detailed usage, supported options and examples for this command. */
     public static final HelpPage HELP_PAGE = new HelpPage(COMMAND_WORD, String.join("\n",
-            "Deletes all contacts from the address book.",
+            "Deletes all contacts and registered departments from the address book.",
             "Usage: clear [--confirm]",
             "",
             "Run clear to see the total contact count without deleting anything.",
-            "Run clear --confirm to delete all contacts, including those hidden by a filter.",
+            "Run clear --confirm to delete all contacts, including those hidden by a filter,",
+            "and all registered departments, including unused entries.",
             "Only --confirm is accepted. Clearing the address book cannot be undone.",
             "Earlier individual deletions remain available to undo in this session.",
             "",
@@ -30,11 +31,12 @@ public class ClearCommand extends Command {
     public static final String MESSAGE_SUCCESS = "Address book has been cleared!";
 
     public static final String MESSAGE_USAGE = COMMAND_WORD
-            + ": Shows a warning before deleting all contacts.\n"
-            + "Use " + COMMAND_WORD + " --confirm to delete all contacts permanently.";
+            + ": Shows a warning before deleting all contacts and registered departments.\n"
+            + "Use " + COMMAND_WORD + " --confirm to delete all contacts and registered departments permanently.";
 
     public static final String MESSAGE_CONFIRMATION =
-            "This will delete all %d contacts and cannot be undone. Type \"clear --confirm\" to proceed.";
+            "This will delete all %d contacts and all registered departments and cannot be undone. "
+            + "Type \"clear --confirm\" to proceed.";
 
     private final boolean isConfirmed;
 

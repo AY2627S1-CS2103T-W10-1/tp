@@ -593,8 +593,10 @@ the parser accepts only blank arguments or the exact `--confirm` flag. All other
 `MESSAGE_INVALID_COMMAND_FORMAT` with `ClearCommand.MESSAGE_USAGE` before any command executes.
 
 `ClearCommand` stores an immutable confirmation flag. Without confirmation, it counts the canonical
-address book's contacts and returns a warning; contacts, display filtering and sorting, and deletion
-history remain unchanged. Its `requiresStorageSave()` override returns false in this case.
+address book's contacts and returns a warning that all contacts and registered departments will be deleted.
+The count refers only to contacts; the department warning also appears when there are no contacts.
+Contacts, the department catalogue, display filtering and sorting, and deletion history remain unchanged.
+Its `requiresStorageSave()` override returns false in this case.
 With confirmation, it resets the address book, including the department catalogue, and allows
 `LogicManager` to save the empty book.
 Clearing does not add contacts to individual-deletion history, so it cannot be undone.
@@ -603,6 +605,10 @@ Earlier individual deletions remain available to `undo`.
 Regression tests cover strict parsing, warning counts with hidden contacts, unchanged display and undo
 history, skipped saves for unconfirmed or invalid input, and reloading the empty saved address book
 after confirmed deletion.
+
+`ClearCommand.HELP_PAGE` describes the removal of all contacts and registered departments, including
+unused catalogue entries. `HelpCatalog` summarizes the same scope in the command overview. The warning,
+usage feedback, and `help clear` all identify departments as part of the data being cleared.
 
 ### Viewing contact details
 
@@ -1399,10 +1405,11 @@ Use a fresh disposable folder with the built-in sample contacts.
 
 ### Clearing contacts with confirmation
 
-Use disposable data and record the full stored contact count before testing.
+Use disposable data, record the full stored contact count, and register at least one unused department before testing.
 
-1. Enter `clear`. Expected: the warning reports the full stored contact count and explains
-   `clear --confirm`; all contacts remain. Restart and check that stored contacts are unchanged.
+1. Enter `clear`. Expected: the warning reports the full stored contact count, states that all registered
+   departments will also be deleted, and explains `clear --confirm`. All contacts and departments remain.
+   Restart and check that both stored collections are unchanged.
 1. Filter with `find`, then enter `clear`. Expected: the warning counts all stored contacts,
    including hidden contacts; the displayed search result remains unchanged.
 1. Enter `clear 1`, `clear --CONFIRM`, `clear --confirm extra`, and `clear --confirm --confirm`.
@@ -1412,7 +1419,11 @@ Use disposable data and record the full stored contact count before testing.
 1. With no earlier individual deletions in the session, enter `undo` after a confirmed clear.
    Expected: there are no deletions to undo. Separately, delete one contact before clearing and
    verify that `undo` restores only that earlier individual deletion.
-1. On an empty address book, enter `clear`. Expected: a warning with a count of 0.
+1. In an address book with no contacts, register a department with `depart --add Engineering`, then enter
+   `clear`. Expected: the warning has a contact count of 0 and still states that all registered departments
+   will be deleted. No data changes.
+1. Enter `help clear`. Expected: the manual states that confirmed clearing deletes all contacts and registered
+   departments, including unused entries. The help overview also mentions contacts and departments.
 
 ### Exporting contacts as CSV
 

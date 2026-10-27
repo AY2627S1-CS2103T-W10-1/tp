@@ -36,7 +36,7 @@ public final class HelpCatalog {
             entry(DeleteCommand.HELP_PAGE, "Delete a contact."),
             entry(UndoCommand.HELP_PAGE, "Restore the latest deletion."),
             entry(ExportCommand.HELP_PAGE, "Export contacts to CSV."),
-            entry(ClearCommand.HELP_PAGE, "Delete all contacts."),
+            entry(ClearCommand.HELP_PAGE, "Clear contacts and departments."),
             entry(HelpCommand.HELP_PAGE, "Show command help.", HelpCommand.COMMAND_ALIAS),
             entry(ExitCommand.HELP_PAGE, "Close the application."));
     private static final List<HelpPage> pages = entries.stream().map(HelpEntry::page).toList();

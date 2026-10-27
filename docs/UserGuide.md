@@ -146,6 +146,8 @@ Examples: `help`, `help depart`, `? sort`, `help ls`.
 Command names are case-insensitive, and aliases (`ls` and `?`) are accepted as topics.
 Unknown topics and multiple arguments are rejected. Repeated help requests update the same window,
 and restore it if minimized. Help preserves contacts, the active filter, display order, and deletion history.
+For example, `help clear` explains that confirmed clearing removes all contacts and registered departments,
+including unused department entries.
 
 
 ### Adding a contact with partial information: `add`
@@ -530,8 +532,8 @@ Earlier individual deletions remain available to `undo` during the current sessi
 
 Format: `clear [--confirm]`
 
-* `clear` shows a warning without changing contacts or saving the address book:
-  `This will delete all N contacts and cannot be undone. Type "clear --confirm" to proceed.`
+* `clear` shows a warning without changing contacts, the department catalogue, or the saved address book:
+  `This will delete all N contacts and all registered departments and cannot be undone. Type "clear --confirm" to proceed.`
 * `N` counts **all stored contacts**, including contacts hidden by a search.
 * `clear --confirm` deletes all stored contacts and all registered departments, including unused entries,
   and saves the empty address book immediately.
@@ -539,11 +541,13 @@ Format: `clear [--confirm]`
 * Only the exact lowercase flag `--confirm` is accepted. Surrounding whitespace is allowed.
   Other arguments, such as `clear 1`, `clear --CONFIRM`, or `clear --confirm extra`, show an
   invalid command format error without deleting or saving anything.
-* On an empty address book, `clear` still shows a warning with a count of 0.
+* With no contacts, `clear` still shows a warning with a count of 0, even if registered departments remain.
+  The warning still states that all registered departments will be deleted.
 
 Examples:
-* `clear` shows the warning and leaves all contacts unchanged.
-* `clear --confirm` deletes all contacts, including those hidden by the current filter.
+* `clear` shows the warning and leaves all contacts and registered departments unchanged.
+* `clear --confirm` deletes all contacts, including those hidden by the current filter, and all registered
+  departments, including unused entries.
 
 ### Exiting the program: `exit`
 
@@ -653,7 +657,7 @@ contacts and departments have been verified on the new computer.
 Action | Format, Examples
 --------|------------------
 **Add** | `add --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMENT] [--address ADDRESS] [--tag TAG ...]`<br> or `add -n NAME [-p PHONE] [-e EMAIL] [-d DEPARTMENT] [-a ADDRESS] [-t TAG]…` <br> e.g., `add --name "James Ho" --email jamesho@example.com`
-**Clear** | `clear` (warning), `clear --confirm` (delete all)
+**Clear** | `clear` (warning), `clear --confirm` (delete all contacts and registered departments)
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit** | `edit INDEX [-n NAME] [-p PHONE_NUMBER] [-e EMAIL] [-a ADDRESS] [-d DEPARTMENT] [-t TAG]…​`<br> e.g., `edit 2 -n James Lee -e jameslee@example.com`
 **Find by name** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
