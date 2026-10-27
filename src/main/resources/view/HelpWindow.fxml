@@ -25,13 +25,14 @@
       <VBox fx:id="helpContainer" spacing="10">
         <children>
           <Label fx:id="helpHeading" text="Available commands" />
-          <Label fx:id="helpCloseHint" text="Press q while this window is active to close it." wrapText="true" />
           <ScrollPane fx:id="helpScroll" fitToWidth="true" focusTraversable="true"
                       hbarPolicy="NEVER" VBox.vgrow="ALWAYS">
             <content>
               <HelpContentView fx:id="helpContent" />
             </content>
           </ScrollPane>
+          <!-- Sits at the bottom like the main window's status bar, listing only keys that work in this window. -->
+          <Label fx:id="helpKeyHints" styleClass="key-hint" text="↑↓ scroll · q close" wrapText="true" />
         </children>
         <padding>
           <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />

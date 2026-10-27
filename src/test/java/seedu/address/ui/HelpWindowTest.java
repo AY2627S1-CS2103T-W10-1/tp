@@ -12,6 +12,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.VBox;
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.SortCommand;
 import seedu.address.logic.help.HelpCatalog;
@@ -48,6 +49,23 @@ public class HelpWindowTest {
 
             window.show();
             assertTrue(window.isShowing());
+        });
+    }
+
+    @Test
+    public void show_keyHintsSitBelowScrollableContent() throws Exception {
+        FxTestUtil.run(() -> {
+            HelpWindow window = new HelpWindow();
+            window.show();
+
+            VBox container = (VBox) window.getRoot().getScene().lookup("#helpContainer");
+            Label hints = (Label) window.getRoot().getScene().lookup("#helpKeyHints");
+            ScrollPane scroll = (ScrollPane) window.getRoot().getScene().lookup("#helpScroll");
+            int lastIndex = container.getChildren().size() - 1;
+            assertEquals(hints, container.getChildren().get(lastIndex));
+            assertEquals(scroll, container.getChildren().get(lastIndex - 1));
+            assertTrue(hints.getStyleClass().contains("key-hint"));
+            assertTrue(hints.getText().endsWith("q close"));
         });
     }
 

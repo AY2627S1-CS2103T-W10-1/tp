@@ -13,6 +13,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Region;
@@ -54,6 +55,7 @@ public class DetailsPanel extends UiPart<Region> {
         placeholder.setWrapText(true);
         placeholder.getStyleClass().add(LABEL_STYLE_CLASS);
         contactDetails.add(placeholder, 0, 0, 2, 1);
+        detailsScroll.addEventFilter(KeyEvent.KEY_PRESSED, this::handlePanelNavigation);
     }
 
     /**
@@ -147,6 +149,20 @@ public class DetailsPanel extends UiPart<Region> {
         }
         field.prefHeightProperty().bind(Bindings.createDoubleBinding(() ->
                 text.getBoundsInLocal().getHeight() + VALUE_HEIGHT_ALLOWANCE, text.boundsInLocalProperty()));
+    }
+
+    /**
+     * Moves to the first value on an unmodified j or k while the panel itself has focus, as it does
+     * when a popup is activated or empty space is clicked, so j/k work however the panel was reached.
+     */
+    private void handlePanelNavigation(KeyEvent event) {
+        if (event.getTarget() != detailsScroll || values.isEmpty()
+                || event.isAltDown() || event.isControlDown() || event.isMetaDown() || event.isShiftDown()
+                || (event.getCode() != KeyCode.J && event.getCode() != KeyCode.K)) {
+            return;
+        }
+        event.consume();
+        focusValue(values.getFirst());
     }
 
     /**

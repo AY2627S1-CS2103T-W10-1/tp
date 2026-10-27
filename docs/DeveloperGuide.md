@@ -630,10 +630,16 @@ opens a popup if the contact has none; later model changes do not silently chang
 succeeds even when the JSON destination cannot be written, and cannot overwrite an externally changed file.
 Contacts are validated and loaded into the model at startup, so `view` does not re-read contact data from disk.
 
-The existing popup handles only unmodified `q` as dismissal; modified keys remain available to the focused
-value. Details navigation selects the target value explicitly, including when its window is still gaining
-native focus or the same value was already focused. `MainWindow` supplies a return-to-prompt callback through `ContactDetailsWindows` so dismissal restores
-focus to `CommandBox`, even if a contact row or another pane previously held focus. Other popups remain open.
+Keyboard handling in the popup:
+
+* Only a plain `q` closes the popup. `q` with Shift, Ctrl, Alt or Meta goes to the focused value instead.
+* Closing a popup with `q` returns focus to the command box, even if another pane had focus before.
+  `MainWindow` passes this action to each popup through `ContactDetailsWindows`. Other popups stay open.
+* Moving to a value with j/k, Up/Down, Tab or Alt+3 selects its whole text, so Ctrl+C copies it. `DetailsPanel`
+  selects the text itself instead of waiting for a focus change, because no focus change happens when the value
+  already had focus or the popup is not yet the active window.
+* Each value handles j/k itself. A popup opened by `view` has no value focused until the user moves into it, so
+  `DetailsPanel` also handles a plain j or k on its scroll pane by moving to the first value.
 
 Department display reads `Person.getDepartment()` from the Department implementation tracked by issue #65.
 The optional value is shown in full, or as `Department: Not provided` when absent. The `view` command uses
@@ -1538,6 +1544,8 @@ add --name "Benson Meier" --phone 92345678 --email benson@example.com --tag vend
    1. View a contact without a department. Expected: the Department field shows a dimmed `Not provided`.
    1. Press Alt+3 until a popup has the focus, then press `j` and `Ctrl+C` (`Cmd+C` on macOS).
       Expected: the phone number is highlighted and copied to the clipboard.
+   1. Close all contact popups, run `view 1`, click the new popup's title bar, then press `j` twice.
+      Expected: the name is highlighted first, then the phone number.
    1. Run `find Benson`, then `edit 1 --department "R&D Engineering"`. Run `find Benson` again, then `view 1`.
       Expected: Benson's details include `Department: R&D Engineering`; `view` preserves the current filter.
    1. Change the selected contact's department with `edit 1 --department Sales`.
