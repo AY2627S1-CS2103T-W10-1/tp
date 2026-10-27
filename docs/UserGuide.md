@@ -90,8 +90,9 @@ view of departments and contact details. Contacts are stored locally, so the app
 * Extraneous parameters for `exit` are ignored. `clear` accepts only the optional `--confirm` flag.<br>
   The `list` and `ls` commands reject extra parameters. Help accepts at most one known command name.
 
-* Command words are case-insensitive, but parameters keep their case.<br>
-  For example, `LIST` and `List` are interpreted as `list`, and `EDIT 1 -n "John Doe"` still sets the name to `John Doe`.
+* Command words are case-insensitive. Flags, field names and other parameters follow the case rules given for each command.<br>
+  For example, `LIST` and `List` are interpreted as `list`, but `sort --by DEPT` is rejected because sort fields are case-sensitive.
+  `EDIT 1 -n "John Doe"` still sets the name to `John Doe`.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </div>
@@ -293,6 +294,7 @@ Sorts the currently displayed contacts in ascending order while preserving any a
 Format: `sort -b FIELD` or `sort --by FIELD`
 
 * `FIELD` must be `department`, `dept`, `tag`, or `tags`. The aliases select the same two sorting fields.
+* `FIELD` is case-sensitive: `sort --by DEPT` and `sort --by Tags` are rejected.
 * Department and tag comparisons are alphabetical and case-insensitive.
 * Tag sorting uses each contact's alphabetically smallest tag, not the order tags were entered.
   It does not group contacts by every tag they share; a contact appears once, using its smallest tag as the key.
