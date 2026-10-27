@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -34,12 +35,34 @@ public class CsvContactExporter {
      * Accepts a portable .csv basename, rather than a directory path.
      */
     public static boolean isValidFileName(String fileName) {
-        if (fileName == null || fileName.length() <= 4 || !fileName.endsWith(".csv")
-                || !fileName.equals(fileName.strip()) || INVALID_CHARACTERS.matcher(fileName).find()) {
-            return false;
+        return getFileNameError(fileName).isEmpty();
+    }
+
+    /**
+     * Explains the first violated filename rule, using the same policy for parsing and file writing.
+     */
+    public static Optional<String> getFileNameError(String fileName) {
+        if (fileName == null || fileName.isEmpty() || fileName.equals(".csv")) {
+            return Optional.of("Invalid file name: provide a name before the lowercase .csv extension.");
+        }
+        if (!fileName.equals(fileName.strip())) {
+            return Optional.of("Invalid file name: remove leading or trailing whitespace.");
+        }
+        if (fileName.contains("/") || fileName.contains("\\")) {
+            return Optional.of("Invalid file name: folder paths are not allowed. Provide a filename only.");
+        }
+        if (INVALID_CHARACTERS.matcher(fileName).find()) {
+            return Optional.of("Invalid file name: remove reserved characters (< > : \" | ? *)"
+                    + " and control characters.");
+        }
+        if (fileName.length() <= 4 || !fileName.endsWith(".csv")) {
+            return Optional.of("Invalid file name: the extension must be lowercase .csv.");
         }
         String stem = fileName.split("\\.", 2)[0].stripTrailing();
-        return !RESERVED_NAME.matcher(stem).matches();
+        if (RESERVED_NAME.matcher(stem).matches()) {
+            return Optional.of("Invalid file name: '" + stem + "' is a reserved device name. Choose another name.");
+        }
+        return Optional.empty();
     }
 
     public Path getDirectory() {

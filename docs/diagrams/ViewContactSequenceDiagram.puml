@@ -7,7 +7,6 @@ participant ":MainWindow" as MainWindow UI_COLOR
 participant ":LogicManager" as LogicManager LOGIC_COLOR
 participant ":ViewCommand" as ViewCommand LOGIC_COLOR
 participant ":Model" as Model MODEL_COLOR
-participant ":Storage" as Storage STORAGE_COLOR
 participant ":ContactDetailsWindows" as Popups UI_COLOR
 participant ":ContactDetailsWindow" as DetailsWindow UI_COLOR
 
@@ -32,21 +31,17 @@ ViewCommand -> ViewCommand : formatDetails(displayedPersons.get(0))
 activate ViewCommand
 ViewCommand --> ViewCommand : details
 deactivate ViewCommand
-ViewCommand --> LogicManager : result: CommandResult(feedback, details)
+ViewCommand --> LogicManager : result: CommandResult(feedback, person, details)
 deactivate ViewCommand
 
 LogicManager -> ViewCommand : requiresStorageSave()
 activate ViewCommand
-ViewCommand --> LogicManager : true
+ViewCommand --> LogicManager : false
 deactivate ViewCommand
-LogicManager -> Model : getAddressBook()
-activate Model
-Model --> LogicManager : addressBook
-deactivate Model
-LogicManager -> Storage : saveAddressBook(addressBook)
-activate Storage
-Storage --> LogicManager : saved successfully
-deactivate Storage
+note over LogicManager
+Read-only viewing skips the JSON save.
+The existing contact file remains unchanged.
+end note
 LogicManager --> MainWindow : result
 deactivate LogicManager
 

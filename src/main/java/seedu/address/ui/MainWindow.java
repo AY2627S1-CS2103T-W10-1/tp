@@ -108,7 +108,8 @@ public class MainWindow extends UiPart<Stage> {
         trackFocusedPane();
 
         helpWindow = new HelpWindow();
-        contactDetailsWindows = new ContactDetailsWindows(primaryStage, logic.getPersonList(), this::addPaneShortcuts);
+        contactDetailsWindows = new ContactDetailsWindows(primaryStage, logic.getPersonList(),
+                this::addPaneShortcuts, () -> focusInMainWindow(() -> commandBox.focus()));
     }
 
     public Stage getPrimaryStage() {
@@ -324,7 +325,7 @@ public class MainWindow extends UiPart<Stage> {
     private CommandResult executeCommand(String commandText) throws CommandException, ParseException {
         try {
             CommandResult commandResult = logic.execute(commandText);
-            logger.info("Result: " + commandResult.getFeedbackToUser());
+            logger.info("Command completed.");
             resultDisplay.setFeedbackToUser(commandResult.getFeedbackToUser());
 
             if (commandResult.isShowHelp()) {
@@ -344,7 +345,7 @@ public class MainWindow extends UiPart<Stage> {
 
             return commandResult;
         } catch (CommandException | ParseException e) {
-            logger.info("An error occurred while executing command: " + commandText);
+            logger.info("Command execution failed: " + e.getClass().getSimpleName());
             resultDisplay.setErrorFeedback(CommandErrorFormatter.format(commandText, e.getMessage()));
             throw e;
         }
