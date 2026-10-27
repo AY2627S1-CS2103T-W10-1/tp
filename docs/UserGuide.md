@@ -3,7 +3,9 @@ layout: page
 title: User Guide
 ---
 
-sudoContact is a **desktop application for managing contacts, optimized for use through a Command Line Interface (CLI)** while retaining the benefits of a Graphical User Interface (GUI). If you type quickly, sudoContact can help you manage contacts faster than traditional GUI applications.
+sudoContact helps secretaries supporting department heads in technology firms manage professional contacts.
+It combines a **Command Line Interface (CLI)** for adding, finding and updating contacts with a graphical
+view of departments and contact details. Contacts are stored locally, so the app works offline.
 
 * Table of Contents
 {:toc}
@@ -12,15 +14,19 @@ sudoContact is a **desktop application for managing contacts, optimized for use 
 
 ## Quick start
 
-1. Ensure that Java `25` or later is installed on your computer.<br>
+1. Install Java `25` and run `java -version` in a terminal to confirm that this is the version being used.<br>
    **Mac users:** Ensure you have the precise JDK version prescribed [here](https://se-education.org/guides/tutorials/javaInstallationMac.html).
 
-1. Download the latest `.jar` file from [here](https://github.com/se-edu/addressbook-level3/releases).
+1. Download the latest `.jar` file from the [sudoContact releases](https://github.com/AY2627S1-CS2103T-W10-1/tp/releases).
 
-1. Copy the file to the folder you want to use as the _home folder_ for your AddressBook.
+1. Copy the file to a writable folder you want to use as the _home folder_ for sudoContact.
+   The app needs permission to create its data and settings files there.
 
-1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar addressbook.jar`.<br>
-   A GUI similar to the one below should appear in a few seconds. Note how the app contains some sample data.<br>
+1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar "sudoContact.jar"`.
+   If the downloaded file has a different name, substitute its actual filename. Launch from the terminal
+   each time to use the Java version you checked; double-clicking may use a different version or fail.<br>
+   The four-pane window opens with sample contacts on first launch. The screenshot below uses illustrative
+   contacts to show departments, sorting and full details.<br>
    ![Ui](images/Ui.png)
 
 1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the scrollable command list. Press `q` while the Help window is active to close it.<br>
@@ -34,7 +40,7 @@ sudoContact is a **desktop application for managing contacts, optimized for use 
 
    * `delete 3` : Deletes the 3rd contact shown in the current list.
 
-   * `clear` : Shows a warning with the total contact count. Use `clear --confirm` to delete all contacts.
+   * `clear` : Shows a warning with the total contact count. Use `clear --confirm` to delete all contacts and departments.
 
    * `exit` : Exits the app.
 
@@ -68,11 +74,12 @@ sudoContact is a **desktop application for managing contacts, optimized for use 
   For example, `-n John` sets the name, but `-nJohn` does not. Text such as `Blk 5 -apt 3` inside a value is kept
   as part of the value.
 
-* For `add` and `edit`, quotes are optional. Wrap a value in matching single or double quotes only when it contains a flag as a
+* For `add` and `edit`, quotes are optional. Wrap a value in matching single or double quotes when it contains a flag as a
   separate word, or a word starting with `--`.<br>
   For example, `edit 1 -a Blk 5 -t 3` sets the address to `Blk 5` and adds the tag `3`, while
   `edit 1 -a "Blk 5 -t 3"` sets the address to `Blk 5 -t 3`. A quote inside a word, as in `O'Brien`, needs no
   special treatment. Unmatched quotes and unknown options such as `--nme` are rejected.
+  Other commands follow their own quoting rules; for example, quote a multiword department name in `depart`.
 
 * Several tags can follow one tag flag, for example `-t friend family` or `--tag friend --tag family`.
 
@@ -112,14 +119,14 @@ The pane that has the keyboard focus is outlined.
 
 Key | Action
 ----|-------
-`Alt+1` | Focus **[1] Departments**, which counts all contacts, contacts with no department, and each department's contacts.
-`Alt+2` | Focus **[2] Contacts**. Move with `↑`/`↓` or `j`/`k`; the selected contact appears in [3] Details. Press `Enter`, or double-click a contact, to open it in its own popup.
-`Alt+3` | Focus **[3] Details**, which shows the selected contact. Press it again to step through the contact details popups; `q` closes the focused popup.
-`Alt+4` or `Esc` | Return to the command prompt in **[4] Output**.
+`Alt+1` | Focus **\[1\] Departments**, which counts all contacts, contacts with no department, and each department's contacts.
+`Alt+2` | Focus **\[2\] Contacts**. Move with `↑`/`↓` or `j`/`k`; the selected contact appears in \[3\] Details. Press `Enter`, or double-click a contact, to open it in its own popup.
+`Alt+3` | Focus **\[3\] Details**, which shows the selected contact. Press it again to step through the contact details popups; `q` closes the focused popup.
+`Alt+4` or `Esc` | Return to the command prompt in **\[4\] Output**.
 `F1` | Open the command help.
 
 The contact list shows one row per contact. Fields that were not provided appear as `—`, and addresses are left
-out to keep rows short; click a contact to see every field in [3] Details. The footer shows how many contacts are displayed out of all
+out to keep rows short; click a contact to see every field in \[3\] Details. The footer shows how many contacts are displayed out of all
 stored contacts, and where the data file is saved.
 
 ### Viewing help: `help`
@@ -148,7 +155,9 @@ Adds a contact with a name and at least one phone number or email address. You c
 Format: `add --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMENT] [--address ADDRESS] [--tag TAG ...]`
 
 * `--name` and at least one of `--phone` or `--email` are required. Names must be nonblank and contain
-  letters, numbers or spaces. A name alone, even with an address, department or tags, is rejected with
+  only ASCII letters (`A-Z`, `a-z`), digits (`0-9`) or ordinary spaces. The current name format does not
+  support accented or Chinese characters, apostrophes or hyphens; use an ASCII transliteration and spaces
+  if needed. A name alone, even with an address, department or tags, is rejected with
   `A phone number or email address must be provided.`
 * Options can appear in any order. Quotes around multiword values are optional:
   `--name "Alice Tan"` and `--name Alice Tan` are the same.
@@ -160,10 +169,14 @@ Format: `add --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMEN
 * Tags contain 1–30 letters, numbers, hyphens or underscores. Leading `#` or `/` is removed.
   Repeat `--tag`, or put multiple tags after one flag. Identical tags are deduplicated; display preserves case.
 * Omit an unknown field entirely. An option with an empty value is rejected.
-* Unknown options, unmatched quotes and repeated options other than `--tag` are rejected.
-* Omitted phone, email, address and department show `Not provided`; omitted tags show `None`.
-* A contact with the same name as an existing contact, and the same phone number **or** email address, is a
-  duplicate and is rejected. Address, department and tags are not compared.
+* Unknown long options beginning with `--`, unmatched quotes and repeated options other than `--tag` are rejected.
+  An unrecognised single-hyphen word inside a value is kept as text: `--address Road -x typo` stores
+  the address `Road -x typo`. Recognised short flags such as `-t` start a new field unless quoted.
+* In the contact table, missing values and tags appear as `—`. The addition feedback and full details show
+  `Not provided` for omitted phone, email, address and department, and `None` for no tags.
+* A contact with the same name as an existing contact and the same provided phone number **or** email address
+  is a duplicate and is rejected. Missing fields do not match; address, department and tags are not compared.
+  Names and emails are compared case-sensitively; phone numbers are compared exactly.
 
 Short flags also work, and can be mixed with long ones:
 `add -n NAME [-p PHONE] [-e EMAIL] [-d DEPARTMENT] [-a ADDRESS] [-t TAG ...]`.
@@ -180,6 +193,10 @@ To complete a contact, find their name and use the displayed row number with the
 for example, register Engineering with `depart --add Engineering`, then run `find Dana` followed by
 `edit 1 -p 91234567 -e dana@example.com --department Engineering`.
 Contacts are saved automatically and retain their supplied and omitted fields after restarting.
+Successful addition clears the active filter and sorting, and shows all contacts in stored order.
+If saving fails, an error is shown, but the new contact remains in the current session's list; saving has
+not been confirmed. Repeating the same `add` may therefore report a duplicate. Resolve the reported
+storage problem, then run `list` to retry saving before closing the app.
 
 ### Listing all contacts: `list` or `ls`
 
@@ -334,12 +351,12 @@ A missing file follows the existing sample-data behavior.
 
 Shows the selected contact's name, phone, email, department, address and tags in a contact details popup.
 The main result box shows a brief confirmation, such as `Showing details of contact 1: Amy Bee`.
-To glance at a contact without opening a popup, click it in the contact list; its details appear in [3] Details.
+To glance at a contact without opening a popup, click it in the contact list; its details appear in \[3\] Details.
 The popup lists each field name beside its value, with how to reach the contact (name, phone, email, address)
 grouped above how they are organised (department, tags). Long values wrap onto multiple lines; scroll to read them.
 Contacts without tags show a dimmed `None` for Tags, and contacts without a department show a dimmed `Not provided`.
-To copy a value, press `Alt+3` until the popup (or [3] Details) has the focus, use `j`/`k` (or `Tab`, `↑`/`↓`) to
-select a value, then press `Ctrl+C`.
+To copy a value, press `Alt+3` until the popup (or \[3\] Details) has the focus, use `j`/`k` (or `Tab`, `↑`/`↓`) to
+select a value, then press `Ctrl+C` (`Cmd+C` on macOS).
 
 Format: `view CONTACT_ID`
 
@@ -348,12 +365,14 @@ Format: `view CONTACT_ID`
 * Surrounding spaces are ignored. Missing contact IDs, zero, negative numbers, decimals and extra arguments are rejected.
 * A contact ID outside the displayed list produces an error showing the valid range.
 * An empty displayed list produces `There is no contact to view in the currently displayed list.`
-* Viewing leaves contact data and the current filter unchanged and uses the same automatic saving flow as other commands.
+* Viewing is read-only: it preserves contact data, the current filter and display order without saving the JSON file.
+  It still works if the contact file cannot currently be written.
 * Each contact gets its own popup, so you can view several contacts and compare them side by side.
   Viewing a contact that already has a popup updates that popup instead of opening another one,
   even if you have since edited the contact's name, phone or email.
 * The command prompt keeps the keyboard focus after `view`, so you can keep typing. Press `Alt+3` to move to
-  [3] Details and then into the popups, `q` to close the focused popup, and `Esc` to return to the prompt.
+  \[3\] Details and then into the popups. Unmodified `q` closes only the focused popup and returns focus to the
+  command prompt; `Esc` returns to the prompt without closing the popup.
 * A popup shows a snapshot. Run `view CONTACT_ID` again after editing, deleting or filtering to refresh it.
   Closing a popup does not exit sudoContact; exiting sudoContact closes every popup.
 * You can also double-click a contact in the contact list, or select it and press `Enter`, as described in
@@ -377,11 +396,16 @@ Format: `edit INDEX [-n NAME] [-p PHONE] [-e EMAIL] [-a ADDRESS] [-d DEPARTMENT]
 * Existing values will be updated to the input values.
 * New values follow the same rules as in `add`. For example, a phone number must contain 7–15 digits, and a
   leading `#` or `/` is removed from each tag.
+  Names use the same ASCII-only format, and name/email duplicate comparisons are case-sensitive.
+  Unknown `--` options are rejected; unrecognised single-hyphen words inside values remain literal text.
 * `-d`/`--department` accepts only a registered department; use `depart --list` to see available names.
   If a supplied department is unknown, no fields are changed.
 * After a successful edit, the full list is shown in stored order.
 * When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
 * To remove all of a person's tags, enter `-t` without a tag after it.
+
+If saving an edit fails, the changed contact remains in memory even though saving has not been confirmed.
+Resolve the storage problem and run `list` to retry saving before closing; the edit is not rolled back.
 
 Examples:
 *  `edit 1 -p 91234567 -e johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.
@@ -424,8 +448,7 @@ Format: `find KEYWORD [MORE_KEYWORDS]`
 
 Examples:
 * `find John` returns `john` and `John Doe`
-* `find alex david` returns `Alex Yeoh`, `David Li`<br>
-  ![result for 'find alex david'](images/findAlexDavidResult.png)
+* With the initial sample contacts, `find alex david` returns `Alex Yeoh` and `David Li`.
 
 ### Deleting a person: `delete`
 
@@ -489,7 +512,8 @@ Examples:
 
 ### Clearing all entries: `clear`
 
-Deletes all contacts only when explicitly confirmed. This operation cannot be undone.
+Deletes all contacts **and the entire department catalogue** only when explicitly confirmed.
+The clear operation cannot be undone.
 Earlier individual deletions remain available to `undo` during the current session.
 
 Format: `clear [--confirm]`
@@ -497,7 +521,8 @@ Format: `clear [--confirm]`
 * `clear` shows a warning without changing contacts or saving the address book:
   `This will delete all N contacts and cannot be undone. Type "clear --confirm" to proceed.`
 * `N` counts **all stored contacts**, including contacts hidden by a search.
-* `clear --confirm` deletes all stored contacts and saves the empty address book immediately.
+* `clear --confirm` deletes all stored contacts and all registered departments, including unused entries,
+  and saves the empty address book immediately.
   It can be entered directly without first entering `clear`.
 * Only the exact lowercase flag `--confirm` is accepted. Surrounding whitespace is allowed.
   Other arguments, such as `clear 1`, `clear --CONFIRM`, or `clear --confirm extra`, show an
@@ -544,45 +569,71 @@ Examples:
 
 Success: `Exported 3 contacts to contacts.csv.` (the count reflects your stored contacts).
 An empty address book reports `No contacts found to export.` and creates no file.
-Invalid arguments report the command format or an invalid filename. If the folder is unavailable,
+Invalid syntax reports the command format. Invalid filenames identify the violated rule:
+
+| Input | Feedback |
+| --- | --- |
+| `export --csv Team.CSV` | `Invalid file name: the extension must be lowercase .csv.` |
+| `export --csv con.csv` | `Invalid file name: 'con' is a reserved device name. Choose another name.` |
+| `export --csv ../x.csv` | `Invalid file name: folder paths are not allowed. Provide a filename only.` |
+
+Missing filename stems, surrounding whitespace, reserved characters and control characters also produce
+specific correction messages. If the folder is unavailable,
 unwritable or out of space, the app reports that it cannot create the CSV; choose a writable launch folder
 or free space and retry. Export is a copy for external use; it does not replace the app's JSON data file.
 
 ### Saving the data
 
-AddressBook automatically saves data after successful commands except `sort` and `export`.
-You do not need to save manually.
+sudoContact automatically saves contact changes after successful commands; no separate save command is needed.
+The JSON save is skipped for `view`, `sort`, `export`, `help`/`?`, `depart --list`, and `clear` without `--confirm`.
 `sort` changes only the displayed order; it does not write the contact file or persist the sort order.
 `export` writes a separate CSV copy; it does not modify or save the JSON contact file.
+Viewing, help and department listing only display information; unconfirmed `clear` only displays its warning.
+`clear --confirm` does save the cleared data. `list`/`ls` and `find` retain the normal JSON-save behavior.
 Departments and tags are contact data and are saved normally when changed.
 If saving fails, for example because the data file is read-only, the error says the change is still applied in the app.
 It is saved the next time saving succeeds. Closing the app before then loses the unsaved change.
 
 ### Editing the data file
 
-AddressBook data is saved automatically as a JSON file `[JAR file location]/data/addressbook.json`. Advanced users are welcome to update data directly by editing that data file.
+Contact data is saved as `data/addressbook.json` relative to the terminal's current working directory when
+the app is launched. `preferences.json` is also relative to that directory. Following Quick start by first
+using `cd` makes this the folder containing the JAR. Launching the JAR by its full path from another folder
+uses that other folder for data instead. Advanced users may edit the JSON file while the app is closed;
+check the launch directory before copying or changing it.
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
-If your changes make the data file invalid, AddressBook starts with an empty address book at the next run. The invalid file remains on disk until a successful command that saves data overwrites it. `sort` uses the current in-memory contacts without writing the file; failed commands also do not save. Still, we recommend backing up the file before editing it.<br>
-Furthermore, certain edits can cause the AddressBook to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
+If your changes make the data file invalid, sudoContact starts with an empty address book at the next run. The invalid file remains on disk until a successful command that saves data overwrites it. `sort` uses the current in-memory contacts without writing the file; failed commands also do not save. Still, we recommend backing up the file before editing it.<br>
+Furthermore, certain edits can cause sudoContact to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </div>
 
-### Archiving data files `[coming in v2.0]`
+### Backing up and moving data
 
-_Details coming soon ..._
+Close sudoContact before copying or replacing data. Copy `data/addressbook.json` from the launch folder
+into a separate backup location; this file contains both contacts and the department catalogue.
+To restore or move it, close the destination app and place the copy at the same relative path in its
+launch folder, creating `data/` if necessary. Restart and check the contacts and departments.
+
+`preferences.json` stores settings, not contacts. A CSV export is useful for sharing contact information,
+but sudoContact has no CSV import command, so use the JSON file for a restorable backup.
 
 --------------------------------------------------------------------------------------------------------------------
 
 ## FAQ
 
 **Q**: How do I transfer my data to another computer?<br>
-**A**: Install the app on the other computer and overwrite the data file it creates with the data file from your previous AddressBook home folder.
+**A**: Follow [Backing up and moving data](#backing-up-and-moving-data). Keep the original JSON backup until
+contacts and departments have been verified on the new computer.
 
 --------------------------------------------------------------------------------------------------------------------
 
 ## Known issues
 
-1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. The remedy is to delete the `preferences.json` file created by the application before running the application again.
+1. **Off-screen windows after changing displays:** Close the app, rename `preferences.json` in the launch
+   folder to `preferences.backup.json`, and launch again to reset the saved window position.
+   This resets preferences without deleting `data/addressbook.json` or its contacts.
+2. **macOS fullscreen dialogs:** Keep Help and contact-details popups in their normal window mode.
+   Making an auxiliary window fullscreen can cause unexpected focus or window behavior.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -594,8 +645,9 @@ Action | Format, Examples
 **Clear** | `clear` (warning), `clear --confirm` (delete all)
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit** | `edit INDEX [-n NAME] [-p PHONE_NUMBER] [-e EMAIL] [-a ADDRESS] [-d DEPARTMENT] [-t TAG]…​`<br> e.g., `edit 2 -n James Lee -e jameslee@example.com`
-**Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
-**Export** | `export -c|--csv [FILENAME]`<br> e.g., `export -c team.csv`
+**Find by name** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
+**Find by tag** | `find --tag TAG [--tag TAG ...]`<br> e.g., `find --tag client --tag important`
+**Export** | `export --csv [FILENAME]` or `export -c [FILENAME]`<br> e.g., `export -c team.csv`
 **View** | `view CONTACT_ID`<br> e.g., `view 2`
 **List** | `list` or `ls`
 **Depart** | `depart --list`, `depart --add DEPARTMENT`, `depart --edit OLD_NAME NEW_NAME`, or `depart --delete DEPARTMENT`<br> e.g., `depart --edit Engineering "Research & Development"`

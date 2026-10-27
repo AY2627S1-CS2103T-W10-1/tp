@@ -23,6 +23,7 @@ public class ContactDetailsWindow extends UiPart<Stage> {
     private static final String FXML = "ContactDetailsWindow.fxml";
 
     private final DetailsPanel detailsPanel = new DetailsPanel();
+    private final Runnable returnToPrompt;
     private Person person;
 
     @FXML
@@ -32,7 +33,15 @@ public class ContactDetailsWindow extends UiPart<Stage> {
      * Creates a contact details popup owned by the main application stage.
      */
     public ContactDetailsWindow(Stage owner) {
+        this(owner, owner::requestFocus);
+    }
+
+    /**
+     * Creates a popup with an action to restore command input after keyboard dismissal.
+     */
+    public ContactDetailsWindow(Stage owner, Runnable returnToPrompt) {
         super(FXML);
+        this.returnToPrompt = requireNonNull(returnToPrompt);
         getRoot().initOwner(requireNonNull(owner));
         detailsPanelPlaceholder.getChildren().add(detailsPanel.getRoot());
         getRoot().getScene().addEventFilter(KeyEvent.KEY_PRESSED, this::handleClose);
@@ -98,6 +107,6 @@ public class ContactDetailsWindow extends UiPart<Stage> {
         }
         event.consume();
         hide();
-        getRoot().getOwner().requestFocus();
+        returnToPrompt.run();
     }
 }

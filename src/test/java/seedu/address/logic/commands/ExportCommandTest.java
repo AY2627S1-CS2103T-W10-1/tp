@@ -22,6 +22,7 @@ import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.Person;
 import seedu.address.storage.CsvContactExporter;
+import seedu.address.testutil.LogCapture;
 
 /**
  * Tests CSV export parsing, output or command behavior.
@@ -67,7 +68,8 @@ public class ExportCommandTest {
     public void execute_permissionOrWriteFailure_reportsErrorWithoutChangingModel() {
         Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
         AddressBook original = new AddressBook(model.getAddressBook());
-        for (IOException failure : List.of(new IOException("Disk full"), new AccessDeniedException("folder"))) {
+        for (IOException failure : List.of(new IOException("confidential.csv: Disk full"),
+                new AccessDeniedException("confidential.csv"))) {
             CsvContactExporter exporter = new CsvContactExporter(testFolder) {
                 @Override
                 public void export(List<Person> contacts, String fileName) throws IOException {
@@ -75,8 +77,13 @@ public class ExportCommandTest {
                 }
             };
             ExportCommand command = new ExportCommand("contacts.csv", exporter);
-            assertThrows(CommandException.class, String.format(ExportCommand.MESSAGE_WRITE_ERROR, "contacts.csv"), ()
-                    -> command.execute(model));
+            try (LogCapture logs = new LogCapture()) {
+                assertThrows(CommandException.class,
+                        String.format(ExportCommand.MESSAGE_WRITE_ERROR, "contacts.csv"), () -> command.execute(model));
+                assertFalse(logs.getOutput().contains("confidential.csv"), logs.getOutput());
+                assertFalse(logs.getOutput().contains("contacts.csv"), logs.getOutput());
+                assertTrue(logs.getOutput().contains("CSV export failed: " + failure.getClass().getSimpleName()));
+            }
             assertEquals(original, model.getAddressBook());
         }
     }

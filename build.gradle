@@ -77,7 +77,7 @@ dependencies {
 }
 
 shadowJar {
-    archiveFileName = 'sudoContact.jar'
+    archiveFileName = 'addressbook.jar'
 }
 
 defaultTasks 'clean', 'test'
