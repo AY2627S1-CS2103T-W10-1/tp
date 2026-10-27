@@ -299,7 +299,7 @@ public class LogicManagerTest {
         CommandResult result = logic.execute("view 1");
 
         assertEquals("Showing details of contact 1: Amy Bee", result.getFeedbackToUser());
-        assertTrue(result.getContactDetails().orElseThrow().contains("Name: Amy Bee\n"));
+        assertEquals("Amy Bee", result.getViewedPerson().orElseThrow().getName().fullName);
         assertEquals(storedBefore, model.getAddressBook().getPersonList());
         assertEquals(displayedBefore, model.getFilteredPersonList());
         assertFalse(Files.exists(dataPath));
@@ -321,7 +321,7 @@ public class LogicManagerTest {
 
         CommandResult result = logic.execute("view 1");
         assertEquals("Showing details of contact 1: Amy Bee", result.getFeedbackToUser());
-        assertTrue(result.getContactDetails().orElseThrow().contains("Name: Amy Bee\n"));
+        assertEquals("Amy Bee", result.getViewedPerson().orElseThrow().getName().fullName);
         assertEquals(List.of(AMY), model.getAddressBook().getPersonList());
     }
 
@@ -338,7 +338,7 @@ public class LogicManagerTest {
 
         CommandResult result = logic.execute("view 1");
 
-        assertTrue(result.getContactDetails().orElseThrow().startsWith("Name: Bob\n"));
+        assertEquals("Bob", result.getViewedPerson().orElseThrow().getName().fullName);
         assertEquals(existing, Files.readString(dataPath));
         assertEquals(storedBefore, model.getAddressBook().getPersonList());
         assertEquals(displayedBefore, model.getFilteredPersonList());
