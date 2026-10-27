@@ -538,6 +538,12 @@ Format: `clear [--confirm]`
 * `clear --confirm` deletes all stored contacts and all registered departments, including unused entries,
   and saves the empty address book immediately.
   It can be entered directly without first entering `clear`.
+* The empty address book is saved **before** contacts and departments are removed from this session.
+  If saving fails, clearing is not applied: contacts, departments, the current filter and sorting, and earlier
+  deletion history remain unchanged. The error explains that the data remains available in this session.
+  Resolve the save error, then retry `clear --confirm` to clear the data, or run `list` to save the retained data.
+  A write interrupted partway through may leave an incomplete JSON file; keep the app open until you can
+  successfully save the retained data. Successful clearing still cannot be undone.
 * Only the exact lowercase flag `--confirm` is accepted. Surrounding whitespace is allowed.
   Other arguments, such as `clear 1`, `clear --CONFIRM`, or `clear --confirm extra`, show an
   invalid command format error without deleting or saving anything.

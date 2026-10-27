@@ -147,7 +147,11 @@ How the `Logic` component works:
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
 1. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
    Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
-1. `LogicManager` saves the canonical address book if `Command.requiresStorageSave()` returns true.
+1. `LogicManager` checks `Command.getAddressBookReplacement()` before execution. If present, it saves the
+   proposed replacement before executing the command, and skips the normal save afterward. Confirmed
+   `ClearCommand` uses this path; a save failure prevents execution and preserves the live model.
+   Otherwise, `LogicManager` saves the canonical address book after execution if `Command.requiresStorageSave()`
+   returns true.
    Read-only `ViewCommand` and display-only `SortCommand` return false, as do `ExportCommand`, `HelpCommand`,
    department listing and unconfirmed `ClearCommand`.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
@@ -597,14 +601,34 @@ address book's contacts and returns a warning that all contacts and registered d
 The count refers only to contacts; the department warning also appears when there are no contacts.
 Contacts, the department catalogue, display filtering and sorting, and deletion history remain unchanged.
 Its `requiresStorageSave()` override returns false in this case.
-With confirmation, it resets the address book, including the department catalogue, and allows
-`LogicManager` to save the empty book.
+With confirmation, `getAddressBookReplacement()` returns an `AddressBookReplacement` containing an empty
+address book and clear-specific recovery instructions. `LogicManager.executeReplacement` saves that
+replacement first and invokes `ClearCommand.execute` only after saving succeeds. The command applies the
+same empty book through `Model.setAddressBook`; no second save occurs. The command has no storage dependency,
+and `LogicManager` selects this path through the command contract rather than checking its concrete type.
+
+Both execution paths use one `LogicManager.saveAddressBook` helper to map permission and general I/O errors.
+A failed replacement save adds the command's recovery instructions while retaining the original I/O cause.
+No live data has been changed at that point: contacts, the catalogue, filtering, sorting, and deletion history
+remain available. The user can resolve the storage error and retry clearing, or use `list` to save the retained
+data. Other commands retain their existing execution-before-save behavior.
+
+The JSON writer still writes directly to its destination. A denied write leaves the existing file intact,
+but a mid-write failure can leave incomplete disk data. The retained in-memory book can be saved with `list`
+after the storage issue is resolved. This flow does not provide atomic file replacement or disk rollback.
 Clearing does not add contacts to individual-deletion history, so it cannot be undone.
 Earlier individual deletions remain available to `undo`.
 
 Regression tests cover strict parsing, warning counts with hidden contacts, unchanged display and undo
 history, skipped saves for unconfirmed or invalid input, and reloading the empty saved address book
 after confirmed deletion.
+
+`ClearSaveFailureIntegrationTest` covers permission and general I/O failures, a real temporary read-only JSON
+file where the platform enforces its permissions, department-only books, preservation of filter/sort and
+mixed deletion history, recovery with `list`, and successful retry with one save. It records live model state
+during saving to verify that clearing has not happened yet. An interrupted-write case verifies that retained
+live data can repair the JSON file. `CommandErrorUiTest` checks that the failure retains the input and data
+and displays recovery instructions rather than clear-success feedback.
 
 `ClearCommand.HELP_PAGE` describes the removal of all contacts and registered departments, including
 unused catalogue entries. `HelpCatalog` summarizes the same scope in the command overview. The warning,
@@ -1424,6 +1448,14 @@ Use disposable data, record the full stored contact count, and register at least
    will be deleted. No data changes.
 1. Enter `help clear`. Expected: the manual states that confirmed clearing deletes all contacts and registered
    departments, including unused entries. The help overview also mentions contacts and departments.
+
+1. In disposable data, register Engineering and an unused department, then add Alice to Engineering.
+   Apply a filter and sort, and record the saved JSON contents. Deny writes to the configured JSON file
+   using permissions enforced by the current account, then run `clear --confirm`.
+   Expected: a save error states that clear was not applied and explains how to recover. Contacts, departments,
+   the displayed filter/order, and earlier deletion history remain unchanged. A permission-denied file retains
+   its original bytes. Restore write permission and run `list`; the original contacts and catalogue remain
+   in the saved JSON. Retry `clear --confirm`; only a successful save clears the live data.
 
 ### Exporting contacts as CSV
 
