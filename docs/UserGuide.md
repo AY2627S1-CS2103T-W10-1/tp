@@ -416,6 +416,7 @@ Format: `find --tag TAG [TAG ...] [--tag TAG ...]`
 * A missing value displays `Tag cannot be empty: Please provide a valid tag after '--tag'.`
 * An invalid search value displays `Tags must use only letters, numbers, hyphens (-), and underscores (_), with no spaces.`
 * No matches displays `No contacts found with the specified tag(s).`
+* Searching changes only the displayed list; it does not modify contacts or save the JSON data file.
 
 Example: `find --tag client --tag important`
 
@@ -558,8 +559,9 @@ or free space and retry. Export is a copy for external use; it does not replace 
 
 ### Saving the data
 
-AddressBook automatically saves data after successful commands except `sort` and `export`.
-You do not need to save manually.
+AddressBook automatically saves data after successful commands except `find`, `sort`, `help`, `export`,
+`depart --list`, and an unconfirmed `clear`.
+You do not need to save data-changing commands manually.
 `sort` changes only the displayed order; it does not write the contact file or persist the sort order.
 `export` writes a separate CSV copy; it does not modify or save the JSON contact file.
 Departments and tags are contact data and are saved normally when changed.
