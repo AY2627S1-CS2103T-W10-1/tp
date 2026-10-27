@@ -457,10 +457,13 @@ Format: `undo [--discard-latest]`
   that restores the next earlier deletion.
 * Undoing a contact deletion appends the restored contact to the list. It fails if a
   [duplicate](#adding-a-contact-with-partial-information-add) of that contact now exists. The deletion stays in the
-  history, so you can edit or delete the duplicate and retry.
+  history. Either `edit` the duplicate's name, phone or email so it no longer matches and run `undo` again, or drop
+  the deletion with `undo --discard-latest`. Deleting the duplicate does not help: that deletion becomes the most
+  recent one, so `undo` restores the duplicate first.
 * A restored contact must have a phone number or email address. If a deleted legacy contact has neither,
-  `undo` reports `A phone number or email address must be provided.` and leaves data and history unchanged.
-  You can recreate that contact using `add` with the required contact information.
+  `undo` reports `Cannot restore the deleted person because it has no phone number or email address` and leaves
+  data and history unchanged. Run `undo --discard-latest` to get past it, then recreate the contact using `add`
+  with the required contact information if you still need it.
 * Undoing a department deletion restores the catalogue entry and the original assignments on existing contacts
   and contacts in deletion history. It preserves later edits to other fields and does not overwrite a department
   assigned after the deletion. Contacts removed by `clear` are not recreated.

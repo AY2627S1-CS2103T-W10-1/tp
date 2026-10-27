@@ -691,12 +691,15 @@ How `undo` works:
    undo.
 1. It reads the most recent contact deletion with `Model#getLastDeletedPerson()`. If that contact has neither a phone
    number nor an email address, which only happens with legacy data, it throws a `CommandException` and leaves the
-   history unchanged.
+   history unchanged. No edit can fix a contact that exists only in the history, so the message points to
+   `undo --discard-latest`.
 1. It checks `Model#hasPerson(...)` for a [duplicate contact](#glossary) already in the list: one with the same name
    and a matching provided phone number or email address (`Person#isSamePerson`). If one exists, it throws a
    `CommandException` that names it. One matching field is enough, so a contact with a different email, or no email,
-   still blocks `undo` if its phone matches. The deletion stays in the history, so the user can `edit` or `delete`
-   that contact and run `undo` again.
+   still blocks `undo` if its phone matches. The deletion stays in the history. The message tells the user to `edit`
+   that contact so it no longer matches and run `undo` again, or to drop the deletion with `undo --discard-latest`.
+   Deleting that contact does not help: `deletePerson` pushes it onto the history, so the next `undo` restores it
+   instead of the blocked contact. `edit` goes through `Model#setPerson`, which leaves the history unchanged.
 1. Otherwise, `Model#restoreLastDeletedPerson()` calls `Model#addPerson`. This appends the `Person` held in
    `deletedPersons` to the end of the stored list, so its tags and other fields are unchanged. Its department reflects
    any `depart --edit` or `depart --delete` run since the deletion. `addPerson` also shows the full

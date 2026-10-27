@@ -41,7 +41,12 @@ public class UndoCommand extends Command {
     public static final String MESSAGE_SUCCESS = "Restored deleted person: %1$s";
     public static final String MESSAGE_NO_DELETION = "There are no deletions to undo in this session.";
     public static final String MESSAGE_DUPLICATE_PERSON =
-            "Cannot restore the deleted person because this person already exists: %1$s";
+            "Cannot restore the deleted person because this person already exists: %1$s\n"
+            + "Edit that contact's name, phone or email so it no longer matches, then run undo again, "
+            + "or run undo --discard-latest to drop this deletion.";
+    public static final String MESSAGE_MISSING_CONTACT_INFORMATION =
+            "Cannot restore the deleted person because it has no phone number or email address: %1$s\n"
+            + "Run undo --discard-latest to drop this deletion, then add the contact again if needed.";
 
     public static final String MESSAGE_DEPARTMENT_RESTORED = "Restored deleted department: %1$s";
     public static final String MESSAGE_DEPARTMENT_EXISTS =
@@ -89,7 +94,8 @@ public class UndoCommand extends Command {
 
         Person personToRestore = model.getLastDeletedPerson();
         if (!personToRestore.hasContactInformation()) {
-            throw new CommandException(Person.MESSAGE_CONTACT_INFORMATION_REQUIRED);
+            throw new CommandException(
+                    String.format(MESSAGE_MISSING_CONTACT_INFORMATION, Messages.format(personToRestore)));
         }
         if (model.hasPerson(personToRestore)) {
             Person existingPerson = model.getAddressBook().getPersonList().stream()

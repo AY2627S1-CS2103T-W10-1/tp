@@ -11,6 +11,7 @@ import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BENSON;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
+import java.util.List;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,7 @@ import seedu.address.model.person.Email;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
+import seedu.address.testutil.PersonBuilder;
 
 /**
  * Contains integration tests (interaction with the Model) and unit tests for
@@ -88,6 +90,38 @@ public class UndoCommandTest {
     }
 
     @Test
+    public void execute_duplicateEditedToNoLongerMatch_restoresOriginal() throws Exception {
+        Person replacement = new PersonBuilder(ALICE).withEmail("replacement@example.com").build();
+        model.deletePerson(ALICE);
+        model.addPerson(replacement);
+        assertCommandFailure(new UndoCommand(), model,
+                String.format(UndoCommand.MESSAGE_DUPLICATE_PERSON, Messages.format(replacement)));
+
+        Person renamed = new PersonBuilder(replacement).withName("Alice Tan").build();
+        model.setPerson(replacement, renamed);
+        new UndoCommand().execute(model);
+
+        assertTrue(model.getAddressBook().getPersonList().containsAll(List.of(ALICE, renamed)));
+        assertFalse(model.hasDeletedPerson());
+    }
+
+    @Test
+    public void execute_duplicateDeleted_restoresDuplicateFirst() throws Exception {
+        Person replacement = new PersonBuilder(ALICE).withEmail("replacement@example.com").build();
+        model.deletePerson(ALICE);
+        model.addPerson(replacement);
+        model.deletePerson(replacement);
+
+        // Deleting the duplicate makes it the most recent deletion, so undo restores it instead of the original.
+        new UndoCommand().execute(model);
+
+        assertTrue(model.getAddressBook().getPersonList().contains(replacement));
+        assertEquals(ALICE, model.getLastDeletedPerson());
+        assertCommandFailure(new UndoCommand(), model,
+                String.format(UndoCommand.MESSAGE_DUPLICATE_PERSON, Messages.format(replacement)));
+    }
+
+    @Test
     public void execute_discardLatestPerson_dropsDeletionWithoutRestoring() {
         model.deletePerson(ALICE);
 
@@ -124,7 +158,8 @@ public class UndoCommandTest {
         model.deletePerson(ALICE);
         model.addPerson(nameOnly);
         model.deletePerson(nameOnly);
-        assertCommandFailure(new UndoCommand(), model, Person.MESSAGE_CONTACT_INFORMATION_REQUIRED);
+        assertCommandFailure(new UndoCommand(), model,
+                String.format(UndoCommand.MESSAGE_MISSING_CONTACT_INFORMATION, Messages.format(nameOnly)));
 
         new UndoCommand(true).execute(model);
         new UndoCommand().execute(model);
