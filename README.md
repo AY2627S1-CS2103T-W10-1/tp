@@ -75,7 +75,7 @@ The Help menu and `F1` show the overview. Press `q` in the Help window to close 
 - A contact name and at least one phone number or email address are required; other details may be supplied later.
 - Phone numbers contain 7–15 digits, and email addresses must use a valid email format.
 - Department names are 2–50 characters and may contain letters, numbers, spaces, hyphens, and ampersands.
-- Tags are 1–30 characters and may contain letters, numbers, hyphens, and underscores. Tag matching is case-sensitive.
+- Tags are 1–30 characters and may contain letters, numbers, hyphens, and underscores. Tag searches with `find --tag` are case-insensitive; tags keep their original capitalisation.
 - Contacts with the same name are duplicates if either their provided phone numbers or email addresses match. Missing fields do not match.
 - Previously valid saved contacts remain intact, including conflicts under the stricter rule; new add, edit and contact undo operations still reject duplicates.
 - Sorting is ascending and case-insensitive; contacts without the selected sorting field appear last.
