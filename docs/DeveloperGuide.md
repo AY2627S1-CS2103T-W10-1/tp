@@ -934,6 +934,12 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **Extensions**
 
+* 2a. The command format is invalid.
+
+  * 2a1. sudoContact displays the command format error.
+
+  Use case ends.
+
 * 3a. The catalogue is empty.
 
   * 3a1. sudoContact informs the user that no departments have been registered.
@@ -1065,50 +1071,51 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **MSS:**
 
-1.  User requests to search for contacts with one or more tags.
-2.  User enters a `find --tag` command with one or more tag values.
-3.  sudoContact validates all specified tags.
-4.  sudoContact searches all contacts for those having any of the specified tags (OR matching),
-    using case-insensitive, whole-tag matching.
-5.  sudoContact displays each matching contact once, even if it matches multiple specified tags or the same
-    tag was specified more than once.
-6.  sudoContact displays the number of matching contacts.
+1.  User requests to find contacts using one or more tags.
+2.  sudoContact displays each contact having any of the specified tags once, using case-insensitive,
+    whole-tag matching, and shows the number of matching contacts.
 
     Use case ends.
 
 **Extensions:**
 
-* 3a. A specified tag contains invalid characters.
+* 1a. A specified tag contains invalid characters.
 
-    * 3a1. sudoContact displays `Tags must use only letters, numbers, hyphens (-), and underscores (_), with no spaces.`
+  * 1a1. sudoContact displays `Tags must use only letters, numbers, hyphens (-), and underscores (_), with no spaces.`
 
-      Use case ends.
+  Use case ends.
 
-* 3b. A tag value is missing.
+* 1b. A tag value is missing.
 
-    * 3b1. sudoContact displays `Tag cannot be empty: Please provide a valid tag after '--tag'.`
+  * 1b1. sudoContact displays `Tag cannot be empty: Please provide a valid tag after '--tag'.`
 
-      Use case ends.
+  Use case ends.
 
-* 3c. No valid `--tag` option is present and an option-like argument is supplied
-  (e.g. `find --tags friends`, `find --TAG friends`, or `find -tag friends`).
+* 1c. An unsupported option is supplied, either instead of or after a valid `--tag`
+  (e.g. `find --tags friends`, `find --TAG friends`, or `find --tag friends --tags family`).
 
-    * 3c1. sudoContact displays `Invalid find option: '[INPUT]'. Use find --tag TAG [TAG ...] [--tag TAG ...] or find KEYWORD [MORE_KEYWORDS].`
+  * 1c1. sudoContact displays `Invalid find option: '[INPUT]'. Use find --tag TAG [TAG ...] [--tag TAG ...] or find KEYWORD [MORE_KEYWORDS].`
 
-      Use case ends.
+  Use case ends.
 
-* 3d. Arguments precede the first valid `--tag` option (e.g. `find Alice --tag friends`),
-  or the `find` command has no arguments.
+* 1d. The command has no arguments or arguments precede the first valid `--tag` option
+  (e.g. `find Alice --tag friends`).
 
-    * 3d1. sudoContact displays an invalid command format error and the `find` usage instructions.
+  * 1d1. sudoContact displays an invalid command format error and the `find` usage instructions.
 
-      Use case ends.
+  Use case ends.
 
-* 4a. No contacts match the specified tag(s).
+* 1e. The command contains an unmatched quote or text immediately after a closing quote.
 
-    * 4a1. sudoContact displays `No contacts found with the specified tag(s).`
+  * 1e1. sudoContact displays the corresponding quotation error.
 
-      Use case ends.
+  Use case ends.
+
+* 2a. No contacts match the specified tag(s).
+
+  * 2a1. sudoContact displays `No contacts found with the specified tag(s).`
+
+  Use case ends.
 
 **Use case: UC7 - View one contact's full details**
 
