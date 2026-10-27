@@ -122,6 +122,37 @@ public class DetailsPanelTest {
     }
 
     @Test
+    public void keyboard_jkWhilePanelHasFocus_movesToFirstValue() throws Exception {
+        FxTestUtil.run(() -> {
+            DetailsPanel panel = new DetailsPanel();
+            Stage stage = new Stage();
+            stage.setScene(new Scene(panel.getRoot(), 500, 400));
+            stage.show();
+            Scene scene = stage.getScene();
+
+            // With only the placeholder there is no value to move to.
+            panel.getRoot().requestFocus();
+            press(scene, KeyCode.J, false);
+            assertEquals(panel.getRoot(), scene.getFocusOwner());
+
+            panel.showDetails(DETAILS);
+            List<TextArea> values = values(grid(panel));
+            press(scene, KeyCode.J, true);
+            assertEquals(panel.getRoot(), scene.getFocusOwner());
+
+            press(scene, KeyCode.J, false);
+            assertEquals(values.get(0), scene.getFocusOwner());
+            assertEquals("Amy Bee", values.get(0).getSelectedText());
+            press(scene, KeyCode.J, false);
+            assertEquals(values.get(1), scene.getFocusOwner());
+
+            panel.getRoot().requestFocus();
+            press(scene, KeyCode.K, false);
+            assertEquals(values.get(0), scene.getFocusOwner());
+        });
+    }
+
+    @Test
     public void showDetails_longValueGrowsToShowEveryWrappedLine() throws Exception {
         FxTestUtil.run(() -> {
             DetailsPanel panel = new DetailsPanel();
