@@ -9,15 +9,18 @@ import static seedu.address.testutil.TypicalPersons.IDA;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import javafx.collections.ObservableList;
 import seedu.address.commons.exceptions.DataLoadingException;
 import seedu.address.model.AddressBook;
 import seedu.address.model.ReadOnlyAddressBook;
+import seedu.address.model.person.Person;
 
 public class JsonAddressBookStorageTest {
     private static final Path TEST_DATA_FOLDER = Paths.get("src", "test", "data", "JsonAddressBookStorageTest");
@@ -84,6 +87,22 @@ public class JsonAddressBookStorageTest {
         readBack = jsonAddressBookStorage.readAddressBook().get(); // file path not specified
         assertEquals(original, new AddressBook(readBack));
 
+    }
+
+    @Test
+    public void saveAddressBook_conversionFailure_doesNotCreateEmptyDestination() {
+        Path destination = testFolder.resolve("contacts.json");
+        AddressBook invalid = new AddressBook() {
+            @Override
+            public ObservableList<Person> getPersonList() {
+                throw new IllegalStateException("Cannot convert contacts");
+            }
+        };
+
+        assertThrows(IllegalStateException.class, () ->
+                new JsonAddressBookStorage(destination).saveAddressBook(invalid));
+
+        assertFalse(Files.exists(destination));
     }
 
     @Test

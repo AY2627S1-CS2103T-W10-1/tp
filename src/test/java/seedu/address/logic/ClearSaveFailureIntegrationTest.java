@@ -25,6 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import seedu.address.commons.util.AtomicFileWriter;
 import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.UndoCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
@@ -122,22 +123,43 @@ public class ClearSaveFailureIntegrationTest {
     }
 
     @Test
-    public void execute_partialWriteFailure_retainsLiveDataForRecoverySave() throws Exception {
+    public void execute_partialTemporaryWriteFailure_preservesSavedAndLiveData() throws Exception {
         populateBookWithHistoryAndDisplayState();
         AddressBook before = new AddressBook(model.getAddressBook());
         List<Person> displayedBefore = List.copyOf(model.getFilteredPersonList());
+        byte[] savedBefore = Files.readAllBytes(storage.getAddressBookFilePath());
         storage.failure = new IOException("Interrupted write");
         storage.writePartialData = true;
 
         assertThrows(CommandException.class, () -> logic.execute("clear --confirm"));
 
-        assertEquals("{", Files.readString(storage.getAddressBookFilePath()));
+        assertArrayEquals(savedBefore, Files.readAllBytes(storage.getAddressBookFilePath()));
         assertEquals(before, model.getAddressBook());
         assertEquals(displayedBefore, model.getFilteredPersonList());
         storage.failure = null;
         storage.writePartialData = false;
         logic.execute("list");
         assertEquals(before, storage.readAddressBook().orElseThrow());
+    }
+
+    @Test
+    public void execute_listWriteFailure_preservesSavedDataAndShowsAllContacts() throws Exception {
+        populateBookWithHistoryAndDisplayState();
+        AddressBook before = new AddressBook(model.getAddressBook());
+        byte[] savedBefore = Files.readAllBytes(storage.getAddressBookFilePath());
+        storage.failure = new IOException("Interrupted write");
+        storage.writePartialData = true;
+
+        assertThrows(CommandException.class, () -> logic.execute("list"));
+
+        assertArrayEquals(savedBefore, Files.readAllBytes(storage.getAddressBookFilePath()));
+        assertEquals(before, model.getAddressBook());
+        assertEquals(before.getPersonList(), model.getFilteredPersonList());
+        storage.failure = null;
+        storage.writePartialData = false;
+        logic.execute("list");
+        assertEquals(before, storage.readAddressBook().orElseThrow());
+        assertEarlierHistoryIsAvailable();
     }
 
     @Test
@@ -257,7 +279,13 @@ public class ClearSaveFailureIntegrationTest {
             liveStates.add(new AddressBook(model.getAddressBook()));
             if (failure != null) {
                 if (writePartialData) {
-                    Files.writeString(getAddressBookFilePath(), "{");
+                    new AtomicFileWriter() {
+                        @Override
+                        protected void writeTemporaryFile(Path temporary, String content) throws IOException {
+                            Files.writeString(temporary, "{");
+                            throw failure;
+                        }
+                    }.write(getAddressBookFilePath(), "{}");
                 }
                 throw failure;
             }

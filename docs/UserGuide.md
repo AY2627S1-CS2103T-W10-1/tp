@@ -544,8 +544,8 @@ Format: `clear [--confirm]`
   If saving fails, clearing is not applied: contacts, departments, the current filter and sorting, and earlier
   deletion history remain unchanged. The error explains that the data remains available in this session.
   Resolve the save error, then retry `clear --confirm` to clear the data, or run `list` to save the retained data.
-  A write interrupted partway through may leave an incomplete JSON file; keep the app open until you can
-  successfully save the retained data. Successful clearing still cannot be undone.
+  The previous saved file also remains unchanged if saving fails. If there was no saved file, a failed save
+  does not create an empty one. Successful clearing still cannot be undone.
 * Only the exact lowercase flag `--confirm` is accepted. Surrounding whitespace is allowed.
   Other arguments, such as `clear 1`, `clear --CONFIRM`, or `clear --confirm extra`, show an
   invalid command format error without deleting or saving anything.
@@ -609,6 +609,9 @@ or free space and retry. Export is a copy for external use; it does not replace 
 ### Saving the data
 
 sudoContact automatically saves contact changes after successful commands; no separate save command is needed.
+JSON saves replace the previous file only after the complete new data has been written. If saving fails,
+the previous saved file remains unchanged. If the filesystem cannot safely replace the file in one operation,
+the app reports a save error; use a local folder that supports atomic file replacement.
 The JSON save is skipped for `find`, `view`, `sort`, `export`, `help`/`?`, `depart --list`, and `clear`
 without `--confirm`.
 `sort` changes only the displayed order; it does not write the contact file or persist the sort order.
@@ -626,7 +629,7 @@ uses that other folder for data instead. Advanced users may edit the JSON file w
 check the launch directory before copying or changing it.
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
-If your changes make the data file invalid, sudoContact starts with an empty address book at the next run. The invalid file remains on disk until a successful command that saves data overwrites it. `sort` uses the current in-memory contacts without writing the file; failed commands also do not save. Still, we recommend backing up the file before editing it.<br>
+If your changes make the data file invalid, sudoContact starts with an empty address book at the next run. The invalid file remains on disk until a successful command that saves data overwrites it. `sort` uses the current in-memory contacts without writing the file. Rejected commands do not attempt to save; if saving fails, the previous saved file remains unchanged. Still, we recommend backing up the file before editing it.<br>
 Furthermore, certain edits can cause sudoContact to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </div>
 

@@ -617,9 +617,16 @@ No live data has been changed at that point: contacts, the catalogue, filtering,
 remain available. The user can resolve the storage error and retry clearing, or use `list` to save the retained
 data. Other commands retain their existing execution-before-save behavior.
 
-The JSON writer still writes directly to its destination. A denied write leaves the existing file intact,
-but a mid-write failure can leave incomplete disk data. The retained in-memory book can be saved with `list`
-after the storage issue is resolved. This flow does not provide atomic file replacement or disk rollback.
+The shared JSON save path serializes the complete object before `AtomicFileWriter` creates a temporary file
+in the destination directory. It writes and closes that file, then publishes it using `Files.move` with
+`ATOMIC_MOVE` and `REPLACE_EXISTING`. Existing read-only destinations are rejected. If temporary-file creation,
+writing, or replacement fails, the existing saved file remains unchanged; a failed first save leaves no empty
+destination. Unsupported atomic replacement is reported as a save error without a non-atomic fallback.
+Temporary files are removed after failures where possible, and cleanup errors are suppressed on the original
+failure rather than replacing it. Successful moves consume the temporary file without a second cleanup step.
+This mechanism also protects normal contact saves, including `list`, and user-preference saves. It does not
+provide a guarantee against sudden power loss. After resolving a save error, users can retry clearing or save
+retained live data with `list`. A failed `list` save still leaves its filter/sort reset applied in memory.
 Clearing does not add contacts to individual-deletion history, so it cannot be undone.
 Earlier individual deletions remain available to `undo`.
 
@@ -630,9 +637,12 @@ after confirmed deletion.
 `ClearSaveFailureIntegrationTest` covers permission and general I/O failures, a real temporary read-only JSON
 file where the platform enforces its permissions, department-only books, preservation of filter/sort and
 mixed deletion history, recovery with `list`, and successful retry with one save. It records live model state
-during saving to verify that clearing has not happened yet. An interrupted-write case verifies that retained
-live data can repair the JSON file. `CommandErrorUiTest` checks that the failure retains the input and data
-and displays recovery instructions rather than clear-success feedback.
+during saving to verify that clearing has not happened yet. An interrupted temporary-write case verifies
+that saved and live data remain unchanged. `AtomicFileWriterTest` covers creation, interrupted-write,
+replacement and unsupported-atomic-move failures with existing and missing destinations, cleanup, and complete
+UTF-8 publication. `JsonUtilTest` checks that serialization failures leave the destination untouched.
+`CommandErrorUiTest` checks that the failure retains the input and data and displays recovery instructions
+rather than clear-success feedback.
 
 `ClearCommand.HELP_PAGE` describes the removal of all contacts and registered departments, including
 unused catalogue entries. `HelpCatalog` summarizes the same scope in the command overview. The warning,

@@ -32,7 +32,7 @@ public class JsonUtil {
             .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
 
     static <T> void serializeObjectToJsonFile(Path jsonFile, T objectToSerialize) throws IOException {
-        FileUtil.writeToFile(jsonFile, toJsonString(objectToSerialize));
+        new AtomicFileWriter().write(jsonFile, toJsonString(objectToSerialize));
     }
 
     static <T> T deserializeObjectFromJsonFile(Path jsonFile, Class<T> classOfObjectToDeserialize)
@@ -71,7 +71,8 @@ public class JsonUtil {
 
     /**
      * Saves the Json object to the specified file.
-     * Overwrites existing file if it exists, creates a new file if it doesn't.
+     * Serializes the complete object before atomically creating or replacing the destination.
+     * A failed save preserves the existing destination; unsupported atomic replacement is an error.
      * @param jsonFile cannot be null
      * @param filePath cannot be null
      * @throws IOException if there was an error during writing to the file
