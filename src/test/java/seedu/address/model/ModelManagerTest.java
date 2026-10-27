@@ -194,6 +194,23 @@ public class ModelManagerTest {
     }
 
     @Test
+    public void equals_differentDeletedDepartment_returnsFalse() {
+        Department engineering = new Department("Engineering");
+        ModelManager engineeringDeleted = new ModelManager();
+        engineeringDeleted.addDepartment(engineering);
+        engineeringDeleted.deleteDepartment(engineering);
+
+        Department sales = new Department("Sales");
+        ModelManager salesDeleted = new ModelManager();
+        salesDeleted.addDepartment(sales);
+        salesDeleted.deleteDepartment(sales);
+
+        // Both address books end up empty, so only the deleted department differs.
+        assertEquals(engineeringDeleted.getAddressBook(), salesDeleted.getAddressBook());
+        assertFalse(engineeringDeleted.equals(salesDeleted));
+    }
+
+    @Test
     public void equals_differentDeletionOrder_returnsFalse() {
         Department engineering = new Department("Engineering");
         Person engineer = new PersonBuilder(ALICE).withDepartment("Engineering").build();
@@ -211,6 +228,7 @@ public class ModelManagerTest {
         assertEquals(contactFirst.getAddressBook(), departmentFirst.getAddressBook());
         assertEquals(contactFirst.getLastDeletedPerson(), departmentFirst.getLastDeletedPerson());
         assertFalse(contactFirst.equals(departmentFirst));
+        assertFalse(departmentFirst.equals(contactFirst));
     }
 
     @Test
@@ -244,5 +262,6 @@ public class ModelManagerTest {
         second.deleteDepartment(engineering);
 
         assertTrue(first.equals(second));
+        assertEquals(first.hashCode(), second.hashCode());
     }
 }

@@ -185,6 +185,7 @@ public class UndoCommandTest {
         // different UndoCommand -> returns true
         assertTrue(undoCommand.equals(new UndoCommand()));
         assertTrue(new UndoCommand(true).equals(new UndoCommand(true)));
+        assertEquals(new UndoCommand(true).hashCode(), new UndoCommand(true).hashCode());
 
         // different discard flag -> returns false
         assertFalse(undoCommand.equals(new UndoCommand(true)));

@@ -284,4 +284,9 @@ public class ModelManager implements Model {
                 && deletionOrder.equals(otherModelManager.deletionOrder);
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(addressBook, userPrefs, filteredPersons, deletedPersons, deletionOrder);
+    }
+
 }
