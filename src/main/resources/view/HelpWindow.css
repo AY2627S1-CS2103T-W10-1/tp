@@ -12,11 +12,6 @@
     -fx-font-weight: bold;
 }
 
-#helpCloseHint {
-    -fx-text-fill: -tui-muted;
-    -fx-font-size: 12px;
-}
-
 #helpScroll, #helpScroll > .viewport {
     -fx-background-color: -tui-pane;
 }
