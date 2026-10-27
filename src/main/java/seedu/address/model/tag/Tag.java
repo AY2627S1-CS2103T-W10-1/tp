@@ -11,7 +11,10 @@ public class Tag {
 
     public static final String MESSAGE_CONSTRAINTS = "Tags must be 1-30 characters using only letters, numbers, "
             + "hyphens (-), and underscores (_), with no spaces.";
+    public static final String MESSAGE_CHARACTER_CONSTRAINTS = "Tags must use only letters, numbers, hyphens (-), "
+            + "and underscores (_), with no spaces.";
     public static final String VALIDATION_REGEX = "[a-zA-Z0-9_-]{1,30}";
+    private static final String STORED_VALUE_REGEX = "[a-zA-Z0-9_-]+";
 
     public final String tagName;
 
@@ -32,7 +35,7 @@ public class Tag {
 
     /** Reads a stored tag, preserving older tags that exceed the current input length limit. */
     public static Tag fromStoredValue(String tagName) {
-        return new Tag(tagName, "[a-zA-Z0-9_-]+");
+        return new Tag(tagName, STORED_VALUE_REGEX);
     }
 
     /**
@@ -40,6 +43,11 @@ public class Tag {
      */
     public static boolean isValidTagName(String test) {
         return test.matches(VALIDATION_REGEX);
+    }
+
+    /** Returns true if the value is a valid stored tag, including a legacy tag longer than 30 characters. */
+    public static boolean isValidStoredTagName(String test) {
+        return test != null && test.matches(STORED_VALUE_REGEX);
     }
 
     @Override

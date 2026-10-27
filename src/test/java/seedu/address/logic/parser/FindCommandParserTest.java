@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.TagsMatchPredicate;
+import seedu.address.model.tag.Tag;
 
 public class FindCommandParserTest {
 
@@ -27,11 +28,10 @@ public class FindCommandParserTest {
     }
 
     @Test
-    public void parse_extraArgumentsAfterTag_throwsParseException() {
-        for (String value : List.of("friends --tags family", "friends -t family", "friends family",
-                "friends --tag=family")) {
-            assertParseFailure(parser, "--tag " + value,
-                    String.format(FindCommandParser.MESSAGE_INVALID_TAG, value));
+    public void parse_unknownOptionAfterTag_throwsParseException() {
+        for (String option : List.of("--tags", "--TAG", "--tag=family")) {
+            assertParseFailure(parser, "--tag friends " + option,
+                    String.format(FindCommandParser.MESSAGE_UNKNOWN_OPTION, option));
         }
     }
 
@@ -48,9 +48,24 @@ public class FindCommandParserTest {
         assertParseSuccess(parser, "--tag client", new FindCommand(new TagsMatchPredicate(List.of("client"))));
         assertParseSuccess(parser, " \t--tag Client-1\t--tag important_2  ",
                 new FindCommand(new TagsMatchPredicate(List.of("Client-1", "important_2"))));
+        assertParseSuccess(parser, "--tag client important_2",
+                new FindCommand(new TagsMatchPredicate(List.of("client", "important_2"))));
         String longestTag = "a".repeat(30);
         assertParseSuccess(parser, "--tag " + longestTag,
                 new FindCommand(new TagsMatchPredicate(List.of(longestTag))));
+        String legacyLongTag = "a".repeat(31);
+        assertParseSuccess(parser, "--tag " + legacyLongTag,
+                new FindCommand(new TagsMatchPredicate(List.of(legacyLongTag))));
+    }
+
+    @Test
+    public void parse_tagsUsesEditNormalization_returnsFindCommand() {
+        assertParseSuccess(parser, "--tag #client /important",
+                new FindCommand(new TagsMatchPredicate(List.of("client", "important"))));
+        assertParseSuccess(parser, "--tag \"--tag\"",
+                new FindCommand(new TagsMatchPredicate(List.of("--tag"))));
+        assertParseSuccess(parser, "--tag client client",
+                new FindCommand(new TagsMatchPredicate(List.of("client"))));
     }
 
     @Test
@@ -62,12 +77,8 @@ public class FindCommandParserTest {
 
     @Test
     public void parse_invalidTag_throwsParseException() {
-        for (String tag : List.of("two words", "bad!", "a".repeat(31), "a\tb", "\"client\"")) {
-            assertParseFailure(parser, "--tag " + tag,
-                    String.format(FindCommandParser.MESSAGE_INVALID_TAG, tag));
-            assertParseFailure(parser, "--tag client --tag " + tag,
-                    String.format(FindCommandParser.MESSAGE_INVALID_TAG, tag));
-        }
+        assertParseFailure(parser, "--tag bad!", Tag.MESSAGE_CHARACTER_CONSTRAINTS);
+        assertParseFailure(parser, "--tag client --tag bad!", Tag.MESSAGE_CHARACTER_CONSTRAINTS);
         assertParseFailure(parser, "Alice --tag client",
                 String.format(MESSAGE_INVALID_COMMAND_FORMAT, FindCommand.MESSAGE_USAGE));
     }

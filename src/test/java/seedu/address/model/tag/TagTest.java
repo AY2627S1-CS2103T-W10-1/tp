@@ -32,4 +32,11 @@ public class TagTest {
         assertFalse(Tag.isValidTagName("bad!"));
     }
 
+    @Test
+    public void isValidStoredTagName_allowsLegacyLongTags() {
+        assertTrue(Tag.isValidStoredTagName("a".repeat(31)));
+        assertFalse(Tag.isValidStoredTagName("two words"));
+        assertFalse(Tag.isValidStoredTagName(null));
+    }
+
 }

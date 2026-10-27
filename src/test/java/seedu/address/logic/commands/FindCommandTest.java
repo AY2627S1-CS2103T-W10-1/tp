@@ -78,6 +78,11 @@ public class FindCommandTest {
     }
 
     @Test
+    public void requiresStorageSave_returnsFalse() {
+        assertFalse(new FindCommand(new TagsMatchPredicate(List.of("friends"))).requiresStorageSave());
+    }
+
+    @Test
     public void equals() {
         NameContainsKeywordsPredicate firstPredicate =
                 new NameContainsKeywordsPredicate(List.of("first"));

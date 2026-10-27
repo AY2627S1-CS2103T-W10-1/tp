@@ -132,6 +132,30 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_findDoesNotSaveEvenWhenStorageCannotWrite() throws Exception {
+        Person bob = new PersonBuilder().withName("Bob").withTags("client").build();
+        model.addPerson(AMY);
+        model.addPerson(bob);
+        JsonAddressBookStorage blockedStorage =
+                new JsonAddressBookStorage(temporaryFolder.resolve("blocked.json")) {
+                    @Override
+                    public void saveAddressBook(ReadOnlyAddressBook addressBook) {
+                        throw new AssertionError("Find must not save the address book");
+                    }
+                };
+        logic = new LogicManager(model, new StorageManager(blockedStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))));
+
+        assertEquals(String.format(Messages.MESSAGE_PERSONS_LISTED_OVERVIEW, 1),
+                logic.execute("find Amy").getFeedbackToUser());
+        assertEquals(List.of(AMY), model.getFilteredPersonList());
+        assertEquals(String.format(Messages.MESSAGE_PERSONS_LISTED_OVERVIEW, 1),
+                logic.execute("find --tag client").getFeedbackToUser());
+        assertEquals(List.of(bob), model.getFilteredPersonList());
+        assertEquals(List.of(AMY, bob), model.getAddressBook().getPersonList());
+    }
+
+    @Test
     public void execute_unconfirmedOrInvalidClear_doesNotSaveOrChangeContacts() throws Exception {
         model.addPerson(AMY);
         JsonAddressBookStorage blockedStorage =

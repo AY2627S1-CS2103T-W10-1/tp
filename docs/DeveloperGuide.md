@@ -278,8 +278,9 @@ nonempty invalid data still causes a loading error. Existing fully populated dat
 tags as 1–30 characters with the team-specified hyphen/underscore support and leading `#`/`/` normalization.
 Keeping these rules in `ParserUtil`, rather than in one command's parser, keeps the two commands consistent.
 Storage retains compatibility with previously valid short phone numbers (`Phone.isValidPhone` still accepts
-3 or more digits) and longer tags through `Tag.fromStoredValue`; normal tag validation uses the shared 1–30
-character limit, including tag searches. This avoids a migration of old contact data.
+3 or more digits) and longer tags through `Tag.fromStoredValue`; normal `add` and `edit` validation uses the
+shared 1–30 character limit. Tag search accepts those longer stored values so legacy tags remain discoverable.
+This avoids a migration of old contact data.
 Tag search and matching reuse the teammate's implementation.
 
 `Person.isSamePerson` requires the same name and at least one matching provided phone number or email
@@ -467,32 +468,34 @@ after a closing quote are rejected.
 
 ### Searching contacts by tags (UC6)
 
-The tag-search command is `find --tag TAG [--tag TAG ...]`. Each tag requires its own lowercase `--tag`
-option; the command word is case-insensitive. Tag matching is case-insensitive; tags contain 1-30 ASCII letters,
-digits, hyphens, or underscores. Surrounding whitespace is ignored, but internal whitespace is invalid.
-Unlike contact-input parsing, tag search does not remove quotes or leading `#` or `/` characters:
-`find --tag "client"` and `find --tag #client` are invalid; use `find --tag client`.
+The tag-search command is `find --tag TAG [TAG ...] [--tag TAG ...]`. The option is lowercase and may be
+repeated; as with `add` and `edit`, several tags may follow one option. The command word is case-insensitive.
+Tag matching is case-insensitive; tags contain ASCII letters, digits, hyphens, or underscores. New tags are
+limited to 30 characters, while search accepts longer legacy tags retained during storage loading.
+`ParserUtil.parseTagForSearch` trims surrounding whitespace and removes leading `#` or `/` characters. Matching quotes
+are removed by the shared tokenizer. A tag that looks like an option must be quoted, so
+`find --tag "--tag"` searches for the literal tag `--tag` rather than introducing another option.
 
 #### Parsing and validation
 
-`AddressBookParser` delegates `find` to `FindCommandParser`. The parser recognizes standalone `--tag`
-tokens and treats the trimmed text between consecutive options as one tag value. It rejects text before
-the first `--tag`, preventing a combined name-and-tag search. It validates values from left to right using
-`Tag.isValidTagName`, reporting the first failure before constructing a command.
+`AddressBookParser` delegates `find` to `FindCommandParser`. The parser uses the shared quote-aware
+`ArgumentTokenizer`, with each word after `--tag` treated as a tag value. It rejects text before the first
+`--tag`, preventing a combined name-and-tag search. Values are validated from left to right through
+`ParserUtil.parseTagForSearch`, keeping normalization and character validation aligned with `add` and `edit`
+while allowing the longer values accepted by `Tag.fromStoredValue`.
+Normalized duplicate query tags are removed before constructing the command.
 
 | Condition | Feedback |
 | --- | --- |
 | Missing or whitespace-only value after `--tag` | `Tag cannot be empty: Please provide a valid tag after '--tag'.` |
-| Nonempty tag violates character or length constraints | `Invalid Tag: '[INPUT]' must be 1-30 characters using only letters, numbers, hyphens (-), and underscores (_), with no spaces.` |
-| No standalone `--tag`, but an option-like token is supplied | `Invalid find option: '[INPUT]'. Use find --tag TAG [--tag TAG ...] or find KEYWORD [MORE_KEYWORDS].` |
+| Tag violates the shared character constraints | `Tags must use only letters, numbers, hyphens (-), and underscores (_), with no spaces.` |
+| No standalone `--tag`, but an option-like token is supplied | `Invalid find option: '[INPUT]'. Use find --tag TAG [TAG ...] [--tag TAG ...] or find KEYWORD [MORE_KEYWORDS].` |
 | No arguments, or text before the first standalone `--tag` | `Invalid command format!` followed by a newline and `FindCommand.MESSAGE_USAGE`. |
 
-`[INPUT]` is the failing trimmed tag value or option token. Without a standalone `--tag`, a token beginning
-with `-`, an en dash, or an em dash is treated as an unsupported option; otherwise parsing follows the
-existing name-search path. After a valid `--tag`, unsupported option text is part of the value:
-`find --tag client --unknown` fails tag validation because the value contains a space.
-`find --tag --unknown` is a valid query for the literal tag `--unknown`, since hyphens are allowed.
-Quoted empty text is not a missing value: `find --tag ""` produces the invalid-tag message.
+Without a standalone `--tag`, a token beginning with `-`, an en dash, or an em dash is treated as an
+unsupported option; otherwise parsing follows the existing name-search path. After a valid `--tag`, an
+unquoted word beginning with `--` is also treated as an option and rejected if unknown. Quoting makes it a
+tag value instead. Empty quoted text and an option without a value produce the missing-tag message.
 Parsing failures leave the current filter, display order, and contacts unchanged.
 
 Tag search uses `String.equalsIgnoreCase` so users need not remember tag capitalization,
@@ -513,8 +516,8 @@ query tags or multiple matching tags do not duplicate contacts in the results.
 
 A successful search reports `[COUNT] person(s) listed!`. If no contacts match, it displays an empty list and
 `No contacts found with the specified tag(s).`; this is a valid search result, not a validation error.
-Contact fields remain unchanged. `FindCommand` retains the normal `LogicManager` storage-save flow;
-a save failure is reported after the display filter has been updated.
+Contact fields remain unchanged. `FindCommand.requiresStorageSave()` returns false because searching changes
+only the displayed filter, so `LogicManager` returns the result without rewriting the address book data file.
 
 `FindCommandParserTest` covers repeated options, whitespace, tag length boundaries, invalid tags,
 unsupported options, and mixed name/tag input. `TagsMatchPredicateTest` verifies OR matching, case-insensitive comparisons,
@@ -987,6 +990,12 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **Extensions**
 
+* 2a. The command format is invalid.
+
+  * 2a1. sudoContact displays the command format error.
+
+  Use case ends.
+
 * 3a. The catalogue is empty.
 
   * 3a1. sudoContact informs the user that no departments have been registered.
@@ -1018,6 +1027,13 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case ends.
 
+* 3a. sudoContact cannot save the updated address book.
+
+  * 3a1. sudoContact reports the save error instead of confirming the addition.
+  * 3a2. The new department remains in memory because the change is not rolled back.
+
+  Use case ends.
+
 
 **Use case: UC5c - Rename a department**
 
@@ -1038,9 +1054,17 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case ends.
 
-* 2b. The source does not exist or the target is already registered.
+* 2b. The source does not exist or the target name belongs to another registered department.
 
   * 2b1. sudoContact displays the corresponding error and leaves the data unchanged.
+
+  Use case ends.
+
+* 4a. sudoContact cannot save the updated address book.
+
+  * 4a1. sudoContact reports the save error instead of confirming the rename.
+  * 4a2. The renamed department and updated contact assignments remain in memory because the change is not
+    rolled back.
 
   Use case ends.
 
@@ -1064,6 +1088,14 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case ends.
 
+* 4a. sudoContact cannot save the updated address book.
+
+  * 4a1. sudoContact reports the save error instead of confirming the deletion.
+  * 4a2. The deleted catalogue entry, cleared assignments and undo record remain changed in memory because the
+    operation is not rolled back.
+
+  Use case ends.
+
 
 **Use case: UC5e - Assign a department to a contact**
 
@@ -1083,62 +1115,63 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   Use case ends.
 
+* 3a. sudoContact cannot save the updated address book.
+
+  * 3a1. sudoContact reports the save error instead of confirming the edit.
+  * 3a2. The contact's updated department remains in memory because the change is not rolled back.
+
+  Use case ends.
+
 
 **Use case:** UC6 - Search contacts by tags
 
 **MSS:**
 
-1.  User requests to search for contacts with one or more tags.
-2.  User enters a `find` command with one or more `--tag TAG` pairs.
-3.  sudoContact validates all specified tags.
-4.  sudoContact searches all contacts for those having any of the specified tags (OR matching),
-    using case-insensitive, whole-tag matching.
-5.  sudoContact displays each matching contact once.
-6.  sudoContact displays the number of matching contacts.
+1.  User requests to find contacts using one or more tags.
+2.  sudoContact displays each contact having any of the specified tags once, using case-insensitive,
+    whole-tag matching, and shows the number of matching contacts.
 
     Use case ends.
 
 **Extensions:**
 
-* 3a. A specified tag contains invalid characters, internal spaces, or more than 30 characters.
+* 1a. A specified tag contains invalid characters.
 
-    * 3a1. sudoContact displays `Invalid Tag: '[INPUT]' must be 1-30 characters using only letters, numbers, hyphens (-), and underscores (_), with no spaces.`
+  * 1a1. sudoContact displays `Tags must use only letters, numbers, hyphens (-), and underscores (_), with no spaces.`
 
-      Use case ends.
+  Use case ends.
 
-* 3b. A tag value is missing.
+* 1b. A tag value is missing.
 
-    * 3b1. sudoContact displays `Tag cannot be empty: Please provide a valid tag after '--tag'.`
+  * 1b1. sudoContact displays `Tag cannot be empty: Please provide a valid tag after '--tag'.`
 
-      Use case ends.
+  Use case ends.
 
-* 3c. No valid `--tag` option is present and an option-like argument is supplied
-  (e.g. `find --tags friends`, `find --TAG friends`, or `find -tag friends`).
+* 1c. An unsupported option is supplied, either instead of or after a valid `--tag`
+  (e.g. `find --tags friends`, `find --TAG friends`, or `find --tag friends --tags family`).
 
-    * 3c1. sudoContact displays `Invalid find option: '[INPUT]'. Use find --tag TAG [--tag TAG ...] or find KEYWORD [MORE_KEYWORDS].`
+  * 1c1. sudoContact displays `Invalid find option: '[INPUT]'. Use find --tag TAG [TAG ...] [--tag TAG ...] or find KEYWORD [MORE_KEYWORDS].`
 
-      Use case ends.
+  Use case ends.
 
-* 3d. Arguments precede the first valid `--tag` option (e.g. `find Alice --tag friends`),
-  or the `find` command has no arguments.
+* 1d. The command has no arguments or arguments precede the first valid `--tag` option
+  (e.g. `find Alice --tag friends`).
 
-    * 3d1. sudoContact displays an invalid command format error and the `find` usage instructions.
+  * 1d1. sudoContact displays an invalid command format error and the `find` usage instructions.
 
-      Use case ends.
+  Use case ends.
 
-* 4a. No contacts match the specified tag(s).
+* 1e. The command contains an unmatched quote or text immediately after a closing quote.
 
-    * 4a1. sudoContact displays `No contacts found with the specified tag(s).`
+  * 1e1. sudoContact displays the corresponding quotation error.
 
-      Use case ends.
+  Use case ends.
 
-* 4b. Multiple tags are specified and a contact matches more than one of them,
-  or the same tag is specified more than once.
+* 2a. No contacts match the specified tag(s).
 
-    * 4b1. sudoContact displays the matching contact only once.
+  * 2a1. sudoContact displays `No contacts found with the specified tag(s).`
 
-      Use case resumes at step 5.
-
+  Use case ends.
 
 **Use case: UC7 - View one contact's full details**
 
