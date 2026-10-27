@@ -22,11 +22,12 @@ public class FindCommand extends Command {
     public static final HelpPage HELP_PAGE = new HelpPage(COMMAND_WORD, String.join("\n",
             "Finds contacts by name keywords or tags.",
             "Usage: find KEYWORD [MORE_KEYWORDS ...]",
-            "       find --tag TAG [--tag TAG ...]",
+            "       find --tag TAG [TAG ...] [--tag TAG ...]",
             "",
             "Options:",
             "  --tag  Match any specified whole tag; matching is case-insensitive.",
             "         This command has no short tag option.",
+            "         Tag input follows add/edit rules; quote a tag that looks like an option.",
             "",
             "Name searches match any keyword, ignoring case.",
             "Tag and name searches cannot be combined. Results replace the displayed list.",
@@ -41,7 +42,8 @@ public class FindCommand extends Command {
             + "the specified keywords (case-insensitive) and displays them as a list with index numbers.\n"
             + "Parameters: KEYWORD [MORE_KEYWORDS]...\n"
             + "Example: " + COMMAND_WORD + " alice bob charlie\n"
-            + "Or find contacts matching any tag (case-insensitive): find --tag TAG [--tag TAG ...]\n"
+            + "Or find contacts matching any tag (case-insensitive): "
+            + "find --tag TAG [TAG ...] [--tag TAG ...]\n"
             + "Example: find --tag client --tag important";
 
     private final Predicate<Person> predicate;
@@ -59,6 +61,11 @@ public class FindCommand extends Command {
         }
         return new CommandResult(
                 String.format(Messages.MESSAGE_PERSONS_LISTED_OVERVIEW, model.getFilteredPersonList().size()));
+    }
+
+    @Override
+    public boolean requiresStorageSave() {
+        return false;
     }
 
     @Override

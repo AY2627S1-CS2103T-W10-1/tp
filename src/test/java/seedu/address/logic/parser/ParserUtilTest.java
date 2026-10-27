@@ -201,6 +201,18 @@ public class ParserUtilTest {
     }
 
     @Test
+    public void parseTagForSearch_legacyLongTag_returnsTag() throws Exception {
+        String legacyLongTag = "A".repeat(31);
+        assertEquals(Tag.fromStoredValue(legacyLongTag), ParserUtil.parseTagForSearch(legacyLongTag));
+    }
+
+    @Test
+    public void parseTagForSearch_invalidCharacters_throwsParseException() {
+        assertThrows(ParseException.class, Tag.MESSAGE_CHARACTER_CONSTRAINTS, () ->
+                ParserUtil.parseTagForSearch("two words"));
+    }
+
+    @Test
     public void parseTags_null_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> ParserUtil.parseTags(null));
     }

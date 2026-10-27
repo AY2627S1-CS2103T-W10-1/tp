@@ -163,10 +163,11 @@ Format: `add --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMEN
   `--name "Alice Tan"` and `--name Alice Tan` are the same.
 * Phone numbers must contain 7–15 digits, with no spaces or `+` sign.
 * A supplied email must be valid, such as `alice@example.com`.
-* Department names use the `depart` rules: 2-50 letters, numbers, spaces, hyphens or `&`.
+* Department names use the `depart` rules: 2-50 characters comprising English letters (`A-Z`, `a-z`),
+  numbers, spaces, hyphens or `&`.
   Register the department first with `depart --add DEPARTMENT`; unknown names are rejected.
 * Addresses are optional and must be nonblank when supplied.
-* Tags contain 1–30 letters, numbers, hyphens or underscores. Leading `#` or `/` is removed.
+* Tags contain 1–30 English letters (`A-Z`, `a-z`), numbers, hyphens or underscores. Leading `#` or `/` is removed.
   Repeat `--tag`, or put multiple tags after one flag. Identical tags are deduplicated; display preserves case.
 * Omit an unknown field entirely. An option with an empty value is rejected.
 * Unknown long options beginning with `--`, unmatched quotes and repeated options other than `--tag` are rejected.
@@ -226,7 +227,8 @@ Manages the shared department catalogue. Choose one operation per command:
 | `depart --add DEPARTMENT` | Registers a new department without assigning contacts. |
 | `depart --edit OLD_NAME NEW_NAME` | Renames a department and updates every associated contact, including hidden contacts. |
 
-* Names are case-sensitive and must contain 2-50 characters using letters, numbers, spaces, `-`, or `&`.
+* Names are case-sensitive and must contain 2-50 characters using English letters (`A-Z`, `a-z`), numbers,
+  spaces, `-`, or `&`.
   `depart`, `add`, and `edit` trim surrounding whitespace before validation and catalogue lookup.
   Spaces inside quoted names are preserved. Existing saved names are normalized on loading.
   Blank names are rejected. Quote names containing spaces, e.g. `depart --add "Customer Support"`.
@@ -252,6 +254,18 @@ Missing names, extra arguments, blank names and invalid names are rejected witho
 
 For example, run `depart --add Engineering`, then `depart --edit Engineering "Research & Development"`.
 `depart --list` now includes `Research & Development` even if no contacts belong to it.
+
+Use `depart --list` to verify all registered departments, including departments that currently have no contacts:
+
+![Listing registered departments](images/departmentList.png)
+
+Renaming a department reports both its previous and updated names:
+
+![Renaming a department](images/departmentRename.png)
+
+Deleting a department confirms that its associated contacts now have no department:
+
+![Deleting a department](images/departmentDelete.png)
 
 ### Assigning a contact's department: `edit --department`
 
@@ -413,23 +427,33 @@ Examples:
 
 ### Locating contacts by tags: `find --tag`
 
-Format: `find --tag TAG [--tag TAG ...]`
+Format: `find --tag TAG [TAG ...] [--tag TAG ...]`
 
 * Command words are case-insensitive: `find`, `FIND`, and `FiNd` are equivalent.
 * The option must be lowercase `--tag`; `--TAG` is invalid. Tag matching is case-insensitive:
   `friends` matches `Friends`. Original tag spelling is preserved in stored data and display.
 * Matches contacts with **any** of the specified tags, ignoring case and matching whole tags.
 * Each matching contact is displayed once, even if several tags match or a tag is repeated.
-* Tags must contain 1–30 letters, numbers, hyphens (`-`), or underscores (`_`), without spaces.
+* As with `add` and `edit`, several tags can follow one `--tag`, the option can be repeated, and identical
+  inputs are deduplicated. Leading `#` or `/` characters are removed before searching.
+* Tags use English letters (`A-Z`, `a-z`), numbers, hyphens (`-`), or underscores (`_`), without spaces.
+  New tags are limited to 30 characters, but search also accepts longer tags retained from older data files.
+  Quote a tag that is itself an option-like value, e.g. `find --tag "--tag"` searches for the tag `--tag`.
 * A missing value displays `Tag cannot be empty: Please provide a valid tag after '--tag'.`
-* An invalid value displays `Invalid Tag: '[INPUT]' must be 1-30 characters using only letters, numbers, hyphens (-), and underscores (_), with no spaces.`
+* An invalid search value displays `Tags must use only letters, numbers, hyphens (-), and underscores (_), with no spaces.`
 * No matches displays `No contacts found with the specified tag(s).`
+* Searching changes only the displayed list; it does not modify contacts or save the JSON data file.
 
 Example: `find --tag client --tag important`
 
+For example, `find --tag friends` displays the two contacts tagged `friends` and reports the number of matches:
+
+![Finding contacts by tag](images/findByTag.png)
+
 For `depart --add`, `depart --edit` and `depart --delete`, each department name containing spaces
 must be enclosed in matching single or double quotes, e.g. `depart --add "Customer Support"`.
-Tag-search values are unquoted single tags; `find --tag "friends"` is invalid.
+Matching quotes around tag-search values are optional, except when needed to prevent a value such as `--tag`
+from being interpreted as an option.
 
 ### Locating persons by name: `find`
 
@@ -585,11 +609,12 @@ or free space and retry. Export is a copy for external use; it does not replace 
 ### Saving the data
 
 sudoContact automatically saves contact changes after successful commands; no separate save command is needed.
-The JSON save is skipped for `view`, `sort`, `export`, `help`/`?`, `depart --list`, and `clear` without `--confirm`.
+The JSON save is skipped for `find`, `view`, `sort`, `export`, `help`/`?`, `depart --list`, and `clear`
+without `--confirm`.
 `sort` changes only the displayed order; it does not write the contact file or persist the sort order.
 `export` writes a separate CSV copy; it does not modify or save the JSON contact file.
-Viewing, help and department listing only display information; unconfirmed `clear` only displays its warning.
-`clear --confirm` does save the cleared data. `list`/`ls` and `find` retain the normal JSON-save behavior.
+Finding, viewing, help and department listing only display information; unconfirmed `clear` only displays its warning.
+`clear --confirm` does save the cleared data. `list`/`ls` retains the normal JSON-save behavior.
 Departments and tags are contact data and are saved normally when changed.
 If saving fails, for example because the data file is read-only, the error says the change is still applied in the app.
 It is saved the next time saving succeeds. Closing the app before then loses the unsaved change.
@@ -646,7 +671,7 @@ Action | Format, Examples
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit** | `edit INDEX [-n NAME] [-p PHONE_NUMBER] [-e EMAIL] [-a ADDRESS] [-d DEPARTMENT] [-t TAG]…​`<br> e.g., `edit 2 -n James Lee -e jameslee@example.com`
 **Find by name** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
-**Find by tag** | `find --tag TAG [--tag TAG ...]`<br> e.g., `find --tag client --tag important`
+**Find by tag** | `find --tag TAG [TAG ...] [--tag TAG ...]`<br> e.g., `find --tag client --tag important`
 **Export** | `export --csv [FILENAME]` or `export -c [FILENAME]`<br> e.g., `export -c team.csv`
 **View** | `view CONTACT_ID`<br> e.g., `view 2`
 **List** | `list` or `ls`
