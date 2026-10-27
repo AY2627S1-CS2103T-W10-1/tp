@@ -236,6 +236,18 @@ Missing names, extra arguments, blank names and invalid names are rejected witho
 For example, run `depart --add Engineering`, then `depart --edit Engineering "Research & Development"`.
 `depart --list` now includes `Research & Development` even if no contacts belong to it.
 
+Use `depart --list` to verify all registered departments, including departments that currently have no contacts:
+
+![Listing registered departments](images/departmentList.png)
+
+Renaming a department reports both its previous and updated names:
+
+![Renaming a department](images/departmentRename.png)
+
+Deleting a department confirms that its associated contacts now have no department:
+
+![Deleting a department](images/departmentDelete.png)
+
 ### Assigning a contact's department: `edit --department`
 
 Format: `edit CONTACT_ID --department DEPARTMENT` (short form: `edit CONTACT_ID -d DEPARTMENT`).
@@ -406,6 +418,10 @@ Format: `find --tag TAG [TAG ...] [--tag TAG ...]`
 * No matches displays `No contacts found with the specified tag(s).`
 
 Example: `find --tag client --tag important`
+
+For example, `find --tag friends` displays the two contacts tagged `friends` and reports the number of matches:
+
+![Finding contacts by tag](images/findByTag.png)
 
 For `depart --add`, `depart --edit` and `depart --delete`, each department name containing spaces
 must be enclosed in matching single or double quotes, e.g. `depart --add "Customer Support"`.
