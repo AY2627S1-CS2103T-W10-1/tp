@@ -46,6 +46,24 @@ public class DashboardUiTest {
     }
 
     @Test
+    public void view_fromMaximizedMainWindow_keepsDefaultPopupSizeAfterNativeLayout() throws Exception {
+        FxTestUtil.run(() -> {
+            MainWindow main = showMainWindow();
+            main.getPrimaryStage().setMaximized(true);
+            FxTestUtil.awaitWindowEvents();
+            TextField input = (TextField) main.getPrimaryStage().getScene().lookup("#commandTextField");
+
+            enter(input, "view 1");
+            FxTestUtil.awaitWindowEvents();
+
+            Stage popup = main.getContactDetailsWindows().getOpenWindows().getFirst().getRoot();
+            assertEquals(560, popup.getWidth(), 2);
+            assertTrue(popup.getScene().getHeight() >= 420 - 2,
+                    "The contact content must keep its preferred height after native layout");
+        });
+    }
+
+    @Test
     public void keyboard_movesBetweenPanesAndOpensSelectedContact() throws Exception {
         FxTestUtil.run(() -> {
             MainWindow main = showMainWindow();
