@@ -26,11 +26,14 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import seedu.address.logic.LogicManager;
 import seedu.address.logic.commands.AddCommand;
+import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.parser.ParserUtil;
+import seedu.address.model.AddressBook;
 import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyAddressBook;
+import seedu.address.model.person.Department;
 import seedu.address.model.person.Person;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
@@ -120,6 +123,34 @@ public class CommandErrorUiTest {
     public void enter_storagePermissionFailure_preservesErrorAndDoesNotRetryCommand() throws Exception {
         assertStorageFailure(new AccessDeniedException("contacts.json"),
                 String.format(LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT, "contacts.json"));
+    }
+
+    @Test
+    public void enter_clearSaveFailure_displaysRecoveryAndKeepsContactsAndDepartments() throws Exception {
+        FxTestUtil.run(() -> {
+            ModelManager model = new ModelManager();
+            model.addDepartment(new Department("Engineering"));
+            model.addPerson(new PersonBuilder().withName("Alice").withDepartment("Engineering").build());
+            AddressBook before = new AddressBook(model.getAddressBook());
+            AtomicInteger saves = new AtomicInteger();
+            JsonAddressBookStorage blocked = new JsonAddressBookStorage(testFolder.resolve("contacts.json")) {
+                @Override
+                public void saveAddressBook(ReadOnlyAddressBook addressBook) throws IOException {
+                    saves.incrementAndGet();
+                    throw new AccessDeniedException("contacts.json");
+                }
+            };
+            Stage stage = showWindow(model, blocked);
+            String expected = String.format(LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT, "contacts.json")
+                    + "\n" + ClearCommand.MESSAGE_SAVE_FAILURE_RECOVERY
+                    + "\n\nExamples:\n  clear\n  clear --confirm";
+
+            assertError(stage, "clear --confirm", expected);
+
+            assertEquals(1, saves.get());
+            assertEquals(before, model.getAddressBook());
+            assertEquals(before.getPersonList(), model.getFilteredPersonList());
+        });
     }
 
     private void assertStorageFailure(IOException failure, String expected) throws Exception {

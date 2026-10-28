@@ -2,17 +2,20 @@ package seedu.address.logic;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 import javafx.collections.ObservableList;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.commons.core.LogsCenter;
+import seedu.address.logic.commands.AddressBookReplacement;
 import seedu.address.logic.commands.Command;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.AddressBookParser;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.Model;
+import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.person.Department;
 import seedu.address.model.person.Person;
 import seedu.address.storage.Storage;
@@ -49,25 +52,42 @@ public class LogicManager implements Logic {
 
     @Override
     public CommandResult execute(String commandText) throws CommandException, ParseException {
-        CommandResult commandResult;
         Command command = addressBookParser.parseCommand(commandText);
         // Log the parsed type only: raw arguments and command.toString() can contain private data.
         logger.info("Executing command: " + command.getClass().getSimpleName());
-        commandResult = command.execute(model);
-
-        if (!command.requiresStorageSave()) {
-            return commandResult;
+        Optional<AddressBookReplacement> replacement = command.getAddressBookReplacement();
+        if (replacement.isPresent()) {
+            return executeReplacement(command, replacement.get());
         }
+        return executeAndSave(command);
+    }
 
+    private CommandResult executeReplacement(Command command, AddressBookReplacement replacement)
+            throws CommandException {
         try {
-            storage.saveAddressBook(model.getAddressBook());
+            saveAddressBook(replacement.addressBook());
+        } catch (CommandException e) {
+            throw new CommandException(e.getMessage() + "\n" + replacement.failureRecoveryMessage(), e.getCause());
+        }
+        return command.execute(model);
+    }
+
+    private CommandResult executeAndSave(Command command) throws CommandException {
+        CommandResult result = command.execute(model);
+        if (command.requiresStorageSave()) {
+            saveAddressBook(model.getAddressBook());
+        }
+        return result;
+    }
+
+    private void saveAddressBook(ReadOnlyAddressBook addressBook) throws CommandException {
+        try {
+            storage.saveAddressBook(addressBook);
         } catch (AccessDeniedException e) {
             throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage()), e);
         } catch (IOException ioe) {
             throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage()), ioe);
         }
-
-        return commandResult;
     }
 
     @Override

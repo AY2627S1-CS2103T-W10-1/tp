@@ -103,7 +103,11 @@ is outlined. `DepartmentPanel` and `StatusBarFooter` read the unfiltered `Logic.
 
 Contact details appear in two places. The docked \[3\] pane follows the selection in \[2\]: selecting a row with a
 click or j/k passes that contact directly to `DetailsPanel.showDetails(Person)` and shows it at once, without running a
-command, so glancing through contacts stays instant. To compare contacts side by side, details can also pop out
+command, so glancing through contacts stays instant. When selection becomes null, the listener calls
+`DetailsPanel.clearDetails()` to restore the placeholder, remove accessible contact text, and reset value
+navigation and scrolling. The constructor uses the same reset operation. A successful `clear --confirm`
+therefore empties the docked pane; a failed save preserves the selection and its details.
+To compare contacts side by side, details can also pop out
 into windows managed by `ContactDetailsWindows`. A successful `view` command returns the
 viewed immutable `Person` through `CommandResult`. `ContactDetailsWindows.show(Person)` refreshes
 the open `ContactDetailsWindow` (a `UiPart<Stage>`) whose contact `isSamePerson` as the viewed one, or opens a new
@@ -149,7 +153,11 @@ How the `Logic` component works:
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
 1. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
    Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
-1. `LogicManager` saves the canonical address book if `Command.requiresStorageSave()` returns true.
+1. `LogicManager` checks `Command.getAddressBookReplacement()` before execution. If present, it saves the
+   proposed replacement before executing the command, and skips the normal save afterward. Confirmed
+   `ClearCommand` uses this path; a save failure prevents execution and preserves the live model.
+   Otherwise, `LogicManager` saves the canonical address book after execution if `Command.requiresStorageSave()`
+   returns true.
    Read-only `ViewCommand` and display-only `SortCommand` return false, as do `ExportCommand`, `HelpCommand`,
    department listing and unconfirmed `ClearCommand`.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
@@ -193,6 +201,23 @@ The `Storage` component,
 * can save both address book data and user preference data in JSON format, and read them back into corresponding objects.
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonAddressBookStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
+
+Both JSON storage classes save through `JsonUtil.saveJsonFile`, which serializes the complete object before
+passing the JSON text to `AtomicFileWriter`. The writer creates a sibling temporary file on the destination's
+filesystem, writes and closes the complete UTF-8 content, then publishes it using
+`Files.move` with `ATOMIC_MOVE` and `REPLACE_EXISTING`. This shared path protects both address book data and
+user preferences. CSV export uses the separate `CsvContactExporter` flow described below.
+
+If serialization, temporary-file creation, writing, or replacement fails, the previous destination remains
+unchanged. A failed save does not create an empty destination if none existed. After a temporary-file write or
+replacement failure, the writer attempts to remove the temporary file; any cleanup failure is attached to the
+original exception as a suppressed exception. Unsupported atomic replacement is reported as a save error,
+without falling back to a non-atomic write.
+
+Atomic replacement protects the saved file independently of command execution. Ordinary commands that modify
+the model do so before saving, so a failed save leaves their changes in memory. After resolving the storage problem,
+`list` retries saving the current address book. Confirmed `clear` uses the replacement-before-execution path
+described in [Clearing contacts with confirmation](#clearing-contacts-with-confirmation).
 
 ### Common classes
 
@@ -597,14 +622,18 @@ the parser accepts only blank arguments or the exact `--confirm` flag. All other
 `ClearCommand` stores an immutable confirmation flag. Without confirmation, it counts the canonical
 address book's contacts and returns a warning; contacts, display filtering and sorting, and deletion
 history remain unchanged. Its `requiresStorageSave()` override returns false in this case.
-With confirmation, it resets the address book, including the department catalogue, and allows
-`LogicManager` to save the empty book.
+With confirmation, `getAddressBookReplacement()` supplies the empty address book to `LogicManager`, which
+saves it before executing the command. Only after saving succeeds does `ClearCommand.execute` reset the
+live address book, including the department catalogue; `LogicManager` skips the normal save afterward.
+If saving fails, the command is not executed: contacts, departments, the current filter and sorting, and
+deletion history remain unchanged. The error explains that clearing was not applied. After resolving the
+storage problem, the user can retry `clear --confirm`, or run `list` to save the retained data.
 Clearing does not add contacts to individual-deletion history, so it cannot be undone.
 Earlier individual deletions remain available to `undo`.
 
 Regression tests cover strict parsing, warning counts with hidden contacts, unchanged display and undo
-history, skipped saves for unconfirmed or invalid input, and reloading the empty saved address book
-after confirmed deletion.
+history, skipped saves for unconfirmed or invalid input, preservation of saved and live data after save
+failures, recovery and retry, and reloading the empty saved address book after confirmed deletion.
 
 ### Viewing contact details
 
@@ -741,31 +770,26 @@ How `undo` works:
    undo.
 1. It reads the most recent contact deletion with `Model#getLastDeletedPerson()`. If that contact has neither a phone
    number nor an email address, which only happens with legacy data, it throws a `CommandException` and leaves the
-   history unchanged. No edit can fix a contact that exists only in the history, so the message points to
-   `undo --discard-latest`.
+   history unchanged. The error points to `undo --discard-latest` to get past the blocked deletion.
 1. It checks `Model#hasPerson(...)` for a [duplicate contact](#glossary) already in the list: one with the same name
    and a matching provided phone number or email address (`Person#isSamePerson`). If one exists, it throws a
    `CommandException` that names it. One matching field is enough, so a contact with a different email, or no email,
-   still blocks `undo` if its phone matches. The deletion stays in the history. The message tells the user to `edit`
-   that contact so it no longer matches and run `undo` again, or to drop the deletion with `undo --discard-latest`.
-   Deleting that contact does not help: `deletePerson` pushes it onto the history, so the next `undo` restores it
-   instead of the blocked contact. `edit` goes through `Model#setPerson`, which leaves the history unchanged.
+   still blocks `undo` if its phone matches. The deletion stays in the history, so the user can edit every
+   conflicting identity field, or change the existing contact's name, and retry. Deleting a conflicting contact
+   creates a newer history entry, so the next `undo` would target that newer deletion instead.
 1. Otherwise, `Model#restoreLastDeletedPerson()` calls `Model#addPerson`. This appends the `Person` held in
    `deletedPersons` to the end of the stored list, so its tags and other fields are unchanged. Its department reflects
    any `depart --edit` or `depart --delete` run since the deletion. `addPerson` also shows the full
    list, which clears any `find` filter and `sort` order. The deletion is popped only after the add succeeds, so a
    failed add does not lose it.
-1. `LogicManager` saves the address book, as it does after other commands that change it. As for every command, a
-   failed save is not rolled back: the contact or department stays restored in memory and its deletion stays popped.
-   The save error says the change is still applied and will be saved the next time saving succeeds, so the user does
-   not run `undo` again, which would restore the next earlier deletion.
+1. `LogicManager` saves the address book, as it does after other commands that change it.
 
-`undo --discard-latest` lets the user get past a deletion they do not want back, or one that `undo` cannot restore,
-such as a legacy contact with no phone number or email address. `UndoCommandParser` creates an `UndoCommand` in
-discard mode. `UndoCommand#execute` finds the most recent deletion with the same `Model` queries as above, throwing a
-`CommandException` if there is none. It names that deletion in the result and calls `Model#discardLastDeletion()`.
-Nothing is restored, so contacts whose department a discarded department deletion cleared stay without it.
-`UndoCommand#requiresStorageSave()` returns false in this mode, because only the in-memory history changes.
+`undo --discard-latest` drops the most recent deletion without restoring it, so the user can get past a deletion
+they do not want back or one that `undo` cannot restore. `UndoCommandParser` creates an `UndoCommand` in discard
+mode. The command throws a `CommandException` if the history is empty; otherwise, it names the deletion in the
+result and calls `Model#discardLastDeletion()`. A discarded deletion cannot be restored. Discarding a department
+deletion leaves its cleared assignments unchanged. `UndoCommand#requiresStorageSave()` returns false in this
+mode because only the in-memory history changes.
 
 `clear` replaces the address book through `Model#setAddressBook`, which does not touch the deletion history. After
 `clear`, `undo` can still restore contacts and departments that were deleted individually before it, but not the
@@ -791,26 +815,14 @@ contacts that `clear` removed.
 **Aspect: Where the deletion history is kept:**
 
 * **Alternative 1 (current choice):** In `ModelManager`.
-  * Pros: Each `Model` has its own history, so tests do not share state. `ModelManager#equals` compares both lists,
-    so `CommandTestUtil.assertCommandSuccess` checks the order `undo` will follow too. Department deletions are
-    compared by their department and cleared contacts, not by object identity.
+  * Pros: Each `Model` has its own history, so tests do not share state. `ModelManager#equals` compares the history,
+    so `CommandTestUtil.assertCommandSuccess` checks it too.
   * Cons: `Model` gains six methods, which every `Model` stub in the tests must implement.
 
 * **Alternative 2:** In a static field of `DeleteCommand` or `UndoCommand`.
   * Pros: `Model` does not change.
   * Cons: A new command object is created for every input, so the history would have to be static. It would then be
     shared by every `Model`, including those in different tests.
-
-**Aspect: Getting past a deletion that `undo` cannot or should not restore:**
-
-* **Alternative 1 (current choice):** `undo --discard-latest` drops the most recent deletion without restoring it.
-  * Pros: The user decides what is dropped, and the result names it. The rest of the history keeps its order.
-  * Cons: A discarded deletion cannot be brought back.
-
-* **Alternative 2:** `undo` skips deletions it cannot restore and restores the most recent one it can.
-  * Pros: No new option.
-  * Cons: Deletions are restored out of order without the user asking, and the blocked deletion stays on top of the
-    history.
 
 ### Command history and error feedback
 
@@ -1626,23 +1638,6 @@ add --name "Benson Meier" --phone 92345678 --email benson@example.com --tag vend
    1. Other incorrect delete commands to try: `delete`, `delete x`, `...` (where x is larger than the list size)<br>
       Expected: Similar to previous.
 
-### Undoing and discarding deletions
-
-1. Prerequisites: List all contacts using the `list` command, with at least two contacts in the list.
-
-1. Test case: `delete 1`, `delete 1`, then `undo --discard-latest`<br>
-   Expected: The status message names the second deleted contact and says it can no longer be restored.
-   The contact list does not change.
-
-1. Test case: `undo`<br>
-   Expected: The first deleted contact is restored at the end of the list.
-
-1. Test case: `undo --discard-latest` with no deletions left in the session<br>
-   Expected: `There are no deletions to undo in this session.`
-
-1. Other incorrect commands to try: `undo 2`, `undo --discard`, `undo -d`<br>
-   Expected: An invalid command format error with the `undo` usage message.
-
 ### Saving data
 
 1. Missing data file: in a fresh disposable folder, launch without `data/addressbook.json`.
@@ -1672,12 +1667,9 @@ add --name "Benson Meier" --phone 92345678 --email benson@example.com --tag vend
 7. Compare the contact data file before and after sorting; its contents should be unchanged.
 8. Give two contacts departments that differ only by case. Sort by tags, then by department; confirm their
    relative order from the tag sort is retained. Repeat with missing fields to confirm those contacts appear last.
-9. Run `depart --list`. If `Support` is absent, register it with `depart --add Support`.
-   Run `sort --by department`, then `view 1`, followed by `edit 1 --department Support`.
-   Expected: viewing and editing both target the first displayed contact.
-   Check the new indices after the edit resets sorting.
-   Sort again, delete a sorted contact, and run `undo`.
-   Expected: its department and tags are restored, and the full list returns to stored order.
+9. After sorting, run `view 1`, then `edit 1 --department Support`; confirm both target the displayed first contact.
+   Check the new indices after assignment resets sorting. Delete a sorted contact and run `undo`; confirm its
+   department and tags are restored and the full list returns to canonical order.
 10. Using a disposable copy of the application, start with malformed contact JSON; confirm the list is empty and
     sorting reports `No contacts found to sort.` without overwriting the file. Add two valid contacts with different
     tags and confirm they are saved. Sort by tags in the same session; confirm sorting succeeds and the saved file

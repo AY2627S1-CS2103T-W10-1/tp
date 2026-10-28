@@ -147,6 +147,8 @@ Examples: `help`, `help depart`, `? sort`, `help ls`.
 Command names are case-insensitive, and aliases (`ls` and `?`) are accepted as topics.
 Unknown topics and multiple arguments are rejected. Repeated help requests update the same window,
 and restore it if minimized. Help preserves contacts, the active filter, display order, and deletion history.
+For example, `help clear` explains that confirmed clearing removes all contacts and registered departments,
+including unused department entries.
 
 
 ### Adding a contact with partial information: `add`
@@ -368,6 +370,8 @@ A missing file follows the existing sample-data behavior.
 Shows the selected contact's name, phone, email, department, address and tags in a contact details popup.
 The main result box shows a brief confirmation, such as `Showing details of contact 1: Amy Bee`.
 To glance at a contact without opening a popup, click it in the contact list; its details appear in \[3\] Details.
+When no contact is selected, \[3\] shows a hint instead of contact details. This includes after a successful
+`clear --confirm`; if clearing fails to save, the selected contact and its details remain available.
 The popup lists each field name beside its value, with how to reach the contact (name, phone, email, address)
 grouped above how they are organised (department, tags). Long values wrap onto multiple lines; scroll to read them.
 Contacts without tags show a dimmed `None` for Tags, and contacts without a department show a dimmed `Not provided`.
@@ -545,20 +549,28 @@ Earlier individual deletions remain available to `undo` during the current sessi
 
 Format: `clear [--confirm]`
 
-* `clear` shows a warning without changing contacts or saving the address book:
-  `This will delete all N contacts and cannot be undone. Type "clear --confirm" to proceed.`
+* `clear` shows a warning without changing contacts, the department catalogue, or the saved address book:
+  `This will delete all N contacts and all registered departments and cannot be undone. Type "clear --confirm" to proceed.`
 * `N` counts **all stored contacts**, including contacts hidden by a search.
 * `clear --confirm` deletes all stored contacts and all registered departments, including unused entries,
   and saves the empty address book immediately.
   It can be entered directly without first entering `clear`.
+* The empty address book is saved **before** contacts and departments are removed from this session.
+  If saving fails, clearing is not applied: contacts, departments, the current filter and sorting, and earlier
+  deletion history remain unchanged. The error explains that the data remains available in this session.
+  Resolve the save error, then retry `clear --confirm` to clear the data, or run `list` to save the retained data.
+  The previous saved file also remains unchanged if saving fails. If there was no saved file, a failed save
+  does not create an empty one. Successful clearing still cannot be undone.
 * Only the exact lowercase flag `--confirm` is accepted. Surrounding whitespace is allowed.
   Other arguments, such as `clear 1`, `clear --CONFIRM`, or `clear --confirm extra`, show an
   invalid command format error without deleting or saving anything.
-* On an empty address book, `clear` still shows a warning with a count of 0.
+* With no contacts, `clear` still shows a warning with a count of 0, even if registered departments remain.
+  The warning still states that all registered departments will be deleted.
 
 Examples:
-* `clear` shows the warning and leaves all contacts unchanged.
-* `clear --confirm` deletes all contacts, including those hidden by the current filter.
+* `clear` shows the warning and leaves all contacts and registered departments unchanged.
+* `clear --confirm` deletes all contacts, including those hidden by the current filter, and all registered
+  departments, including unused entries.
 
 ### Exiting the program: `exit`
 
@@ -612,15 +624,24 @@ or free space and retry. Export is a copy for external use; it does not replace 
 ### Saving the data
 
 sudoContact automatically saves contact changes after successful commands; no separate save command is needed.
-The JSON save is skipped for `find`, `view`, `sort`, `export`, `help`/`?`, `depart --list`, and `clear`
-without `--confirm`.
+JSON saves replace the previous file only after the complete new data has been written. If saving fails,
+the previous saved file remains unchanged. If the filesystem cannot safely replace the file in one operation,
+the app reports a save error; use a local folder that supports atomic file replacement.
+The JSON save is skipped for `find`, `view`, `sort`, `export`, `help`/`?`, `depart --list`,
+`undo --discard-latest`, and `clear` without `--confirm`.
 `sort` changes only the displayed order; it does not write the contact file or persist the sort order.
 `export` writes a separate CSV copy; it does not modify or save the JSON contact file.
 Finding, viewing, help and department listing only display information; unconfirmed `clear` only displays its warning.
 `clear --confirm` does save the cleared data. `list`/`ls` retains the normal JSON-save behavior.
 Departments and tags are contact data and are saved normally when changed.
-If saving fails, for example because the data file is read-only, the error says the change is still applied in the app.
-It is saved the next time saving succeeds. Closing the app before then loses the unsaved change.
+If saving fails after adding, editing, deleting, changing departments, or restoring a deletion, the change remains
+in the current session, while the previous saved file remains unchanged. Resolve the storage problem, then run
+`list` to retry saving before closing the app. Repeating the original command may apply another change.
+Closing the app before saving succeeds loses the unsaved change.
+
+`clear --confirm` saves the empty address book before removing contacts and departments from the current session.
+If saving fails, clearing is not applied. Resolve the storage problem, then retry `clear --confirm` if you still
+want to clear the data.
 
 ### Editing the data file
 
@@ -631,7 +652,7 @@ uses that other folder for data instead. Advanced users may edit the JSON file w
 check the launch directory before copying or changing it.
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
-If your changes make the data file invalid, sudoContact starts with an empty address book at the next run. The invalid file remains on disk until a successful command that saves data overwrites it. `sort` uses the current in-memory contacts without writing the file; failed commands also do not save. Still, we recommend backing up the file before editing it.<br>
+If your changes make the data file invalid, sudoContact starts with an empty address book at the next run. The invalid file remains on disk until a successful command that saves data overwrites it. `sort` uses the current in-memory contacts without writing the file. Rejected commands do not attempt to save; if saving fails, the previous saved file remains unchanged. Still, we recommend backing up the file before editing it.<br>
 Furthermore, certain edits can cause sudoContact to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </div>
 
@@ -670,7 +691,7 @@ contacts and departments have been verified on the new computer.
 Action | Format, Examples
 --------|------------------
 **Add** | `add --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMENT] [--address ADDRESS] [--tag TAG ...]`<br> or `add -n NAME [-p PHONE] [-e EMAIL] [-d DEPARTMENT] [-a ADDRESS] [-t TAG]…` <br> e.g., `add --name "James Ho" --email jamesho@example.com`
-**Clear** | `clear` (warning), `clear --confirm` (delete all)
+**Clear** | `clear` (warning), `clear --confirm` (delete all contacts and registered departments)
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit** | `edit INDEX [-n NAME] [-p PHONE_NUMBER] [-e EMAIL] [-a ADDRESS] [-d DEPARTMENT] [-t TAG]…​`<br> e.g., `edit 2 -n James Lee -e jameslee@example.com`
 **Find by name** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`

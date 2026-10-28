@@ -1,6 +1,7 @@
 package seedu.address.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
@@ -28,6 +29,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 import seedu.address.logic.LogicManager;
+import seedu.address.logic.commands.ClearCommand;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.Person;
@@ -214,8 +216,58 @@ public class DashboardUiTest {
             assertTrue(main.getContactDetailsWindows().getOpenWindows().isEmpty());
 
             contacts.getSelectionModel().clearSelection();
-            assertTrue(dockedDetails(scene).startsWith("Name: Carl Kurz\n"));
+            assertEmptyDockedDetails(scene);
+            contacts.getSelectionModel().select(1);
+            assertTrue(dockedDetails(scene).startsWith("Name: Benson Meier\n"));
         });
+    }
+
+    @Test
+    public void clear_selectedContact_restoresDockedPlaceholder() throws Exception {
+        FxTestUtil.run(() -> {
+            MainWindow main = showMainWindow();
+            Scene scene = main.getPrimaryStage().getScene();
+            TextField input = (TextField) scene.lookup("#commandTextField");
+            ListView<?> contacts = (ListView<?>) scene.lookup("#personListView");
+            contacts.getSelectionModel().selectFirst();
+            assertTrue(dockedDetails(scene).startsWith("Name: Alice Pauline\n"));
+
+            enter(input, "clear --confirm");
+
+            assertEquals(ClearCommand.MESSAGE_SUCCESS, ((TextArea) scene.lookup("#resultDisplay")).getText());
+            assertTrue(contacts.getItems().isEmpty());
+            assertNull(contacts.getSelectionModel().getSelectedItem());
+            assertEmptyDockedDetails(scene);
+            press(input, KeyCode.DIGIT3, true);
+            assertSame(scene.lookup("#detailsScroll"), scene.getFocusOwner());
+        });
+    }
+
+    @Test
+    public void clear_saveFailure_keepsSelectionAndDockedDetails() throws Exception {
+        FxTestUtil.run(() -> {
+            // A directory at the data path causes a real save failure.
+            MainWindow main = showMainWindow(testFolder);
+            Scene scene = main.getPrimaryStage().getScene();
+            ListView<?> contacts = (ListView<?>) scene.lookup("#personListView");
+            contacts.getSelectionModel().selectFirst();
+            Object selected = contacts.getSelectionModel().getSelectedItem();
+            String details = dockedDetails(scene);
+
+            enter((TextField) scene.lookup("#commandTextField"), "clear --confirm");
+
+            assertTrue(((TextArea) scene.lookup("#resultDisplay")).getText()
+                    .contains(ClearCommand.MESSAGE_SAVE_FAILURE_RECOVERY));
+            assertSame(selected, contacts.getSelectionModel().getSelectedItem());
+            assertEquals(details, dockedDetails(scene));
+        });
+    }
+
+    private static void assertEmptyDockedDetails(Scene scene) {
+        GridPane grid = (GridPane) ((ScrollPane) scene.lookup("#detailsScroll")).getContent();
+        assertEquals(1, grid.getChildren().size());
+        assertEquals(DetailsPanel.PLACEHOLDER, ((Label) grid.getChildren().getFirst()).getText());
+        assertNull(grid.getAccessibleText());
     }
 
     @Test

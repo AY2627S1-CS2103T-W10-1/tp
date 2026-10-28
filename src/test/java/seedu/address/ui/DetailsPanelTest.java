@@ -2,6 +2,7 @@ package seedu.address.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -104,6 +105,43 @@ public class DetailsPanelTest {
                     "Not provided", "None"), fields.stream().map(TextArea::getText).toList());
             assertEquals(List.of(false, true, false, true, true, true), fields.stream()
                     .map(field -> field.getStyleClass().contains(DetailsPanel.EMPTY_STYLE_CLASS)).toList());
+        });
+    }
+
+    @Test
+    public void clearDetails_restoresPlaceholderAndResetsNavigationAndScroll() throws Exception {
+        FxTestUtil.run(() -> {
+            DetailsPanel panel = new DetailsPanel();
+            Stage stage = new Stage();
+            stage.setScene(new Scene(panel.getRoot(), 500, 400));
+            stage.show();
+            Scene scene = stage.getScene();
+            ScrollPane scroll = (ScrollPane) panel.getRoot();
+            panel.showDetails(PERSON);
+            scroll.setVvalue(1);
+
+            panel.clearDetails();
+            panel.clearDetails();
+
+            assertEquals(1, grid(panel).getChildren().size());
+            assertEquals(DetailsPanel.PLACEHOLDER, ((Label) grid(panel).getChildren().getFirst()).getText());
+            assertTrue(values(grid(panel)).isEmpty());
+            assertNull(grid(panel).getAccessibleText());
+            assertEquals(0, scroll.getVvalue());
+            panel.focus();
+            assertEquals(scroll, scene.getFocusOwner());
+            press(scene, KeyCode.J, false);
+            press(scene, KeyCode.K, false);
+            assertEquals(scroll, scene.getFocusOwner());
+
+            panel.showDetails(new PersonBuilder().withName("Bob").withTags().build());
+            panel.focus();
+            assertEquals("Bob", ((TextArea) scene.getFocusOwner()).getSelectedText());
+            assertEquals("Name: Bob\nPhone: " + PersonBuilder.DEFAULT_PHONE
+                    + "\nEmail: " + PersonBuilder.DEFAULT_EMAIL
+                    + "\nAddress: " + PersonBuilder.DEFAULT_ADDRESS
+                    + "\n\n\nDepartment: Not provided\nTags: None",
+                    grid(panel).getAccessibleText());
         });
     }
 
