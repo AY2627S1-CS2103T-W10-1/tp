@@ -35,6 +35,24 @@ public class SortCommandTest {
     }
 
     @Test
+    public void hashCode_equalCommands_workInHashSet() {
+        Set<SortCommand> commands = new HashSet<>();
+        for (SortField field : SortField.values()) {
+            SortCommand command = new SortCommand(field);
+            SortCommand equalCommand = new SortCommand(field);
+            assertEquals(command.hashCode(), equalCommand.hashCode());
+            assertTrue(commands.add(command));
+            assertTrue(commands.contains(equalCommand));
+            assertFalse(commands.add(equalCommand));
+        }
+        assertEquals(SortField.values().length, commands.size());
+        for (SortField field : SortField.values()) {
+            assertTrue(commands.remove(new SortCommand(field)));
+        }
+        assertTrue(commands.isEmpty());
+    }
+
+    @Test
     public void toStringMethod() {
         for (SortField field : SortField.values()) {
             SortCommand command = new SortCommand(field);
