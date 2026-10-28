@@ -2,15 +2,26 @@ package seedu.address.logic.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
+import static seedu.address.testutil.TypicalPersons.ALICE;
+import static seedu.address.testutil.TypicalPersons.BOB;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.io.IOException;
+import java.io.Writer;
 import java.nio.file.AccessDeniedException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -65,6 +76,49 @@ public class ExportCommandTest {
     }
 
     @Test
+    public void execute_concurrentExports_onlyOneSucceedsAndKeepsItsCompleteCsv() throws Exception {
+        AddressBook firstBook = new AddressBook();
+        firstBook.addPerson(ALICE);
+        firstBook.addPerson(BOB);
+        AddressBook secondBook = new AddressBook();
+        secondBook.addPerson(BOB);
+        Model firstModel = new ModelManager(firstBook, new UserPrefs());
+        Model secondModel = new ModelManager(secondBook, new UserPrefs());
+        firstModel.updateFilteredPersonList(person -> false);
+        secondModel.updateFilteredPersonList(person -> false);
+
+        command("first.csv").execute(firstModel);
+        command("second.csv").execute(secondModel);
+        String firstCsv = Files.readString(testFolder.resolve("first.csv"));
+        String secondCsv = Files.readString(testFolder.resolve("second.csv"));
+        Files.delete(testFolder.resolve("first.csv"));
+        Files.delete(testFolder.resolve("second.csv"));
+
+        CyclicBarrier readyToPublish = new CyclicBarrier(2);
+        ExportCommand first = new ExportCommand("contacts.csv", concurrentExporter(readyToPublish));
+        ExportCommand second = new ExportCommand("contacts.csv", concurrentExporter(readyToPublish));
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            for (int attempt = 0; attempt < 100; attempt++) {
+                var firstExport = executor.submit(() -> executeOrAssertConflict(first, firstModel));
+                var secondExport = executor.submit(() -> executeOrAssertConflict(second, secondModel));
+                boolean firstSucceeded = firstExport.get(15, TimeUnit.SECONDS);
+                boolean secondSucceeded = secondExport.get(15, TimeUnit.SECONDS);
+                assertNotEquals(firstSucceeded, secondSucceeded, "Exactly one export must succeed");
+                assertEquals(firstSucceeded ? firstCsv : secondCsv,
+                        Files.readString(testFolder.resolve("contacts.csv")));
+                try (var entries = Files.list(testFolder)) {
+                    assertEquals(List.of(testFolder.resolve("contacts.csv")), entries.toList());
+                }
+                Files.delete(testFolder.resolve("contacts.csv"));
+            }
+        }
+        assertEquals(firstBook, firstModel.getAddressBook());
+        assertEquals(secondBook, secondModel.getAddressBook());
+        assertTrue(firstModel.getFilteredPersonList().isEmpty());
+        assertTrue(secondModel.getFilteredPersonList().isEmpty());
+    }
+
+    @Test
     public void execute_permissionOrWriteFailure_reportsErrorWithoutChangingModel() {
         Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
         AddressBook original = new AddressBook(model.getAddressBook());
@@ -111,5 +165,35 @@ public class ExportCommandTest {
 
     private ExportCommand command(String fileName) {
         return new ExportCommand(fileName, new CsvContactExporter(testFolder));
+    }
+
+    private CsvContactExporter concurrentExporter(CyclicBarrier readyToPublish) {
+        return new CsvContactExporter(testFolder) {
+            @Override
+            protected void writeContacts(Writer writer, List<Person> contacts) throws IOException {
+                super.writeContacts(writer, contacts);
+                writer.flush();
+                try {
+                    readyToPublish.await(10, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("Interrupted while waiting for the other export", e);
+                } catch (BrokenBarrierException | TimeoutException e) {
+                    throw new IOException("The other export did not reach publication", e);
+                }
+            }
+        };
+    }
+
+    private boolean executeOrAssertConflict(ExportCommand command, Model model) throws CommandException {
+        try {
+            assertEquals(new CommandResult(String.format(ExportCommand.MESSAGE_SUCCESS,
+                    model.getAddressBook().getPersonList().size(), "contacts.csv")), command.execute(model));
+            return true;
+        } catch (CommandException e) {
+            assertEquals(String.format(ExportCommand.MESSAGE_ALREADY_EXISTS, "contacts.csv"), e.getMessage());
+            assertInstanceOf(FileAlreadyExistsException.class, e.getCause());
+            return false;
+        }
     }
 }

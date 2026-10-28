@@ -84,7 +84,13 @@ public class CsvContactExporter {
             try (BufferedWriter writer = Files.newBufferedWriter(temporary, StandardCharsets.UTF_8)) {
                 writeContacts(writer, contacts);
             }
-            Files.move(temporary, destination);
+            try {
+                // Creating the destination link refuses an existing name in the same filesystem operation.
+                // A move can replace a file created between its internal existence check and rename.
+                Files.createLink(destination, temporary);
+            } catch (UnsupportedOperationException e) {
+                throw new IOException("The destination file system does not support safe CSV publication", e);
+            }
         } finally {
             Files.deleteIfExists(temporary);
         }

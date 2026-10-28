@@ -46,8 +46,9 @@ end note
 Exporter --> Exporter
 deactivate Exporter
 note over Exporter
-Close the writer and move the temporary file
-without replacing an existing destination.
+Close the writer and publish a hard link
+with Files.createLink(destination, temporary).
+An existing destination makes publication fail.
 Clean up the temporary file in finally.
 end note
 Exporter --> ExportCommand : export completed

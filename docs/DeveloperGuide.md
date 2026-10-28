@@ -30,6 +30,8 @@ filename feedback, return-to-prompt focus after popup dismissal, deterministic d
 regression tests and matching documentation.
 He Qianyi used OpenAI Codex to assist with the Week 11 UG/DG review, contact-workflow use cases,
 reproducible manual testing instructions, documentation links, diagrams and current product screenshots.
+He Qianyi used OpenAI Codex to assist with preventing concurrent CSV exports from overwriting files,
+including regression tests and the matching export documentation.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -229,9 +231,12 @@ commas, double quotes, CR or LF are quoted, and inner double quotes are doubled,
 to an empty cell, sorts tags and joins them with `; `. It preserves input order and repeated records.
 Raw empty values also allow partial contacts to be exported when the partial-add feature is integrated.
 
-The exporter writes and closes a temporary file in the destination directory before moving it to the
-requested name. It checks for an existing destination and moves without `REPLACE_EXISTING`, so a file
-created during export is also protected. The temporary file is cleaned up on completion or failure.
+The exporter writes and closes a temporary file in the destination directory, then publishes it with
+`Files.createLink(destination, temporary)`. Creating the hard link refuses an existing destination in
+the filesystem operation itself, so simultaneous exports cannot overwrite each other. The losing export
+reports the existing-file error; the winner's complete CSV remains intact. The temporary name is removed
+on completion or failure. Filesystems without hard-link support report a write error instead of falling
+back to a move that could overwrite another export.
 `FileAlreadyExistsException` produces a choose-another-filename message; other `IOException`s produce
 a file creation error instead of a success result. The default output directory is the process working
 directory; an injectable exporter isolates tests and simulates permission or interrupted-write failures.
