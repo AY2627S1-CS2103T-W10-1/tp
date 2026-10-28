@@ -2,6 +2,7 @@ package seedu.address.storage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.ALICE;
@@ -11,9 +12,11 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -94,6 +97,20 @@ public class CsvContactExporterTest {
         assertThrows(IOException.class, () -> exporter.export(List.of(ALICE), "contacts.csv"));
         try (var entries = Files.list(testFolder)) {
             assertEquals(0, entries.count());
+        }
+    }
+
+    @Test
+    public void export_hardLinksUnsupported_reportsIoFailureWithoutPublishingOrLeavingTemporaryFile() throws Exception {
+        try (var fileSystem = FileSystems.newFileSystem(testFolder.resolve("export.zip"), Map.of("create", "true"))) {
+            Path directory = fileSystem.getPath("/");
+            CsvContactExporter exporter = new CsvContactExporter(directory);
+            IOException failure = org.junit.jupiter.api.Assertions.assertThrows(IOException.class, ()
+                    -> exporter.export(List.of(ALICE), "contacts.csv"));
+            assertInstanceOf(UnsupportedOperationException.class, failure.getCause());
+            try (var entries = Files.list(directory)) {
+                assertEquals(0, entries.count());
+            }
         }
     }
 
