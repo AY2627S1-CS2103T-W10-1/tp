@@ -18,7 +18,7 @@ public class ContactDetailsWindow extends UiPart<Stage> {
 
     public static final String TITLE_PREFIX = "Contact details: ";
     /** Width the popup opens with, as set in the FXML file. */
-    public static final double WIDTH = 440;
+    public static final double WIDTH = 560;
 
     private static final String FXML = "ContactDetailsWindow.fxml";
 
@@ -52,11 +52,16 @@ public class ContactDetailsWindow extends UiPart<Stage> {
      */
     public void showDetails(Person person) {
         requireNonNull(person);
+        boolean isFirstShow = this.person == null;
         this.person = person;
         getRoot().setTitle(TITLE_PREFIX + person.getName().fullName);
         detailsPanel.showDetails(person);
         getRoot().setIconified(false);
         getRoot().show();
+        if (isFirstShow) {
+            // Size from the laid-out scene so native minimum-size events do not replace the initial dimensions.
+            getRoot().sizeToScene();
+        }
         getRoot().toFront();
     }
 

@@ -6,8 +6,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.stage.Window;
+import javafx.util.Duration;
 
 /**
  * Runs interface tests on the JavaFX thread using the platform's display.
@@ -45,5 +47,14 @@ final class FxTestUtil {
         }, null);
         Platform.runLater(task);
         task.get(15, TimeUnit.SECONDS);
+    }
+
+    /** Allows native window-manager events and layout pulses to settle without blocking the JavaFX thread. */
+    static void awaitWindowEvents() {
+        Object eventLoop = new Object();
+        PauseTransition waitForWindow = new PauseTransition(Duration.millis(250));
+        waitForWindow.setOnFinished(unused -> Platform.exitNestedEventLoop(eventLoop, null));
+        waitForWindow.play();
+        Platform.enterNestedEventLoop(eventLoop);
     }
 }

@@ -16,7 +16,7 @@
         <URL value="@DarkTheme.css" />
         <URL value="@Extensions.css" />
       </stylesheets>
-      <VBox spacing="4" prefWidth="440" prefHeight="320" styleClass="details-window">
+      <VBox spacing="4" prefWidth="560" prefHeight="420" styleClass="details-window">
         <padding>
           <Insets top="4" right="8" bottom="8" left="4" />
         </padding>
