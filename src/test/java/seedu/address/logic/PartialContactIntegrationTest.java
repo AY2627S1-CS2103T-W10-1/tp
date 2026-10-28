@@ -175,7 +175,8 @@ public class PartialContactIntegrationTest {
             }
         };
         LogicManager failedLogic = logicFor(model, failing);
-        assertThrows(CommandException.class, "Could not save data due to the following error: storage unavailable", ()
+        String expectedMessage = String.format(LogicManager.FILE_OPS_ERROR_FORMAT, "storage unavailable");
+        assertThrows(CommandException.class, expectedMessage, ()
                 -> failedLogic.execute("add --name Alice --phone 91234567"));
         assertFalse(Files.exists(failing.getAddressBookFilePath()));
     }

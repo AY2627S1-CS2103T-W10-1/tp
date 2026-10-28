@@ -36,17 +36,18 @@ public class ContactDetailsWindowTest {
             Stage owner = new Stage();
             ContactDetailsWindow window = new ContactDetailsWindow(owner);
             String longAddress = "Long address ".repeat(100).strip();
-            String details = "Name: Alice\nPhone: 12345678\nEmail: alice@example.com\n"
-                    + "Address: " + longAddress + "\n\n\nTags: client, vendor";
-
-            window.showDetails(alice, details);
+            Person person = new PersonBuilder(alice).withAddress(longAddress).withTags("vendor", "client").build();
+            window.showDetails(person);
 
             GridPane grid = grid(window);
-            assertEquals(details, grid.getAccessibleText());
+            assertEquals("Name: Alice Pauline\nPhone: 94351253\nEmail: amy@gmail.com\n"
+                    + "Address: " + longAddress + "\n\n\nDepartment: Not provided\nTags: client, vendor",
+                    grid.getAccessibleText());
             List<TextArea> values = grid.getChildren().stream()
                     .filter(node -> node.getStyleClass().contains(DetailsPanel.VALUE_STYLE_CLASS))
                     .map(TextArea.class::cast).toList();
-            assertEquals(List.of("Alice", "12345678", "alice@example.com", longAddress, "client, vendor"),
+            assertEquals(List.of("Alice Pauline", "94351253", "amy@gmail.com", longAddress, "Not provided",
+                    "client, vendor"),
                     values.stream().map(TextArea::getText).toList());
             values.forEach(value -> {
                 assertTrue(value.isWrapText());
@@ -62,7 +63,7 @@ public class ContactDetailsWindowTest {
     public void focus_selectsFirstValueForCopying() throws Exception {
         FxTestUtil.run(() -> {
             ContactDetailsWindow window = new ContactDetailsWindow(new Stage());
-            window.showDetails(alice, "Name: Alice Pauline\nPhone: 94351253");
+            window.showDetails(alice);
 
             window.focus();
 
@@ -76,7 +77,7 @@ public class ContactDetailsWindowTest {
     public void pressJ_afterViewLeavesFocusOnPanel_movesToFirstValue() throws Exception {
         FxTestUtil.run(() -> {
             ContactDetailsWindow window = new ContactDetailsWindow(new Stage());
-            window.showDetails(alice, "Name: Alice Pauline\nPhone: 94351253");
+            window.showDetails(alice);
             // Activating a popup opened by view focuses its panel rather than a value.
             ScrollPane panel = (ScrollPane) window.getRoot().getScene().lookup("#detailsScroll");
             panel.requestFocus();
@@ -95,7 +96,7 @@ public class ContactDetailsWindowTest {
             ContactDetailsWindow window = new ContactDetailsWindow(new Stage());
             assertFalse(window.showsContact(alice));
 
-            window.showDetails(alice, "Alice");
+            window.showDetails(alice);
             Person editedAlice = new PersonBuilder(alice).withDepartment("Finance").build();
             assertTrue(window.showsContact(editedAlice));
             assertFalse(window.showsContact(new PersonBuilder().withName("Benson Meier").build()));
@@ -111,7 +112,7 @@ public class ContactDetailsWindowTest {
             Stage owner = new Stage();
             owner.show();
             ContactDetailsWindow window = new ContactDetailsWindow(owner);
-            window.showDetails(alice, "Name: Alice Pauline");
+            window.showDetails(alice);
             window.focus();
             Node value = window.getRoot().getScene().getFocusOwner();
 
@@ -132,8 +133,7 @@ public class ContactDetailsWindowTest {
     public void showDetails_nullArgument_throwsNullPointerException() throws Exception {
         FxTestUtil.run(() -> {
             ContactDetailsWindow window = new ContactDetailsWindow(new Stage());
-            assertThrows(NullPointerException.class, () -> window.showDetails(null, "details"));
-            assertThrows(NullPointerException.class, () -> window.showDetails(alice, null));
+            assertThrows(NullPointerException.class, () -> window.showDetails(null));
             assertFalse(window.getRoot().isShowing());
         });
     }

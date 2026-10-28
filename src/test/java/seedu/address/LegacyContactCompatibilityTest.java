@@ -15,8 +15,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import seedu.address.logic.LogicManager;
+import seedu.address.logic.Messages;
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.EditCommand;
+import seedu.address.logic.commands.UndoCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.Model;
@@ -159,7 +161,8 @@ public class LegacyContactCompatibilityTest {
         LogicManager logic = new LogicManager(model, storage);
         logic.execute("delete 5");
         String before = Files.readString(storage.getAddressBookFilePath());
-        assertEquals(Person.MESSAGE_CONTACT_INFORMATION_REQUIRED,
+        assertEquals(String.format(UndoCommand.MESSAGE_MISSING_CONTACT_INFORMATION,
+                Messages.format(expectedContacts().getLast())),
                 assertThrows(CommandException.class, () -> logic.execute("undo")).getMessage());
         assertEquals(expectedContacts().getLast(), model.getLastDeletedPerson());
         assertEquals(before, Files.readString(storage.getAddressBookFilePath()));

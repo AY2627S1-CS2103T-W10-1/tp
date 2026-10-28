@@ -25,9 +25,6 @@ public class CommandResult {
     /** Contact whose details are shown, absent for other commands. */
     private final Person viewedPerson;
 
-    /** Full contact details for the contact's details window, absent for other commands. */
-    private final String contactDetails;
-
     /** Selected help content, absent for ordinary and legacy help results. */
     private final HelpPage helpPage;
 
@@ -35,24 +32,22 @@ public class CommandResult {
      * Constructs a {@code CommandResult} with the specified fields.
      */
     public CommandResult(String feedbackToUser, boolean showHelp, boolean exit) {
-        this(feedbackToUser, showHelp, exit, null, null, null);
+        this(feedbackToUser, showHelp, exit, null, null);
     }
 
     /**
-     * Constructs a result with separate main-window feedback and the viewed contact's details.
-     * The contact decides which details window shows the details.
+     * Constructs a result with main-window feedback and the contact to display in a details window.
      */
-    public CommandResult(String feedbackToUser, Person viewedPerson, String contactDetails) {
-        this(feedbackToUser, false, false, requireNonNull(viewedPerson), requireNonNull(contactDetails), null);
+    public CommandResult(String feedbackToUser, Person viewedPerson) {
+        this(feedbackToUser, false, false, requireNonNull(viewedPerson), null);
     }
 
     private CommandResult(String feedbackToUser, boolean showHelp, boolean exit, Person viewedPerson,
-            String contactDetails, HelpPage helpPage) {
+            HelpPage helpPage) {
         this.feedbackToUser = requireNonNull(feedbackToUser);
         this.showHelp = showHelp;
         this.exit = exit;
         this.viewedPerson = viewedPerson;
-        this.contactDetails = contactDetails;
         this.helpPage = helpPage;
     }
 
@@ -73,7 +68,7 @@ public class CommandResult {
      * @throws NullPointerException If either argument is null.
      */
     public static CommandResult forHelp(String feedbackToUser, HelpPage page) {
-        return new CommandResult(feedbackToUser, true, false, null, null, requireNonNull(page));
+        return new CommandResult(feedbackToUser, true, false, null, requireNonNull(page));
     }
 
     /**
@@ -96,11 +91,7 @@ public class CommandResult {
     }
 
     public boolean isShowDetails() {
-        return contactDetails != null;
-    }
-
-    public Optional<String> getContactDetails() {
-        return Optional.ofNullable(contactDetails);
+        return viewedPerson != null;
     }
 
     /**
@@ -125,13 +116,12 @@ public class CommandResult {
                 && showHelp == otherCommandResult.showHelp
                 && exit == otherCommandResult.exit
                 && Objects.equals(viewedPerson, otherCommandResult.viewedPerson)
-                && Objects.equals(contactDetails, otherCommandResult.contactDetails)
                 && Objects.equals(helpPage, otherCommandResult.helpPage);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(feedbackToUser, showHelp, exit, viewedPerson, contactDetails, helpPage);
+        return Objects.hash(feedbackToUser, showHelp, exit, viewedPerson, helpPage);
     }
 
     @Override
@@ -141,7 +131,6 @@ public class CommandResult {
                 .add("showHelp", showHelp)
                 .add("exit", exit)
                 .add("showDetails", isShowDetails())
-                .add("contactDetails", contactDetails)
                 .add("helpPage", helpPage)
                 .toString();
     }

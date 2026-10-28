@@ -84,6 +84,12 @@ public interface Model {
     /** Restores the latest department deletion and its still-unassigned contacts. */
     void restoreLastDeletedDepartment();
 
+    /**
+     * Removes the latest contact or department deletion from the deletion history without restoring it.
+     * There must be at least one deletion in the history.
+     */
+    void discardLastDeletion();
+
     /** Registers a new department. The name must not already exist. */
     void addDepartment(Department department);
 

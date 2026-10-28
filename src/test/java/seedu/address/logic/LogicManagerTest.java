@@ -156,6 +156,24 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_undoDiscardLatest_doesNotSaveEvenWhenStorageCannotWrite() throws Exception {
+        model.addPerson(AMY);
+        model.deletePerson(AMY);
+        JsonAddressBookStorage blockedStorage =
+                new JsonAddressBookStorage(temporaryFolder.resolve("blocked.json")) {
+                    @Override
+                    public void saveAddressBook(ReadOnlyAddressBook addressBook) {
+                        throw new AssertionError("Discarding undo history must not save the address book");
+                    }
+                };
+        logic = new LogicManager(model, new StorageManager(blockedStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))));
+        logic.execute("undo --discard-latest");
+        assertFalse(model.hasDeletedPerson());
+        assertEquals(List.of(), model.getAddressBook().getPersonList());
+    }
+
+    @Test
     public void execute_unconfirmedOrInvalidClear_doesNotSaveOrChangeContacts() throws Exception {
         model.addPerson(AMY);
         JsonAddressBookStorage blockedStorage =
@@ -299,7 +317,7 @@ public class LogicManagerTest {
         CommandResult result = logic.execute("view 1");
 
         assertEquals("Showing details of contact 1: Amy Bee", result.getFeedbackToUser());
-        assertTrue(result.getContactDetails().orElseThrow().contains("Name: Amy Bee\n"));
+        assertEquals("Amy Bee", result.getViewedPerson().orElseThrow().getName().fullName);
         assertEquals(storedBefore, model.getAddressBook().getPersonList());
         assertEquals(displayedBefore, model.getFilteredPersonList());
         assertFalse(Files.exists(dataPath));
@@ -321,7 +339,7 @@ public class LogicManagerTest {
 
         CommandResult result = logic.execute("view 1");
         assertEquals("Showing details of contact 1: Amy Bee", result.getFeedbackToUser());
-        assertTrue(result.getContactDetails().orElseThrow().contains("Name: Amy Bee\n"));
+        assertEquals("Amy Bee", result.getViewedPerson().orElseThrow().getName().fullName);
         assertEquals(List.of(AMY), model.getAddressBook().getPersonList());
     }
 
@@ -338,7 +356,7 @@ public class LogicManagerTest {
 
         CommandResult result = logic.execute("view 1");
 
-        assertTrue(result.getContactDetails().orElseThrow().startsWith("Name: Bob\n"));
+        assertEquals("Bob", result.getViewedPerson().orElseThrow().getName().fullName);
         assertEquals(existing, Files.readString(dataPath));
         assertEquals(storedBefore, model.getAddressBook().getPersonList());
         assertEquals(displayedBefore, model.getFilteredPersonList());
