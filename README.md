@@ -54,13 +54,15 @@ The following command formats describe sudoContact's product interface. Replace 
 | Sort contacts | `sort -b/--by <department\|dept\|tag\|tags>` | `sort --by department` |
 | Delete a contact | `delete INDEX` | `delete 2` |
 | Restore the latest deletion | `undo` | `undo` |
+| Discard the latest deletion | `undo --discard-latest` | `undo --discard-latest` |
 | Export contacts | `export --csv [FILENAME]` | `export --csv investors.csv` (`contacts.csv` when omitted) |
 | Show help | `help [COMMAND]` or `? [COMMAND]` | `help depart` |
 
 `INDEX` refers to the one-based position in the contact list currently displayed. This makes it possible to find or filter a group first and then act on a specific result.
 
 Register a department with `depart --add` before assigning it through `add` or `edit`.
-Use `undo` to reverse the latest contact or department deletion in the current session.
+Use `undo` to reverse the latest contact or department deletion in the current session,
+or `undo --discard-latest` to drop it from the history without restoring it.
 Quote department names containing spaces in `depart` commands. Renaming updates all associated contacts.
 
 Use a single hyphen for short options and a double hyphen for long options. For example, `sort -b department` and `sort --by department` are equivalent. Command options and their values are shown above wherever applicable.

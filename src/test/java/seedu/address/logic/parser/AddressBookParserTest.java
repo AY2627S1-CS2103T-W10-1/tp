@@ -142,6 +142,7 @@ public class AddressBookParserTest {
     @Test
     public void parseCommand_undo() throws Exception {
         assertEquals(new UndoCommand(), parser.parseCommand(UndoCommand.COMMAND_WORD));
+        assertEquals(new UndoCommand(true), parser.parseCommand(UndoCommand.COMMAND_WORD + " --discard-latest"));
     }
 
     @Test
