@@ -52,7 +52,6 @@ public class ContactDetailsWindow extends UiPart<Stage> {
      */
     public void showDetails(Person person) {
         requireNonNull(person);
-        requireNonNull(details);
         boolean isFirstShow = this.person == null;
         this.person = person;
         getRoot().setTitle(TITLE_PREFIX + person.getName().fullName);
