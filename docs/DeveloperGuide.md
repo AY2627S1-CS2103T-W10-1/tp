@@ -109,13 +109,15 @@ navigation and scrolling. The constructor uses the same reset operation. A succe
 therefore empties the docked pane; a failed save preserves the selection and its details.
 To compare contacts side by side, details can also pop out
 into windows managed by `ContactDetailsWindows`. A successful `view` command returns the
-viewed `Person` and a details snapshot through `CommandResult`. `ContactDetailsWindows.show(Person, String)` refreshes
+viewed immutable `Person` through `CommandResult`. `ContactDetailsWindows.show(Person)` refreshes
 the open `ContactDetailsWindow` (a `UiPart<Stage>`) whose contact `isSamePerson` as the viewed one, or opens a new
 popup cascaded from the main window. An edit can change every field `isSamePerson` compares, so
 `ContactDetailsWindows` also listens to `Logic.getPersonList()`: when a contact is replaced in place, its popup
 switches to the edited `Person`, and viewing a renamed contact still refreshes its popup. Like the docked pane, each
-popup hosts a `DetailsPanel`, which turns every `Field: value` line of the snapshot into a grey field name beside a
-read-only value that can be selected with j/k or Tab and copied. Several contacts can therefore be compared side by
+popup hosts a `DetailsPanel`, which reads fields directly from the person and displays each grey field name beside a
+read-only value that can be selected with j/k or Tab and copied. Missing-value styling uses field presence rather than
+displayed text, so supplied values such as `None` and `Not provided` retain normal styling. The panel also generates
+a text description for assistive technology. Several contacts can therefore be compared side by
 side, while viewing the same contact again never duplicates its popup. Popups are owned by the main stage, so they
 stay in front of it, and the keyboard focus stays at the prompt after `view`. Pressing Enter on a row in \[2\], or
 double-clicking it, runs `view` with that row's contact ID. Repeated Alt+3 presses step through the docked pane and
@@ -601,52 +603,16 @@ the parser accepts only blank arguments or the exact `--confirm` flag. All other
 `MESSAGE_INVALID_COMMAND_FORMAT` with `ClearCommand.MESSAGE_USAGE` before any command executes.
 
 `ClearCommand` stores an immutable confirmation flag. Without confirmation, it counts the canonical
-address book's contacts and returns a warning that all contacts and registered departments will be deleted.
-The count refers only to contacts; the department warning also appears when there are no contacts.
-Contacts, the department catalogue, display filtering and sorting, and deletion history remain unchanged.
-Its `requiresStorageSave()` override returns false in this case.
-With confirmation, `getAddressBookReplacement()` returns an `AddressBookReplacement` containing an empty
-address book and clear-specific recovery instructions. `LogicManager.executeReplacement` saves that
-replacement first and invokes `ClearCommand.execute` only after saving succeeds. The command applies the
-same empty book through `Model.setAddressBook`; no second save occurs. The command has no storage dependency,
-and `LogicManager` selects this path through the command contract rather than checking its concrete type.
-
-Both execution paths use one `LogicManager.saveAddressBook` helper to map permission and general I/O errors.
-A failed replacement save adds the command's recovery instructions while retaining the original I/O cause.
-No live data has been changed at that point: contacts, the catalogue, filtering, sorting, and deletion history
-remain available. The user can resolve the storage error and retry clearing, or use `list` to save the retained
-data. Other commands retain their existing execution-before-save behavior.
-
-The shared JSON save path serializes the complete object before `AtomicFileWriter` creates a temporary file
-in the destination directory. It writes and closes that file, then publishes it using `Files.move` with
-`ATOMIC_MOVE` and `REPLACE_EXISTING`. Existing read-only destinations are rejected. If temporary-file creation,
-writing, or replacement fails, the existing saved file remains unchanged; a failed first save leaves no empty
-destination. Unsupported atomic replacement is reported as a save error without a non-atomic fallback.
-Temporary files are removed after failures where possible, and cleanup errors are suppressed on the original
-failure rather than replacing it. Successful moves consume the temporary file without a second cleanup step.
-This mechanism also protects normal contact saves, including `list`, and user-preference saves. It does not
-provide a guarantee against sudden power loss. After resolving a save error, users can retry clearing or save
-retained live data with `list`. A failed `list` save still leaves its filter/sort reset applied in memory.
+address book's contacts and returns a warning; contacts, display filtering and sorting, and deletion
+history remain unchanged. Its `requiresStorageSave()` override returns false in this case.
+With confirmation, it resets the address book, including the department catalogue, and allows
+`LogicManager` to save the empty book.
 Clearing does not add contacts to individual-deletion history, so it cannot be undone.
 Earlier individual deletions remain available to `undo`.
 
 Regression tests cover strict parsing, warning counts with hidden contacts, unchanged display and undo
 history, skipped saves for unconfirmed or invalid input, and reloading the empty saved address book
 after confirmed deletion.
-
-`ClearSaveFailureIntegrationTest` covers permission and general I/O failures, a real temporary read-only JSON
-file where the platform enforces its permissions, department-only books, preservation of filter/sort and
-mixed deletion history, recovery with `list`, and successful retry with one save. It records live model state
-during saving to verify that clearing has not happened yet. An interrupted temporary-write case verifies
-that saved and live data remain unchanged. `AtomicFileWriterTest` covers creation, interrupted-write,
-replacement and unsupported-atomic-move failures with existing and missing destinations, cleanup, and complete
-UTF-8 publication. `JsonUtilTest` checks that serialization failures leave the destination untouched.
-`CommandErrorUiTest` checks that the failure retains the input and data and displays recovery instructions
-rather than clear-success feedback.
-
-`ClearCommand.HELP_PAGE` describes the removal of all contacts and registered departments, including
-unused catalogue entries. `HelpCatalog` summarizes the same scope in the command overview. The warning,
-usage feedback, and `help clear` all identify departments as part of the data being cleared.
 
 ### Viewing contact details
 
@@ -1443,11 +1409,10 @@ Use a fresh disposable folder with the built-in sample contacts.
 
 ### Clearing contacts with confirmation
 
-Use disposable data, record the full stored contact count, and register at least one unused department before testing.
+Use disposable data and record the full stored contact count before testing.
 
-1. Enter `clear`. Expected: the warning reports the full stored contact count, states that all registered
-   departments will also be deleted, and explains `clear --confirm`. All contacts and departments remain.
-   Restart and check that both stored collections are unchanged.
+1. Enter `clear`. Expected: the warning reports the full stored contact count and explains
+   `clear --confirm`; all contacts remain. Restart and check that stored contacts are unchanged.
 1. Filter with `find`, then enter `clear`. Expected: the warning counts all stored contacts,
    including hidden contacts; the displayed search result remains unchanged.
 1. Enter `clear 1`, `clear --CONFIRM`, `clear --confirm extra`, and `clear --confirm --confirm`.
@@ -1457,19 +1422,7 @@ Use disposable data, record the full stored contact count, and register at least
 1. With no earlier individual deletions in the session, enter `undo` after a confirmed clear.
    Expected: there are no deletions to undo. Separately, delete one contact before clearing and
    verify that `undo` restores only that earlier individual deletion.
-1. In an address book with no contacts, register a department with `depart --add Engineering`, then enter
-   `clear`. Expected: the warning has a contact count of 0 and still states that all registered departments
-   will be deleted. No data changes.
-1. Enter `help clear`. Expected: the manual states that confirmed clearing deletes all contacts and registered
-   departments, including unused entries. The help overview also mentions contacts and departments.
-
-1. In disposable data, register Engineering and an unused department, then add Alice to Engineering.
-   Apply a filter and sort, and record the saved JSON contents. Deny writes to the configured JSON file
-   using permissions enforced by the current account, then run `clear --confirm`.
-   Expected: a save error states that clear was not applied and explains how to recover. Contacts, departments,
-   the displayed filter/order, and earlier deletion history remain unchanged. A permission-denied file retains
-   its original bytes. Restore write permission and run `list`; the original contacts and catalogue remain
-   in the saved JSON. Retry `clear --confirm`; only a successful save clears the live data.
+1. On an empty address book, enter `clear`. Expected: a warning with a count of 0.
 
 ### Exporting contacts as CSV
 
@@ -1570,11 +1523,6 @@ Register Engineering using `depart --add Engineering` before the assignment step
    Expected: equivalent partial-contact support; omitted fields remain unprovided.
 
 ### Viewing a contact's details
-
-1. Select a contact in \[2\] and confirm its fields appear in the docked \[3\] pane. Using disposable data,
-   run `clear --confirm`. Expected: the contact list is empty, no contact is selected, and \[3\] shows its
-   empty-selection hint with no old fields. `Alt+3` focuses the empty pane; j/k cannot reach old values.
-   If saving is blocked instead, clearing fails and the selected contact's details remain visible.
 
 In a separate disposable folder, prepare the following fixture (one command per line):
 

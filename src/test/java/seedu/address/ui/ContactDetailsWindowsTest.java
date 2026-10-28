@@ -41,8 +41,8 @@ public class ContactDetailsWindowsTest {
             List<Scene> setUpScenes = new ArrayList<>();
             ContactDetailsWindows windows = new ContactDetailsWindows(shownOwner(), persons, setUpScenes::add);
 
-            ContactDetailsWindow first = windows.show(alice, "Alice");
-            ContactDetailsWindow second = windows.show(benson, "Benson");
+            ContactDetailsWindow first = windows.show(alice);
+            ContactDetailsWindow second = windows.show(benson);
 
             assertNotEquals(first, second);
             assertEquals(List.of(first, second), windows.getOpenWindows());
@@ -58,15 +58,15 @@ public class ContactDetailsWindowsTest {
     public void show_sameContactAgain_refreshesItsWindow() throws Exception {
         FxTestUtil.run(() -> {
             ContactDetailsWindows windows = new ContactDetailsWindows(shownOwner(), persons, unused -> { });
-            ContactDetailsWindow first = windows.show(alice, "Department: Not provided");
-            windows.show(benson, "Benson");
+            ContactDetailsWindow first = windows.show(alice);
+            windows.show(benson);
 
             Person editedAlice = new PersonBuilder(alice).withDepartment("Finance").build();
-            ContactDetailsWindow refreshed = windows.show(editedAlice, "Department: Finance");
+            ContactDetailsWindow refreshed = windows.show(editedAlice);
 
             assertSame(first, refreshed);
             assertEquals(2, windows.getOpenWindows().size());
-            assertEquals("Department: Finance", detailsText(first));
+            assertTrue(detailsText(first).contains("Department: Finance\n"));
         });
     }
 
@@ -74,15 +74,15 @@ public class ContactDetailsWindowsTest {
     public void show_afterRenamingEdit_refreshesItsWindow() throws Exception {
         FxTestUtil.run(() -> {
             ContactDetailsWindows windows = new ContactDetailsWindows(shownOwner(), persons, unused -> { });
-            ContactDetailsWindow first = windows.show(alice, "Name: Alice Pauline");
+            ContactDetailsWindow first = windows.show(alice);
             assertFalse(renamedAlice.isSamePerson(alice));
 
             persons.set(0, renamedAlice);
-            ContactDetailsWindow refreshed = windows.show(renamedAlice, "Name: Alice Renamed");
+            ContactDetailsWindow refreshed = windows.show(renamedAlice);
 
             assertSame(first, refreshed);
             assertEquals(List.of(first), windows.getOpenWindows());
-            assertEquals("Name: Alice Renamed", detailsText(first));
+            assertTrue(detailsText(first).startsWith("Name: Alice Renamed\n"));
             assertEquals(ContactDetailsWindow.TITLE_PREFIX + "Alice Renamed", first.getRoot().getTitle());
         });
     }
@@ -91,14 +91,14 @@ public class ContactDetailsWindowsTest {
     public void show_afterInOrderReplacementOfEveryContact_refreshesEachWindow() throws Exception {
         FxTestUtil.run(() -> {
             ContactDetailsWindows windows = new ContactDetailsWindows(shownOwner(), persons, unused -> { });
-            ContactDetailsWindow aliceWindow = windows.show(alice, "Alice");
-            ContactDetailsWindow bensonWindow = windows.show(benson, "Benson");
+            ContactDetailsWindow aliceWindow = windows.show(alice);
+            ContactDetailsWindow bensonWindow = windows.show(benson);
 
             // Restoring a deleted department rewrites every contact at once, in the same order.
             persons.setAll(renamedAlice, renamedBenson);
 
-            assertSame(aliceWindow, windows.show(renamedAlice, "Alice renamed"));
-            assertSame(bensonWindow, windows.show(renamedBenson, "Benson renamed"));
+            assertSame(aliceWindow, windows.show(renamedAlice));
+            assertSame(bensonWindow, windows.show(renamedBenson));
             assertEquals(List.of(aliceWindow, bensonWindow), windows.getOpenWindows());
         });
     }
@@ -107,12 +107,12 @@ public class ContactDetailsWindowsTest {
     public void show_afterReplacementOfDifferentSize_opensNewWindow() throws Exception {
         FxTestUtil.run(() -> {
             ContactDetailsWindows windows = new ContactDetailsWindows(shownOwner(), persons, unused -> { });
-            ContactDetailsWindow aliceWindow = windows.show(alice, "Alice");
+            ContactDetailsWindow aliceWindow = windows.show(alice);
 
             // Positions no longer pair old and new contacts, so no popup is handed over.
             persons.setAll(renamedAlice);
 
-            assertNotEquals(aliceWindow, windows.show(renamedAlice, "Alice renamed"));
+            assertNotEquals(aliceWindow, windows.show(renamedAlice));
             assertEquals(2, windows.getOpenWindows().size());
         });
     }
@@ -121,11 +121,11 @@ public class ContactDetailsWindowsTest {
     public void show_afterContactWindowClosed_opensNewWindow() throws Exception {
         FxTestUtil.run(() -> {
             ContactDetailsWindows windows = new ContactDetailsWindows(shownOwner(), persons, unused -> { });
-            ContactDetailsWindow first = windows.show(alice, "Alice");
+            ContactDetailsWindow first = windows.show(alice);
             first.hide();
             assertTrue(windows.getOpenWindows().isEmpty());
 
-            ContactDetailsWindow reopened = windows.show(alice, "Alice again");
+            ContactDetailsWindow reopened = windows.show(alice);
             assertNotEquals(first, reopened);
             assertEquals(List.of(reopened), windows.getOpenWindows());
         });
@@ -138,8 +138,8 @@ public class ContactDetailsWindowsTest {
             ContactDetailsWindows windows = new ContactDetailsWindows(owner, persons, unused -> { });
             assertFalse(windows.focusAfter(owner));
 
-            ContactDetailsWindow first = windows.show(alice, "Name: Alice");
-            ContactDetailsWindow second = windows.show(benson, "Name: Benson");
+            ContactDetailsWindow first = windows.show(alice);
+            ContactDetailsWindow second = windows.show(benson);
 
             assertTrue(windows.focusAfter(owner));
             assertTrue(hasFocusedDetails(first));
@@ -153,8 +153,8 @@ public class ContactDetailsWindowsTest {
     public void hideAll_closesEveryWindow() throws Exception {
         FxTestUtil.run(() -> {
             ContactDetailsWindows windows = new ContactDetailsWindows(shownOwner(), persons, unused -> { });
-            ContactDetailsWindow first = windows.show(alice, "Alice");
-            ContactDetailsWindow second = windows.show(benson, "Benson");
+            ContactDetailsWindow first = windows.show(alice);
+            ContactDetailsWindow second = windows.show(benson);
 
             windows.hideAll();
 
@@ -168,8 +168,7 @@ public class ContactDetailsWindowsTest {
     public void show_nullArgument_throwsNullPointerException() throws Exception {
         FxTestUtil.run(() -> {
             ContactDetailsWindows windows = new ContactDetailsWindows(shownOwner(), persons, unused -> { });
-            assertThrows(NullPointerException.class, () -> windows.show(null, "details"));
-            assertThrows(NullPointerException.class, () -> windows.show(alice, null));
+            assertThrows(NullPointerException.class, () -> windows.show(null));
             assertTrue(windows.getOpenWindows().isEmpty());
             Stage owner = shownOwner();
             assertThrows(NullPointerException.class, () -> new ContactDetailsWindows(owner, null, unused -> { }));

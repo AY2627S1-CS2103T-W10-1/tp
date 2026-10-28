@@ -28,7 +28,7 @@ public final class HelpCatalog {
     private static final List<HelpEntry> entries = List.of(
             entry(AddCommand.HELP_PAGE, "Add a contact."),
             entry(EditCommand.HELP_PAGE, "Edit contact details."),
-            entry(DepartCommand.HELP_PAGE, "Set a department."),
+            entry(DepartCommand.HELP_PAGE, "Manage departments."),
             entry(FindCommand.HELP_PAGE, "Search names or tags."),
             entry(ViewCommand.HELP_PAGE, "View full contact details."),
             entry(ListCommand.HELP_PAGE, "List all contacts.", ListCommand.COMMAND_ALIAS),

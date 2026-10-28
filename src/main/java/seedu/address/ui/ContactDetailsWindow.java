@@ -48,14 +48,13 @@ public class ContactDetailsWindow extends UiPart<Stage> {
     }
 
     /**
-     * Shows {@code details} for {@code person}, replacing any earlier snapshot, and brings the popup to the front.
+     * Shows every field of {@code person}, replacing any earlier snapshot, and brings the popup to the front.
      */
-    public void showDetails(Person person, String details) {
+    public void showDetails(Person person) {
         requireNonNull(person);
-        requireNonNull(details);
         this.person = person;
         getRoot().setTitle(TITLE_PREFIX + person.getName().fullName);
-        detailsPanel.showDetails(details);
+        detailsPanel.showDetails(person);
         getRoot().setIconified(false);
         getRoot().show();
         getRoot().toFront();

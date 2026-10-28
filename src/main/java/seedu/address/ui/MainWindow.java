@@ -335,8 +335,7 @@ public class MainWindow extends UiPart<Stage> {
             }
 
             if (commandResult.isShowDetails()) {
-                contactDetailsWindows.show(commandResult.getViewedPerson().orElseThrow(),
-                        commandResult.getContactDetails().orElseThrow());
+                contactDetailsWindows.show(commandResult.getViewedPerson().orElseThrow());
                 // The popup stays in front of its owner, while typing carries on in the main window.
                 primaryStage.requestFocus();
             }

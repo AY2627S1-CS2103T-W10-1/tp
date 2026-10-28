@@ -2,6 +2,7 @@ package seedu.address.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 import static seedu.address.testutil.Assert.assertThrows;
@@ -14,9 +15,12 @@ import java.util.NoSuchElementException;
 import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.core.GuiSettings;
+import seedu.address.model.person.Department;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
+import seedu.address.model.person.Person;
 import seedu.address.model.person.exceptions.DuplicatePersonException;
 import seedu.address.testutil.AddressBookBuilder;
+import seedu.address.testutil.PersonBuilder;
 
 public class ModelManagerTest {
 
@@ -107,6 +111,33 @@ public class ModelManagerTest {
     }
 
     @Test
+    public void discardLastDeletion_contactDeletion_dropsPersonWithoutRestoring() {
+        modelManager.addPerson(ALICE);
+        modelManager.deletePerson(ALICE);
+        modelManager.discardLastDeletion();
+        assertFalse(modelManager.hasPerson(ALICE));
+        assertFalse(modelManager.hasDeletedPerson());
+    }
+
+    @Test
+    public void discardLastDeletion_departmentDeletion_keepsEarlierContactDeletion() {
+        Department engineering = new Department("Engineering");
+        modelManager.addPerson(ALICE);
+        modelManager.deletePerson(ALICE);
+        modelManager.addDepartment(engineering);
+        modelManager.deleteDepartment(engineering);
+        modelManager.discardLastDeletion();
+        assertFalse(modelManager.hasDepartment(engineering));
+        assertNull(modelManager.getLastDeletedDepartment());
+        assertEquals(ALICE, modelManager.getLastDeletedPerson());
+    }
+
+    @Test
+    public void discardLastDeletion_noDeletion_throwsNoSuchElementException() {
+        assertThrows(NoSuchElementException.class, () -> modelManager.discardLastDeletion());
+    }
+
+    @Test
     public void getFilteredPersonList_modifyList_throwsUnsupportedOperationException() {
         assertThrows(UnsupportedOperationException.class, () -> modelManager.getFilteredPersonList().remove(0));
     }
@@ -152,5 +183,85 @@ public class ModelManagerTest {
         modelManagerWithDeletion.deletePerson(BENSON);
         AddressBook addressBookWithoutBenson = new AddressBookBuilder().withPerson(ALICE).build();
         assertFalse(modelManagerWithDeletion.equals(new ModelManager(addressBookWithoutBenson, userPrefs)));
+    }
+
+    @Test
+    public void equals_departmentDeletionHistory_returnsFalse() {
+        Department engineering = new Department("Engineering");
+        modelManager.addDepartment(engineering);
+        modelManager.deleteDepartment(engineering);
+        assertFalse(modelManager.equals(new ModelManager()));
+    }
+
+    @Test
+    public void equals_differentDeletedDepartment_returnsFalse() {
+        Department engineering = new Department("Engineering");
+        ModelManager engineeringDeleted = new ModelManager();
+        engineeringDeleted.addDepartment(engineering);
+        engineeringDeleted.deleteDepartment(engineering);
+
+        Department sales = new Department("Sales");
+        ModelManager salesDeleted = new ModelManager();
+        salesDeleted.addDepartment(sales);
+        salesDeleted.deleteDepartment(sales);
+
+        // Both address books end up empty, so only the deleted department differs.
+        assertEquals(engineeringDeleted.getAddressBook(), salesDeleted.getAddressBook());
+        assertFalse(engineeringDeleted.equals(salesDeleted));
+    }
+
+    @Test
+    public void equals_differentDeletionOrder_returnsFalse() {
+        Department engineering = new Department("Engineering");
+        Person engineer = new PersonBuilder(ALICE).withDepartment("Engineering").build();
+        AddressBook addressBook = new AddressBookBuilder().withPerson(engineer).build();
+
+        ModelManager contactFirst = new ModelManager(addressBook, new UserPrefs());
+        contactFirst.deletePerson(engineer);
+        contactFirst.deleteDepartment(engineering);
+
+        ModelManager departmentFirst = new ModelManager(addressBook, new UserPrefs());
+        departmentFirst.deleteDepartment(engineering);
+        departmentFirst.deletePerson(departmentFirst.getAddressBook().getPersonList().get(0));
+
+        // Same data and deleted contacts, but undo restores the department first in only one of them.
+        assertEquals(contactFirst.getAddressBook(), departmentFirst.getAddressBook());
+        assertEquals(contactFirst.getLastDeletedPerson(), departmentFirst.getLastDeletedPerson());
+        assertFalse(contactFirst.equals(departmentFirst));
+        assertFalse(departmentFirst.equals(contactFirst));
+    }
+
+    @Test
+    public void equals_differentClearedAssignments_returnsFalse() {
+        Department engineering = new Department("Engineering");
+        ModelManager assigned = new ModelManager(new AddressBookBuilder()
+                .withPerson(new PersonBuilder(ALICE).withDepartment("Engineering").build()).build(), new UserPrefs());
+        assigned.deleteDepartment(engineering);
+
+        ModelManager unassigned = new ModelManager(new AddressBookBuilder().withPerson(ALICE).build(), new UserPrefs());
+        unassigned.addDepartment(engineering);
+        unassigned.deleteDepartment(engineering);
+
+        // Same data, but undo reassigns Engineering to Alice in only one of them.
+        assertEquals(assigned.getAddressBook(), unassigned.getAddressBook());
+        assertFalse(assigned.equals(unassigned));
+    }
+
+    @Test
+    public void equals_sameHistoryBuiltSeparately_returnsTrue() {
+        Department engineering = new Department("Engineering");
+        AddressBook addressBook = new AddressBookBuilder()
+                .withPerson(new PersonBuilder(ALICE).withDepartment("Engineering").build()).withPerson(BENSON).build();
+
+        ModelManager first = new ModelManager(addressBook, new UserPrefs());
+        first.deletePerson(BENSON);
+        first.deleteDepartment(engineering);
+
+        ModelManager second = new ModelManager(addressBook, new UserPrefs());
+        second.deletePerson(BENSON);
+        second.deleteDepartment(engineering);
+
+        assertTrue(first.equals(second));
+        assertEquals(first.hashCode(), second.hashCode());
     }
 }

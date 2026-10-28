@@ -54,13 +54,15 @@ The following command formats describe sudoContact's product interface. Replace 
 | Sort contacts | `sort -b/--by <department\|dept\|tag\|tags>` | `sort --by department` |
 | Delete a contact | `delete INDEX` | `delete 2` |
 | Restore the latest deletion | `undo` | `undo` |
+| Discard the latest deletion | `undo --discard-latest` | `undo --discard-latest` |
 | Export contacts | `export --csv [FILENAME]` | `export --csv investors.csv` (`contacts.csv` when omitted) |
 | Show help | `help [COMMAND]` or `? [COMMAND]` | `help depart` |
 
 `INDEX` refers to the one-based position in the contact list currently displayed. This makes it possible to find or filter a group first and then act on a specific result.
 
 Register a department with `depart --add` before assigning it through `add` or `edit`.
-Use `undo` to reverse the latest contact or department deletion in the current session.
+Use `undo` to reverse the latest contact or department deletion in the current session,
+or `undo --discard-latest` to drop it from the history without restoring it.
 Quote department names containing spaces in `depart` commands. Renaming updates all associated contacts.
 
 Use a single hyphen for short options and a double hyphen for long options. For example, `sort -b department` and `sort --by department` are equivalent. Command options and their values are shown above wherever applicable.
@@ -75,7 +77,7 @@ The Help menu and `F1` show the overview. Press `q` in the Help window to close 
 - A contact name and at least one phone number or email address are required; other details may be supplied later.
 - Phone numbers contain 7–15 digits, and email addresses must use a valid email format.
 - Department names are 2–50 characters and may contain letters, numbers, spaces, hyphens, and ampersands.
-- Tags are 1–30 characters and may contain letters, numbers, hyphens, and underscores. Tag matching is case-sensitive.
+- Tags are 1–30 characters and may contain letters, numbers, hyphens, and underscores. Tag searches with `find --tag` are case-insensitive; tags keep their original capitalisation.
 - Contacts with the same name are duplicates if either their provided phone numbers or email addresses match. Missing fields do not match.
 - Previously valid saved contacts remain intact, including conflicts under the stricter rule; new add, edit and contact undo operations still reject duplicates.
 - Sorting is ascending and case-insensitive; contacts without the selected sorting field appear last.

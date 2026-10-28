@@ -4,7 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
@@ -17,6 +17,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Region;
+import seedu.address.model.person.Person;
 
 /**
  * Shows a snapshot of one contact's full details as a grid of field names and values, in the docked [3] pane
@@ -31,14 +32,14 @@ public class DetailsPanel extends UiPart<Region> {
     public static final String EMPTY_STYLE_CLASS = "details-empty";
 
     private static final String FXML = "DetailsPanel.fxml";
-    private static final String FIELD_SEPARATOR = ": ";
-    /** Values that mean a field was not provided; they are dimmed like the table's placeholder. */
-    private static final Set<String> EMPTY_VALUES = Set.of("Not provided", "None");
     private static final double GAP_HEIGHT = 8;
     /** Keeps the last wrapped line clear of the value's bottom edge. */
     private static final double VALUE_HEIGHT_ALLOWANCE = 2;
 
     private final List<TextArea> values = new ArrayList<>();
+
+    /** One displayed field, with presence tracked separately from its text. */
+    private record DetailField(String name, String value, boolean isProvided) { }
 
     @FXML
     private ScrollPane detailsScroll;
@@ -71,37 +72,51 @@ public class DetailsPanel extends UiPart<Region> {
     }
 
     /**
-     * Replaces the displayed details and scrolls back to the top.
-     * Each {@code "Field: value"} line becomes a row and each blank line a gap between groups of fields.
-     * The original text stays available as the grid's accessible text.
+     * Replaces the displayed details with a snapshot of {@code person} and scrolls back to the top.
+     * Missing fields are dimmed based on their presence, independently of the text they display.
+     * A text description of the fields is also available to assistive technology.
      */
-    public void showDetails(String details) {
-        requireNonNull(details);
+    public void showDetails(Person person) {
+        requireNonNull(person);
         contactDetails.getChildren().clear();
         values.clear();
 
-        int row = 0;
-        for (String line : details.lines().toList()) {
-            if (line.isBlank()) {
-                Region gap = new Region();
-                gap.setMinHeight(GAP_HEIGHT);
-                contactDetails.add(gap, 0, row++, 2, 1);
-                continue;
-            }
-            int separator = line.indexOf(FIELD_SEPARATOR);
-            if (separator < 0) {
-                contactDetails.add(createValue(line), 0, row++, 2, 1);
-                continue;
-            }
-            Label name = new Label(line.substring(0, separator));
+        List<DetailField> contactFields = List.of(
+                new DetailField("Name", person.getName().fullName, true),
+                new DetailField("Phone", person.getPhone().toString(), person.getPhone().isProvided()),
+                new DetailField("Email", person.getEmail().toString(), person.getEmail().isProvided()),
+                new DetailField("Address", person.getAddress().toString(), person.getAddress().isProvided()));
+        String tags = person.getTags().stream().map(tag -> tag.tagName).sorted().collect(Collectors.joining(", "));
+        List<DetailField> organizationFields = List.of(
+                new DetailField("Department", person.getDepartment().map(department -> department.value)
+                        .orElse("Not provided"), person.getDepartment().isPresent()),
+                new DetailField("Tags", tags.isEmpty() ? "None" : tags, !person.getTags().isEmpty()));
+
+        String contactText = addFields(contactFields, 0);
+        // Preserve the two blank rows separating contact information from department and tags.
+        for (int row = contactFields.size(); row < contactFields.size() + 2; row++) {
+            Region gap = new Region();
+            gap.setMinHeight(GAP_HEIGHT);
+            contactDetails.add(gap, 0, row, 2, 1);
+        }
+        String organizationText = addFields(organizationFields, contactFields.size() + 2);
+        contactDetails.setAccessibleText(contactText + "\n\n\n" + organizationText);
+        detailsScroll.setVvalue(0);
+    }
+
+    /**
+     * Adds a group of fields starting at {@code firstRow} and returns their text description.
+     */
+    private String addFields(List<DetailField> fields, int firstRow) {
+        int row = firstRow;
+        for (DetailField field : fields) {
+            Label name = new Label(field.name());
             name.getStyleClass().add(LABEL_STYLE_CLASS);
             name.setMinWidth(Region.USE_PREF_SIZE);
             GridPane.setValignment(name, VPos.TOP);
-            contactDetails.addRow(row++, name, createValue(line.substring(separator + FIELD_SEPARATOR.length())));
+            contactDetails.addRow(row++, name, createValue(field.value(), field.isProvided()));
         }
-
-        contactDetails.setAccessibleText(details);
-        detailsScroll.setVvalue(0);
+        return fields.stream().map(field -> field.name() + ": " + field.value()).collect(Collectors.joining("\n"));
     }
 
     /**
@@ -127,14 +142,14 @@ public class DetailsPanel extends UiPart<Region> {
     /**
      * Creates a read-only, wrapping value whose height follows its text, so the grid never scrolls inside a value.
      */
-    private TextArea createValue(String value) {
+    private TextArea createValue(String value, boolean isProvided) {
         TextArea field = new TextArea(value);
         field.setEditable(false);
         field.setWrapText(true);
         field.setPrefRowCount(1);
         field.setMinHeight(Region.USE_PREF_SIZE);
         field.getStyleClass().add(VALUE_STYLE_CLASS);
-        if (EMPTY_VALUES.contains(value)) {
+        if (!isProvided) {
             field.getStyleClass().add(EMPTY_STYLE_CLASS);
         }
         field.skinProperty().addListener((unused, oldSkin, newSkin) -> fitHeightToText(field));

@@ -84,6 +84,11 @@ public class SortCommand extends Command {
     }
 
     @Override
+    public int hashCode() {
+        return field.hashCode();
+    }
+
+    @Override
     public String toString() {
         return new ToStringBuilder(this)
                 .add("field", field)

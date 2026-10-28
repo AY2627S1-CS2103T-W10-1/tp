@@ -90,8 +90,9 @@ view of departments and contact details. Contacts are stored locally, so the app
 * Extraneous parameters for `exit` are ignored. `clear` accepts only the optional `--confirm` flag.<br>
   The `list` and `ls` commands reject extra parameters. Help accepts at most one known command name.
 
-* Command words are case-insensitive, but parameters keep their case.<br>
-  For example, `LIST` and `List` are interpreted as `list`, and `EDIT 1 -n "John Doe"` still sets the name to `John Doe`.
+* Command words are case-insensitive. Flags, field names and other parameters follow the case rules given for each command.<br>
+  For example, `LIST` and `List` are interpreted as `list`, but `sort --by DEPT` is rejected because sort fields are case-sensitive.
+  `EDIT 1 -n "John Doe"` still sets the name to `John Doe`.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </div>
@@ -295,6 +296,7 @@ Sorts the currently displayed contacts in ascending order while preserving any a
 Format: `sort -b FIELD` or `sort --by FIELD`
 
 * `FIELD` must be `department`, `dept`, `tag`, or `tags`. The aliases select the same two sorting fields.
+* `FIELD` is case-sensitive: `sort --by DEPT` and `sort --by Tags` are rejected.
 * Department and tag comparisons are alphabetical and case-insensitive.
 * Tag sorting uses each contact's alphabetically smallest tag, not the order tags were entered.
   It does not group contacts by every tag they share; a contact appears once, using its smallest tag as the key.
@@ -496,19 +498,26 @@ Examples:
 
 ### Undoing a deletion: `undo`
 
-Restores the most recent contact deletion (`delete INDEX`) or department deletion (`depart --delete NAME`).
+Restores the most recent contact deletion (`delete INDEX`) or department deletion (`depart --delete NAME`),
+or discards it from the history without restoring it.
 
-Format: `undo`
+Format: `undo [--discard-latest]`
 
 * Both deletion types share one history. Repeated calls undo deletions in reverse chronological order.
   `add`, `edit`, `depart --add`, `depart --edit`, and `clear` cannot be undone.
 * History is remembered only until you close the app. Successful undo is saved and shows all contacts in stored order.
+* If the data file cannot be saved, the error says the change is still applied in the app: the deletion is restored
+  and removed from the history. It is saved the next time saving succeeds, so do not run `undo` again to retry;
+  that restores the next earlier deletion.
 * Undoing a contact deletion appends the restored contact to the list. It fails if a
   [duplicate](#adding-a-contact-with-partial-information-add) of that contact now exists. The deletion stays in the
-  history, so you can edit or delete the duplicate and retry.
+  history. Either `edit` the duplicate's name, phone or email so it no longer matches and run `undo` again, or drop
+  the deletion with `undo --discard-latest`. Deleting the duplicate does not help: that deletion becomes the most
+  recent one, so `undo` restores the duplicate first.
 * A restored contact must have a phone number or email address. If a deleted legacy contact has neither,
-  `undo` reports `A phone number or email address must be provided.` and leaves data and history unchanged.
-  You can recreate that contact using `add` with the required contact information.
+  `undo` reports `Cannot restore the deleted person because it has no phone number or email address` and leaves
+  data and history unchanged. Run `undo --discard-latest` to get past it, then recreate the contact using `add`
+  with the required contact information if you still need it.
 * Undoing a department deletion restores the catalogue entry and the original assignments on existing contacts
   and contacts in deletion history. It preserves later edits to other fields and does not overwrite a department
   assigned after the deletion. Contacts removed by `clear` are not recreated.
@@ -516,7 +525,11 @@ Format: `undo`
   `Cannot restore the deleted department because it already exists: NAME`. No data or history is changed.
   Rename the conflicting entry with `depart --edit` before retrying.
 * Department restoration reports `Restored deleted department: NAME`.
-* `undo` takes no parameters. With no history, it reports `There are no deletions to undo in this session.`
+* `undo --discard-latest` removes the most recent deletion from the history without restoring it, so the next
+  `undo` acts on the deletion before it. Use it when you do not want that deletion back, or it cannot be restored.
+  The discarded deletion can no longer be restored. Nothing is saved, because your contacts do not change.
+* `undo` accepts only `--discard-latest`. With no history, both forms report
+  `There are no deletions to undo in this session.`
 
 Examples:
 
@@ -525,6 +538,8 @@ Examples:
   A second `undo` restores the deleted contact with its original Engineering assignment.
 * `depart --delete Engineering`, `delete 1`, then `undo` restores the contact without a department.
   A second `undo` restores Engineering and the contact's original assignment.
+* `delete 1`, `delete 1`, then `undo --discard-latest` drops the second deletion without restoring it.
+  `undo` then restores the first deleted contact.
 
 ### Clearing all entries: `clear`
 
@@ -619,6 +634,8 @@ without `--confirm`.
 Finding, viewing, help and department listing only display information; unconfirmed `clear` only displays its warning.
 `clear --confirm` does save the cleared data. `list`/`ls` retains the normal JSON-save behavior.
 Departments and tags are contact data and are saved normally when changed.
+If saving fails, for example because the data file is read-only, the error says the change is still applied in the app.
+It is saved the next time saving succeeds. Closing the app before then loses the unsaved change.
 
 ### Editing the data file
 
@@ -678,5 +695,5 @@ Action | Format, Examples
 **List** | `list` or `ls`
 **Depart** | `depart --list`, `depart --add DEPARTMENT`, `depart --edit OLD_NAME NEW_NAME`, or `depart --delete DEPARTMENT`<br> e.g., `depart --edit Engineering "Research & Development"`
 **Sort** | `sort -b FIELD` or `sort --by FIELD`, where `FIELD` is `department`, `dept`, `tag`, or `tags`
-**Undo** | `undo`
+**Undo** | `undo` (restore), `undo --discard-latest` (drop without restoring)
 **Help** | `help [COMMAND]` or `? [COMMAND]`
