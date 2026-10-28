@@ -57,7 +57,7 @@ public class DashboardUiTest {
             FxTestUtil.awaitWindowEvents();
 
             Stage popup = main.getContactDetailsWindows().getOpenWindows().getFirst().getRoot();
-            assertEquals(560, popup.getWidth(), 2);
+            assertEquals(560, popup.getScene().getWidth(), 2);
             assertTrue(popup.getScene().getHeight() >= 420 - 2,
                     "The contact content must keep its preferred height after native layout");
         });
