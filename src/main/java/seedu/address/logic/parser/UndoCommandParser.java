@@ -11,15 +11,19 @@ import seedu.address.logic.parser.exceptions.ParseException;
 public class UndoCommandParser implements Parser<UndoCommand> {
 
     /**
-     * Parses the given {@code String} of arguments in the context of the UndoCommand
-     * and returns an UndoCommand object for execution.
-     * @throws ParseException if the user input contains any arguments
+     * Parses blank arguments, or the flag that discards the most recent deletion instead of restoring it.
+     *
+     * @throws ParseException if the arguments are neither blank nor exactly {@code --discard-latest}.
      */
     public UndoCommand parse(String args) throws ParseException {
-        if (!args.isBlank()) {
-            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, UndoCommand.MESSAGE_USAGE));
+        String trimmedArgs = args.trim();
+        if (trimmedArgs.isEmpty()) {
+            return new UndoCommand();
         }
-        return new UndoCommand();
+        if (trimmedArgs.equals("--discard-latest")) {
+            return new UndoCommand(true);
+        }
+        throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, UndoCommand.MESSAGE_USAGE));
     }
 
 }
