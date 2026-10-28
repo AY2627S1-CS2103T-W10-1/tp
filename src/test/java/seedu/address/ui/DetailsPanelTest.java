@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -20,8 +21,17 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
+import seedu.address.model.person.Address;
+import seedu.address.model.person.Department;
+import seedu.address.model.person.Email;
+import seedu.address.model.person.Person;
+import seedu.address.model.person.Phone;
+import seedu.address.testutil.PersonBuilder;
 
 public class DetailsPanelTest {
+    private static final Person PERSON = new Person(new PersonBuilder().build().getName(), new Phone("85355255"),
+            Email.notProvided(), new Address(PersonBuilder.DEFAULT_ADDRESS), Set.of(),
+            new Department("R&D"));
     private static final String DETAILS = "Name: Amy Bee\nPhone: 85355255\nEmail: Not provided\n"
             + "Address: 123, Jurong West Ave 6, #08-111\n\n\nDepartment: R&D\nTags: None";
     private static final String LONG_ADDRESS = "Blk 123, Jurong West Avenue 6, #08-111, Singapore 640123, "
@@ -39,7 +49,7 @@ public class DetailsPanelTest {
             GridPane grid = grid(panel);
             assertEquals(DetailsPanel.PLACEHOLDER, ((Label) grid.getChildren().getFirst()).getText());
 
-            panel.showDetails(DETAILS);
+            panel.showDetails(PERSON);
             assertEquals(List.of("Name", "Phone", "Email", "Address", "Department", "Tags"),
                     labels(grid).stream().map(Label::getText).toList());
             List<TextArea> values = values(grid);
@@ -53,10 +63,47 @@ public class DetailsPanelTest {
             });
             assertEquals(DETAILS, grid.getAccessibleText());
 
-            panel.showDetails("Name: Bob");
-            assertEquals(List.of("Bob"), values(grid).stream().map(TextArea::getText).toList());
+            Person bob = new PersonBuilder().withName("Bob").withTags("vendor", "client").build();
+            panel.showDetails(bob);
+            assertEquals(List.of("Bob", PersonBuilder.DEFAULT_PHONE, PersonBuilder.DEFAULT_EMAIL,
+                    PersonBuilder.DEFAULT_ADDRESS, "Not provided", "client, vendor"),
+                    values(grid).stream().map(TextArea::getText).toList());
+            String bobDetails = grid.getAccessibleText();
             assertThrows(NullPointerException.class, () -> panel.showDetails(null));
-            assertEquals("Name: Bob", grid.getAccessibleText());
+            assertEquals(bobDetails, grid.getAccessibleText());
+        });
+    }
+
+    @Test
+    public void showDetails_valuesMatchingPlaceholders_areNotDimmed() throws Exception {
+        FxTestUtil.run(() -> {
+            DetailsPanel panel = new DetailsPanel();
+            for (String text : List.of("None", "Not provided")) {
+                Person person = new PersonBuilder().withName(text).withAddress(text).withDepartment(text)
+                        .withTags("None").build();
+                panel.showDetails(person);
+
+                List<TextArea> fields = values(grid(panel));
+                assertEquals(List.of(text, PersonBuilder.DEFAULT_PHONE, PersonBuilder.DEFAULT_EMAIL, text, text,
+                        "None"), fields.stream().map(TextArea::getText).toList());
+                fields.forEach(field -> assertFalse(field.getStyleClass().contains(DetailsPanel.EMPTY_STYLE_CLASS)));
+            }
+        });
+    }
+
+    @Test
+    public void showDetails_missingFields_areDimmed() throws Exception {
+        FxTestUtil.run(() -> {
+            DetailsPanel panel = new DetailsPanel();
+            Person defaults = new PersonBuilder().build();
+            panel.showDetails(new Person(defaults.getName(), Phone.notProvided(), defaults.getEmail(),
+                    Address.notProvided(), Set.of()));
+
+            List<TextArea> fields = values(grid(panel));
+            assertEquals(List.of("Amy Bee", "Not provided", PersonBuilder.DEFAULT_EMAIL, "Not provided",
+                    "Not provided", "None"), fields.stream().map(TextArea::getText).toList());
+            assertEquals(List.of(false, true, false, true, true, true), fields.stream()
+                    .map(field -> field.getStyleClass().contains(DetailsPanel.EMPTY_STYLE_CLASS)).toList());
         });
     }
 
@@ -67,7 +114,7 @@ public class DetailsPanelTest {
             Stage stage = new Stage();
             stage.setScene(new Scene(panel.getRoot(), 500, 400));
             stage.show();
-            panel.showDetails(DETAILS);
+            panel.showDetails(PERSON);
             List<TextArea> values = values(grid(panel));
             Scene scene = stage.getScene();
 
@@ -100,7 +147,7 @@ public class DetailsPanelTest {
             Stage stage = new Stage();
             stage.setScene(new Scene(panel.getRoot(), 500, 400));
             stage.show();
-            panel.showDetails(DETAILS);
+            panel.showDetails(PERSON);
             List<TextArea> values = values(grid(panel));
             Scene scene = stage.getScene();
             panel.focus();
@@ -135,7 +182,7 @@ public class DetailsPanelTest {
             press(scene, KeyCode.J, false);
             assertEquals(panel.getRoot(), scene.getFocusOwner());
 
-            panel.showDetails(DETAILS);
+            panel.showDetails(PERSON);
             List<TextArea> values = values(grid(panel));
             // Shift, Ctrl, Alt or Meta with j, and keys other than j/k, are left to the panel.
             for (int modifier = 0; modifier < 4; modifier++) {
@@ -165,7 +212,7 @@ public class DetailsPanelTest {
             Stage stage = new Stage();
             stage.setScene(new Scene(panel.getRoot(), 360, 400));
             stage.show();
-            panel.showDetails("Name: Amy Bee\nAddress: " + LONG_ADDRESS);
+            panel.showDetails(new PersonBuilder().withAddress(LONG_ADDRESS).build());
             // Wrapping changes the text's height after the first layout, so the value needs further passes.
             for (int pass = 0; pass < 3; pass++) {
                 panel.getRoot().applyCss();
@@ -174,7 +221,7 @@ public class DetailsPanelTest {
 
             List<TextArea> values = values(grid(panel));
             TextArea name = values.get(0);
-            TextArea address = values.get(1);
+            TextArea address = values.get(3);
             double addressTextHeight = address.lookup(".text").getBoundsInLocal().getHeight();
             assertTrue(addressTextHeight > 1.5 * name.lookup(".text").getBoundsInLocal().getHeight(),
                     "The address should wrap onto more than one line.");

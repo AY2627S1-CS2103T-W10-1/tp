@@ -27,11 +27,7 @@ note over ViewCommand, Model
 Assume a nonempty displayed list and a valid index.
 Filtering and sorting determine the selected contact.
 end note
-ViewCommand -> ViewCommand : formatDetails(displayedPersons.get(0))
-activate ViewCommand
-ViewCommand --> ViewCommand : details
-deactivate ViewCommand
-ViewCommand --> LogicManager : result: CommandResult(feedback, person, details)
+ViewCommand --> LogicManager : result: CommandResult(feedback, person)
 deactivate ViewCommand
 
 LogicManager -> ViewCommand : requiresStorageSave()
@@ -48,13 +44,13 @@ deactivate LogicManager
 note over MainWindow
 Show the short feedback in ResultDisplay.
 end note
-MainWindow -> Popups : show(person, details)
+MainWindow -> Popups : show(person)
 activate Popups
 note over Popups
 Reuse the popup that shows the same contact,
 or open a new one.
 end note
-Popups -> DetailsWindow : showDetails(person, details)
+Popups -> DetailsWindow : showDetails(person)
 activate DetailsWindow
 note over DetailsWindow
 Show a snapshot. Later model changes

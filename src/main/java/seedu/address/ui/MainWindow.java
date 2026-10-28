@@ -243,7 +243,7 @@ public class MainWindow extends UiPart<Stage> {
         // Selecting a contact shows it at once; view, Enter and double-click pop it out into a window instead.
         personListPanel.selectedPersonProperty().addListener((unused, oldPerson, newPerson) -> {
             if (newPerson != null) {
-                detailsPanel.showDetails(ViewCommand.formatDetails(newPerson));
+                detailsPanel.showDetails(newPerson);
             }
         });
 
@@ -333,8 +333,7 @@ public class MainWindow extends UiPart<Stage> {
             }
 
             if (commandResult.isShowDetails()) {
-                contactDetailsWindows.show(commandResult.getViewedPerson().orElseThrow(),
-                        commandResult.getContactDetails().orElseThrow());
+                contactDetailsWindows.show(commandResult.getViewedPerson().orElseThrow());
                 // The popup stays in front of its owner, while typing carries on in the main window.
                 primaryStage.requestFocus();
             }

@@ -57,18 +57,17 @@ public class ContactDetailsWindows {
     }
 
     /**
-     * Shows {@code details} in the popup for {@code person}, opening a new popup if that contact has none.
+     * Shows the details of {@code person}, opening a new popup if that contact has none.
      *
      * @return The popup that shows the details.
      */
-    public ContactDetailsWindow show(Person person, String details) {
+    public ContactDetailsWindow show(Person person) {
         requireNonNull(person);
-        requireNonNull(details);
         ContactDetailsWindow window = openWindows.stream()
                 .filter(open -> open.showsContact(person))
                 .findFirst()
                 .orElseGet(this::open);
-        window.showDetails(person, details);
+        window.showDetails(person);
         return window;
     }
 

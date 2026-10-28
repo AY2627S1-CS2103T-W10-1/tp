@@ -60,31 +60,26 @@ public class CommandResultTest {
     @Test
     public void detailsResult_preservesFlagsAndEquality() {
         Person amy = new PersonBuilder().build();
-        CommandResult details = new CommandResult("feedback", amy, "details");
+        CommandResult details = new CommandResult("feedback", amy);
         assertTrue(details.isShowDetails());
         assertFalse(details.isShowHelp());
         assertFalse(details.isExit());
         assertFalse(new CommandResult("details").isShowDetails());
-        assertEquals(details, new CommandResult("feedback", new PersonBuilder().build(), "details"));
-        assertEquals(details.hashCode(), new CommandResult("feedback", amy, "details").hashCode());
+        assertEquals(details, new CommandResult("feedback", new PersonBuilder().build()));
+        assertEquals(details.hashCode(), new CommandResult("feedback", amy).hashCode());
         assertEquals("feedback", details.getFeedbackToUser());
-        assertEquals("details", details.getContactDetails().orElseThrow());
         assertEquals(amy, details.getViewedPerson().orElseThrow());
-        assertTrue(new CommandResult("feedback").getContactDetails().isEmpty());
         assertTrue(new CommandResult("feedback").getViewedPerson().isEmpty());
         assertNotEquals(details, new CommandResult("feedback"));
-        assertNotEquals(details, new CommandResult("feedback", amy, "different details"));
-        assertNotEquals(details.hashCode(), new CommandResult("feedback", amy, "different details").hashCode());
         Person bob = new PersonBuilder().withName("Bob Choo").build();
-        assertNotEquals(details, new CommandResult("feedback", bob, "details"));
+        assertNotEquals(details, new CommandResult("feedback", bob));
     }
 
     @Test
     public void detailsResult_nullArgument_throwsNullPointerException() {
         Person amy = new PersonBuilder().build();
-        assertThrows(NullPointerException.class, () -> new CommandResult(null, amy, "details"));
-        assertThrows(NullPointerException.class, () -> new CommandResult("feedback", null, "details"));
-        assertThrows(NullPointerException.class, () -> new CommandResult("feedback", amy, null));
+        assertThrows(NullPointerException.class, () -> new CommandResult(null, amy));
+        assertThrows(NullPointerException.class, () -> new CommandResult("feedback", (Person) null));
     }
 
     @Test
@@ -118,7 +113,6 @@ public class CommandResultTest {
         String expected = CommandResult.class.getCanonicalName() + "{feedbackToUser="
                 + commandResult.getFeedbackToUser() + ", showHelp=" + commandResult.isShowHelp()
                 + ", exit=" + commandResult.isExit() + ", showDetails=" + commandResult.isShowDetails()
-                + ", contactDetails=" + commandResult.getContactDetails().orElse(null)
                 + ", helpPage=" + commandResult.getHelpPage().orElse(null) + "}";
         assertEquals(expected, commandResult.toString());
     }
