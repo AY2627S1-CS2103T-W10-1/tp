@@ -117,7 +117,7 @@ public class DetailsPanelTest {
             stage.show();
             Scene scene = stage.getScene();
             ScrollPane scroll = (ScrollPane) panel.getRoot();
-            panel.showDetails(DETAILS);
+            panel.showDetails(PERSON);
             scroll.setVvalue(1);
 
             panel.clearDetails();
@@ -134,10 +134,14 @@ public class DetailsPanelTest {
             press(scene, KeyCode.K, false);
             assertEquals(scroll, scene.getFocusOwner());
 
-            panel.showDetails("Name: Bob");
+            panel.showDetails(new PersonBuilder().withName("Bob").withTags().build());
             panel.focus();
             assertEquals("Bob", ((TextArea) scene.getFocusOwner()).getSelectedText());
-            assertEquals("Name: Bob", grid(panel).getAccessibleText());
+            assertEquals("Name: Bob\nPhone: " + PersonBuilder.DEFAULT_PHONE
+                    + "\nEmail: " + PersonBuilder.DEFAULT_EMAIL
+                    + "\nAddress: " + PersonBuilder.DEFAULT_ADDRESS
+                    + "\n\n\nDepartment: Not provided\nTags: None",
+                    grid(panel).getAccessibleText());
         });
     }
 

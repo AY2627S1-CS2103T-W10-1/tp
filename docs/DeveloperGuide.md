@@ -102,7 +102,7 @@ is outlined. `DepartmentPanel` and `StatusBarFooter` read the unfiltered `Logic.
 `Logic.getDepartmentList()`, so they stay up to date with every change.
 
 Contact details appear in two places. The docked \[3\] pane follows the selection in \[2\]: selecting a row with a
-click or j/k formats that contact with `ViewCommand.formatDetails(Person)` and shows it at once, without running a
+click or j/k passes that contact directly to `DetailsPanel.showDetails(Person)` and shows it at once, without running a
 command, so glancing through contacts stays instant. When selection becomes null, the listener calls
 `DetailsPanel.clearDetails()` to restore the placeholder, remove accessible contact text, and reset value
 navigation and scrolling. The constructor uses the same reset operation. A successful `clear --confirm`
@@ -627,11 +627,12 @@ filtering and sorting determine the selected row. `CONTACT_ID` is the same one-b
 position used by `edit`, represented internally by `Index`. It reports an empty list or the valid contact ID range
 before accessing the contact.
 
-The command formats all currently supported fields as labelled, untruncated lines, sorts tags for stable output,
-and returns a `CommandResult` with separate short feedback, the viewed `Person`, and an optional `contactDetails`
-payload. `MainWindow` displays only the short feedback in the main result box and forwards the person and payload to
-`ContactDetailsWindows`, which shows them in that contact's owner-linked `ContactDetailsWindow` popup containing a
-read-only, wrapping field grid with selectable values inside a scroll pane. Each successful `view` updates
+The command returns a `CommandResult` with short feedback and the viewed immutable `Person`.
+`MainWindow` displays the feedback in the main result box and forwards the person to
+`ContactDetailsWindows`, which shows it in that contact's owner-linked `ContactDetailsWindow` popup.
+Its `DetailsPanel` renders all supported fields directly from the person, sorts tags for stable output, and uses
+field presence to style missing values. The read-only, wrapping field grid contains selectable values inside a
+scroll pane. Each successful `view` updates
 the contact's popup with a snapshot, or
 opens a popup if the contact has none; later model changes do not silently change a displayed snapshot.
 
@@ -704,6 +705,8 @@ time the app starts. The history uses two lists, each used as a stack:
 * `Model#getLastDeletedDepartment()` — Returns the department if the most recent deletion was a department deletion,
   or `null` otherwise.
 * `Model#restoreLastDeletedDepartment()` — Restores the most recent department deletion and pops it.
+* `Model#discardLastDeletion()` — Pops the most recent deletion from `deletionOrder`, and from `deletedPersons` if it
+  is a contact deletion, without restoring anything.
 
 `DeleteCommand` is the only caller of `deletePerson`, and `DepartCommand` is the only caller of `deleteDepartment`,
 so both record deletions without any extra code. The success message of `delete` ends with `Use 'undo' to restore.`
@@ -731,8 +734,9 @@ most recent deletion is a contact:
 
 How `undo` works:
 
-1. `AddressBookParser` passes the rest of the input to `UndoCommandParser`. If there is any argument (e.g. `undo 2`),
-   the parser throws a `ParseException` with the usage message.
+1. `AddressBookParser` passes the rest of the input to `UndoCommandParser`. The only accepted argument is
+   `--discard-latest`, described below. Any other argument (e.g. `undo 2`) makes the parser throw a `ParseException`
+   with the usage message.
 1. `UndoCommand#execute` calls `Model#getLastDeletedDepartment()`. If the most recent deletion was a department
    deletion, it checks `Model#hasDepartment(...)`. If that name has been registered again, it throws a
    `CommandException` and leaves the history unchanged. Otherwise, `Model#restoreLastDeletedDepartment()` adds the
@@ -745,7 +749,7 @@ How `undo` works:
    undo.
 1. It reads the most recent contact deletion with `Model#getLastDeletedPerson()`. If that contact has neither a phone
    number nor an email address, which only happens with legacy data, it throws a `CommandException` and leaves the
-   history unchanged.
+   history unchanged. The error points to `undo --discard-latest` to get past the blocked deletion.
 1. It checks `Model#hasPerson(...)` for a [duplicate contact](#glossary) already in the list: one with the same name
    and a matching provided phone number or email address (`Person#isSamePerson`). If one exists, it throws a
    `CommandException` that names it. One matching field is enough, so a contact with a different email, or no email,
@@ -758,6 +762,13 @@ How `undo` works:
    list, which clears any `find` filter and `sort` order. The deletion is popped only after the add succeeds, so a
    failed add does not lose it.
 1. `LogicManager` saves the address book, as it does after other commands that change it.
+
+`undo --discard-latest` drops the most recent deletion without restoring it, so the user can get past a deletion
+they do not want back or one that `undo` cannot restore. `UndoCommandParser` creates an `UndoCommand` in discard
+mode. The command throws a `CommandException` if the history is empty; otherwise, it names the deletion in the
+result and calls `Model#discardLastDeletion()`. A discarded deletion cannot be restored. Discarding a department
+deletion leaves its cleared assignments unchanged. `UndoCommand#requiresStorageSave()` returns false in this
+mode because only the in-memory history changes.
 
 `clear` replaces the address book through `Model#setAddressBook`, which does not touch the deletion history. After
 `clear`, `undo` can still restore contacts and departments that were deleted individually before it, but not the
@@ -785,7 +796,7 @@ contacts that `clear` removed.
 * **Alternative 1 (current choice):** In `ModelManager`.
   * Pros: Each `Model` has its own history, so tests do not share state. `ModelManager#equals` compares the history,
     so `CommandTestUtil.assertCommandSuccess` checks it too.
-  * Cons: `Model` gains five methods, which every `Model` stub in the tests must implement.
+  * Cons: `Model` gains six methods, which every `Model` stub in the tests must implement.
 
 * **Alternative 2:** In a static field of `DeleteCommand` or `UndoCommand`.
   * Pros: `Model` does not change.

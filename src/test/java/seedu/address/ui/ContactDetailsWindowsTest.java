@@ -49,8 +49,9 @@ public class ContactDetailsWindowsTest {
             assertEquals(List.of(first.getRoot().getScene(), second.getRoot().getScene()), setUpScenes);
             assertTrue(first.getRoot().isShowing());
             assertTrue(second.getRoot().isShowing());
-            assertEquals(ContactDetailsWindows.CASCADE_OFFSET, second.getRoot().getX() - first.getRoot().getX());
-            assertEquals(ContactDetailsWindows.CASCADE_OFFSET, second.getRoot().getY() - first.getRoot().getY());
+            // Native window coordinates can include subpixel rounding on scaled displays.
+            assertEquals(ContactDetailsWindows.CASCADE_OFFSET, second.getRoot().getX() - first.getRoot().getX(), 0.01);
+            assertEquals(ContactDetailsWindows.CASCADE_OFFSET, second.getRoot().getY() - first.getRoot().getY(), 0.01);
         });
     }
 

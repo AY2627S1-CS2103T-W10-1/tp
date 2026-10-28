@@ -245,7 +245,7 @@ public class MainWindow extends UiPart<Stage> {
             if (newPerson == null) {
                 detailsPanel.clearDetails();
             } else {
-                detailsPanel.showDetails(ViewCommand.formatDetails(newPerson));
+                detailsPanel.showDetails(newPerson);
             }
         });
 
