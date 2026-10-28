@@ -202,6 +202,23 @@ The `Storage` component,
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonAddressBookStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
+Both JSON storage classes save through `JsonUtil.saveJsonFile`, which serializes the complete object before
+passing the JSON text to `AtomicFileWriter`. The writer creates a sibling temporary file on the destination's
+filesystem, writes and closes the complete UTF-8 content, then publishes it using
+`Files.move` with `ATOMIC_MOVE` and `REPLACE_EXISTING`. This shared path protects both address book data and
+user preferences. CSV export uses the separate `CsvContactExporter` flow described below.
+
+If serialization, temporary-file creation, writing, or replacement fails, the previous destination remains
+unchanged. A failed save does not create an empty destination if none existed. After a temporary-file write or
+replacement failure, the writer attempts to remove the temporary file; any cleanup failure is attached to the
+original exception as a suppressed exception. Unsupported atomic replacement is reported as a save error,
+without falling back to a non-atomic write.
+
+Atomic replacement protects the saved file independently of command execution. Ordinary commands that modify
+the model do so before saving, so a failed save leaves their changes in memory. After resolving the storage problem,
+`list` retries saving the current address book. Confirmed `clear` uses the replacement-before-execution path
+described in [Clearing contacts with confirmation](#clearing-contacts-with-confirmation).
+
 ### Common classes
 
 Classes used by multiple components are in the `seedu.address.commons` package.
@@ -605,14 +622,18 @@ the parser accepts only blank arguments or the exact `--confirm` flag. All other
 `ClearCommand` stores an immutable confirmation flag. Without confirmation, it counts the canonical
 address book's contacts and returns a warning; contacts, display filtering and sorting, and deletion
 history remain unchanged. Its `requiresStorageSave()` override returns false in this case.
-With confirmation, it resets the address book, including the department catalogue, and allows
-`LogicManager` to save the empty book.
+With confirmation, `getAddressBookReplacement()` supplies the empty address book to `LogicManager`, which
+saves it before executing the command. Only after saving succeeds does `ClearCommand.execute` reset the
+live address book, including the department catalogue; `LogicManager` skips the normal save afterward.
+If saving fails, the command is not executed: contacts, departments, the current filter and sorting, and
+deletion history remain unchanged. The error explains that clearing was not applied. After resolving the
+storage problem, the user can retry `clear --confirm`, or run `list` to save the retained data.
 Clearing does not add contacts to individual-deletion history, so it cannot be undone.
 Earlier individual deletions remain available to `undo`.
 
 Regression tests cover strict parsing, warning counts with hidden contacts, unchanged display and undo
-history, skipped saves for unconfirmed or invalid input, and reloading the empty saved address book
-after confirmed deletion.
+history, skipped saves for unconfirmed or invalid input, preservation of saved and live data after save
+failures, recovery and retry, and reloading the empty saved address book after confirmed deletion.
 
 ### Viewing contact details
 

@@ -627,15 +627,21 @@ sudoContact automatically saves contact changes after successful commands; no se
 JSON saves replace the previous file only after the complete new data has been written. If saving fails,
 the previous saved file remains unchanged. If the filesystem cannot safely replace the file in one operation,
 the app reports a save error; use a local folder that supports atomic file replacement.
-The JSON save is skipped for `find`, `view`, `sort`, `export`, `help`/`?`, `depart --list`, and `clear`
-without `--confirm`.
+The JSON save is skipped for `find`, `view`, `sort`, `export`, `help`/`?`, `depart --list`,
+`undo --discard-latest`, and `clear` without `--confirm`.
 `sort` changes only the displayed order; it does not write the contact file or persist the sort order.
 `export` writes a separate CSV copy; it does not modify or save the JSON contact file.
 Finding, viewing, help and department listing only display information; unconfirmed `clear` only displays its warning.
 `clear --confirm` does save the cleared data. `list`/`ls` retains the normal JSON-save behavior.
 Departments and tags are contact data and are saved normally when changed.
-If saving fails, for example because the data file is read-only, the error says the change is still applied in the app.
-It is saved the next time saving succeeds. Closing the app before then loses the unsaved change.
+If saving fails after adding, editing, deleting, changing departments, or restoring a deletion, the change remains
+in the current session, while the previous saved file remains unchanged. Resolve the storage problem, then run
+`list` to retry saving before closing the app. Repeating the original command may apply another change.
+Closing the app before saving succeeds loses the unsaved change.
+
+`clear --confirm` saves the empty address book before removing contacts and departments from the current session.
+If saving fails, clearing is not applied. Resolve the storage problem, then retry `clear --confirm` if you still
+want to clear the data.
 
 ### Editing the data file
 
