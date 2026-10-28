@@ -73,6 +73,23 @@ public class ContactDetailsWindowTest {
     }
 
     @Test
+    public void pressJ_afterViewLeavesFocusOnPanel_movesToFirstValue() throws Exception {
+        FxTestUtil.run(() -> {
+            ContactDetailsWindow window = new ContactDetailsWindow(new Stage());
+            window.showDetails(alice, "Name: Alice Pauline\nPhone: 94351253");
+            // Activating a popup opened by view focuses its panel rather than a value.
+            ScrollPane panel = (ScrollPane) window.getRoot().getScene().lookup("#detailsScroll");
+            panel.requestFocus();
+
+            Event.fireEvent(panel, new KeyEvent(KeyEvent.KEY_PRESSED, "j", "j", KeyCode.J,
+                    false, false, false, false));
+
+            TextArea focused = (TextArea) window.getRoot().getScene().getFocusOwner();
+            assertEquals("Alice Pauline", focused.getSelectedText());
+        });
+    }
+
+    @Test
     public void showsContact_sameContactWhileShowing_returnsTrue() throws Exception {
         FxTestUtil.run(() -> {
             ContactDetailsWindow window = new ContactDetailsWindow(new Stage());
