@@ -160,8 +160,8 @@ How the `Logic` component works:
    `ClearCommand` uses this path; a save failure prevents execution and preserves the live model.
    Otherwise, `LogicManager` saves the canonical address book after execution if `Command.requiresStorageSave()`
    returns true.
-   Read-only `ViewCommand` and display-only `SortCommand` return false, as do `ExportCommand`, `HelpCommand`,
-   department listing and unconfirmed `ClearCommand`.
+   Read-only `ViewCommand` and `FindCommand` and display-only `SortCommand` return false, as do `ExportCommand`,
+   `HelpCommand`, department listing, unconfirmed `ClearCommand` and `undo --discard-latest`.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
@@ -415,7 +415,9 @@ cleared too. The active filter is retained and sorting resets to stored order.
 `UndoCommand` checks the latest deletion type. For a department deletion, it rejects an existing catalogue name
 before changing state; otherwise it restores the department and assignments on tracked contacts still without
 a department, including contacts awaiting restoration. `setPerson` updates tracked references so subsequent
-name or phone edits survive undo. Explicit reassignment to another department is preserved. Missing contacts
+name or phone edits survive undo. Explicit reassignment to another department is preserved. Department deletions
+and renames replace affected contacts without updating older deletion entries, so a contact reassigned after the
+deletion is never reassigned by `undo`, even if its new department is later deleted. Missing contacts
 are not recreated. The history entry is consumed only on success, and all contacts are displayed in stored order.
 Department restoration reports `Restored deleted department: [NAME]`; a name conflict reports
 `Cannot restore the deleted department because it already exists: [NAME]` and preserves data and history.
@@ -798,7 +800,9 @@ mode because only the in-memory history changes.
 
 `clear` replaces the address book through `Model#setAddressBook`, which does not touch the deletion history. After
 `clear`, `undo` can still restore contacts and departments that were deleted individually before it, but not the
-contacts that `clear` removed.
+contacts that `clear` removed. If a contact restored this way had a department, that department is added back to the
+department list. `clear` emptied the list, and `AddressBook#addPerson`, which `undo` uses to restore the contact,
+adds any department the contact has that is not already listed.
 
 #### Design considerations:
 
@@ -978,8 +982,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * 2a. The deletion request has an invalid format or the index is
   missing, invalid, or outside the displayed list's range.
 
-  * 2a1. sudoContact shows an error message and indicates the
-    required format or valid index range.
+  * 2a1. sudoContact shows the required format if the index is
+    missing or not a positive integer, or reports that the index
+    is invalid if it is outside the displayed list's range.
 
   Use case resumes at step 2.
 
@@ -999,10 +1004,11 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **Extensions**
 
-* 1a. The undo request includes additional arguments.
+* 1a. The undo request includes an argument other than
+  `--discard-latest`.
 
-  * 1a1. sudoContact shows an error message explaining that undo
-    does not accept arguments.
+  * 1a1. sudoContact shows the invalid command format error and
+    the undo usage.
 
   Use case resumes at step 1.
 
@@ -1010,6 +1016,14 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   * 1b1. sudoContact informs the user that there are no deletions
     left to undo.
+
+  Use case ends.
+
+* 1c. User requests `undo --discard-latest`.
+
+  * 1c1. sudoContact removes the most recent deletion from the
+    history without restoring it, and names the discarded
+    contact or department.
 
   Use case ends.
 
@@ -1026,6 +1040,16 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
   * 2b1. sudoContact rejects the restoration and names the department.
   * 2b2. sudoContact retains the deleted department for a later
+    undo attempt.
+
+  Use case ends.
+
+* 2c. The contact to restore has neither a phone number nor an
+  email address, which is only possible with older saved data.
+
+  * 2c1. sudoContact rejects the restoration and suggests
+    `undo --discard-latest`.
+  * 2c2. sudoContact retains the deleted contact for a later
     undo attempt.
 
   Use case ends.
@@ -1628,20 +1652,22 @@ add --name "Benson Meier" --phone 92345678 --email benson@example.com --tag vend
    1. With contacts already loaded, change the JSON file externally and run `view`.
       Expected: the current in-memory contact is displayed; the external file is neither read nor overwritten.
 
-### Deleting a person
+### Deleting a contact and undoing deletions
 
-1. Deleting a person while all persons are being shown
+Use a fresh disposable folder with the built-in sample contacts.
 
-   1. Prerequisites: List all persons using the `list` command, with multiple persons in the list.
-
-   1. Test case: `delete 1`<br>
-      Expected: The first contact is deleted from the list. The status message shows the deleted contact's details.
-
-   1. Test case: `delete 0`<br>
-      Expected: No person is deleted. The status message shows error details.
-
-   1. Other incorrect delete commands to try: `delete`, `delete x`, `...` (where x is larger than the list size)<br>
-      Expected: Similar to previous.
+1. Enter `delete 1`. Expected: Alex Yeoh is deleted and the message ends with `Use 'undo' to restore.`
+   Enter `delete 0`, `delete` and `delete 99`. Expected: an error for each; no contact is deleted.
+1. Enter `delete 1` again to delete Bernice Yu, then `undo`. Expected: Bernice Yu is restored at the end of the list.
+   Enter `undo` again. Expected: Alex Yeoh is restored at the end of the list. Enter `undo` a third time.
+   Expected: `There are no deletions to undo in this session.`
+1. Enter `find Alex`, then `delete 1`. Enter `add --name "Alex Yeoh" --phone 87438807`, then `undo`.
+   Expected: an error naming the existing Alex Yeoh; the deletion stays in the history.
+   Enter `undo --discard-latest`. Expected: the deletion is discarded. Enter `undo`.
+   Expected: there are no deletions to undo.
+1. Enter `undo 2` and `undo --discard`. Expected: an invalid command format error with the undo usage for each.
+1. Enter `delete 1`, then `undo`, then exit and relaunch from the same folder. Expected: the restored contact is
+   still present, and `undo` reports there are no deletions to undo.
 
 ### Saving data
 
