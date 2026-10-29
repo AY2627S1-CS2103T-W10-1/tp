@@ -246,8 +246,9 @@ Manages the shared department catalogue. Choose one operation per command:
 Deleting a department preserves all contacts and their other fields, but clears matching department
 assignments in both current contacts and contact deletion history. The deletion is added to the same
 session-only undo history as contact deletions. See [Undoing a deletion](#undoing-a-deletion-undo).
-`undo` restores the removed department and its original assignments where the contacts still have no department.
-Later edits to other contact fields are preserved; contacts explicitly assigned elsewhere are not reassigned.
+`undo` restores the removed department and gives it back to the contacts that lost it. A contact assigned another
+department after the deletion is not reassigned, even if that department has since been deleted. Later edits to
+other contact fields are preserved.
 Deletion retains the current filter, resets sorting to stored order, and is saved across restarts.
 
 Use `depart --delete "Customer Support"` to remove a registered department. Success reports
@@ -308,8 +309,8 @@ Format: `sort -b FIELD` or `sort --by FIELD`
 * Only the display order changes. Contacts and their saved order remain unchanged, and sorting does not save the file.
 * Displayed indices are updated; `edit 1`, `delete 1`, and `view 1` target the first row.
 * Another sort uses the current displayed order as its starting point. `list`, `find`, and successful contact
-  mutations (`add`, `edit`, `delete`, `depart --edit`, `depart --delete`, `clear`, or `undo`) reset sorting to stored order.
-  `depart --list` and `depart --add` preserve sorting.
+  mutations (`add`, `edit`, `delete`, `depart --edit`, `depart --delete`, `clear`, or an `undo` that restores a deletion)
+  reset sorting to stored order. `depart --list`, `depart --add` and `undo --discard-latest` preserve sorting.
   `view` and `help` preserve the display order. Sort order is not retained after restarting.
 * Options and field aliases are lowercase. Use ordinary hyphens, not Unicode dashes. Exactly one option and one
   field are required; quoted fields, `--by=tags`, combined options, extra arguments, and descending order are rejected.
@@ -519,8 +520,9 @@ Format: `undo [--discard-latest]`
   data and history unchanged. Run `undo --discard-latest` to get past it, then recreate the contact using `add`
   with the required contact information if you still need it.
 * Undoing a department deletion restores the catalogue entry and the original assignments on existing contacts
-  and contacts in deletion history. It preserves later edits to other fields and does not overwrite a department
-  assigned after the deletion. Contacts removed by `clear` are not recreated.
+  and contacts in deletion history. It preserves later edits to other fields. A contact assigned another department
+  after the deletion is not reassigned, even if that department was later deleted. Contacts removed by `clear` are
+  not recreated.
 * If the department name has been registered again, undo fails with
   `Cannot restore the deleted department because it already exists: NAME`. No data or history is changed.
   Rename the conflicting entry with `depart --edit` before retrying.
@@ -546,6 +548,7 @@ Examples:
 Deletes all contacts **and the entire department catalogue** only when explicitly confirmed.
 The clear operation cannot be undone.
 Earlier individual deletions remain available to `undo` during the current session.
+If `undo` restores a contact deleted before the clear, the contact's department, if any, is registered again.
 
 Format: `clear [--confirm]`
 
