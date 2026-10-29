@@ -1394,7 +1394,7 @@ not an extension of this use case; startup loading and mutating-command saves ha
 * **Department catalogue**: The complete set of registered department names, including unused entries, managed with `depart --list`, `depart --add`, `depart --edit`, and `depart --delete`.
 * **Mainstream OS**: Windows, Linux, Unix, or macOS
 * **Matching contact**: For a tag search, a contact that has at least one of the tags specified in the command (OR matching). A matching contact is displayed once even when it has more than one specified tag.
-* **Private contact detail**: A contact detail that is not meant to be shared with others
+* **Private contact detail**: Contact information that the user considers confidential. This term does not indicate an application privacy setting; sudoContact does not provide per-field privacy markers or visibility controls.
 * **Currently displayed list**: The contacts shown after filtering or sorting. The one-based `CONTACT_ID` used by `view`, `edit` and `delete` refers to a position in this list, which can differ from stored order.
 * **Stored contact list**: All contacts in the address book's canonical in-memory order, including contacts hidden by a filter. A normal JSON save persists this list. CSV export uses the entire list; display sorting does not reorder it.
 * **Partial contact**: A contact with some optional details omitted. New contacts require a name and at least one phone number or email address; older saved name-only contacts remain loadable.
@@ -1402,6 +1402,7 @@ not an extension of this use case; startup loading and mutating-command saves ha
 * **Duplicate contact**: An existing contact with the same name and a matching provided phone number or email address as a contact being added, edited, or restored. Missing fields do not match. Comparisons are case-sensitive.
 * **CSV export**: A UTF-8 comma-separated values file containing a header row and one row for each stored contact.
 * **Tag**: An optional label attached to a contact to support categorisation and searching. Tag matching is case-insensitive.
+* **Session**: One application run, from launch until exit. Command history and individual-deletion undo history are available only within the current session.
 
 --------------------------------------------------------------------------------------------------------------------
 
