@@ -199,6 +199,7 @@ public class ClearSaveFailureIntegrationTest {
                 ? LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT : LogicManager.FILE_OPS_ERROR_FORMAT;
         assertEquals(String.format(errorFormat, failure.getMessage()) + "\n"
                 + ClearCommand.MESSAGE_SAVE_FAILURE_RECOVERY, error.getMessage());
+        assertFalse(error.getMessage().contains(LogicManager.FILE_OPS_CHANGES_KEPT_NOTE));
         assertSame(failure, error.getCause());
         assertEquals(attemptsBefore + 1, storage.requests.size());
         assertEmptyBook(storage.requests.getLast());

@@ -146,6 +146,7 @@ public class CommandErrorUiTest {
                     + "\n\nExamples:\n  clear\n  clear --confirm";
 
             assertError(stage, "clear --confirm", expected);
+            assertFalse(feedback(stage).getText().contains(LogicManager.FILE_OPS_CHANGES_KEPT_NOTE));
 
             assertEquals(1, saves.get());
             assertEquals(before, model.getAddressBook());
@@ -167,7 +168,7 @@ public class CommandErrorUiTest {
                 }
             };
             Stage stage = showWindow(model, blocked);
-            assertError(stage, "delete 1", expected + DELETE_EXAMPLES);
+            assertError(stage, "delete 1", expected + "\n" + LogicManager.FILE_OPS_CHANGES_KEPT_NOTE + DELETE_EXAMPLES);
             assertEquals(1, saves.get());
             // The deletion happened before saving failed; displaying examples must not retry or undo it.
             assertTrue(model.getAddressBook().getPersonList().isEmpty());

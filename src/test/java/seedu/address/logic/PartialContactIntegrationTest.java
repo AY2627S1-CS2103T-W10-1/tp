@@ -175,7 +175,8 @@ public class PartialContactIntegrationTest {
             }
         };
         LogicManager failedLogic = logicFor(model, failing);
-        String expectedMessage = String.format(LogicManager.FILE_OPS_ERROR_FORMAT, "storage unavailable");
+        String expectedMessage = String.format(LogicManager.FILE_OPS_ERROR_FORMAT, "storage unavailable")
+                + "\n" + LogicManager.FILE_OPS_CHANGES_KEPT_NOTE;
         assertThrows(CommandException.class, expectedMessage, ()
                 -> failedLogic.execute("add --name Alice --phone 91234567"));
         assertFalse(Files.exists(failing.getAddressBookFilePath()));

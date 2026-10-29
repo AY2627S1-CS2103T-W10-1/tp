@@ -28,12 +28,10 @@ public class LogicManager implements Logic {
     public static final String FILE_OPS_CHANGES_KEPT_NOTE =
             "Any change is still applied in the app and will be saved the next time saving succeeds.";
 
-    public static final String FILE_OPS_ERROR_FORMAT =
-            "Could not save data due to the following error: %s\n" + FILE_OPS_CHANGES_KEPT_NOTE;
+    public static final String FILE_OPS_ERROR_FORMAT = "Could not save data due to the following error: %s";
 
     public static final String FILE_OPS_PERMISSION_ERROR_FORMAT =
-            "Could not save data to file %s due to insufficient permissions to write to the file or the folder.\n"
-            + FILE_OPS_CHANGES_KEPT_NOTE;
+            "Could not save data to file %s due to insufficient permissions to write to the file or the folder.";
 
     private final Logger logger = LogsCenter.getLogger(LogicManager.class);
 
@@ -64,29 +62,28 @@ public class LogicManager implements Logic {
 
     private CommandResult executeReplacement(Command command, AddressBookReplacement replacement)
             throws CommandException {
-        try {
-            saveAddressBook(replacement.addressBook());
-        } catch (CommandException e) {
-            throw new CommandException(e.getMessage() + "\n" + replacement.failureRecoveryMessage(), e.getCause());
-        }
+        saveAddressBook(replacement.addressBook(), replacement.failureRecoveryMessage());
         return command.execute(model);
     }
 
     private CommandResult executeAndSave(Command command) throws CommandException {
         CommandResult result = command.execute(model);
         if (command.requiresStorageSave()) {
-            saveAddressBook(model.getAddressBook());
+            saveAddressBook(model.getAddressBook(), FILE_OPS_CHANGES_KEPT_NOTE);
         }
         return result;
     }
 
-    private void saveAddressBook(ReadOnlyAddressBook addressBook) throws CommandException {
+    private void saveAddressBook(ReadOnlyAddressBook addressBook, String failureRecoveryMessage)
+            throws CommandException {
         try {
             storage.saveAddressBook(addressBook);
         } catch (AccessDeniedException e) {
-            throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage()), e);
+            throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage())
+                    + "\n" + failureRecoveryMessage, e);
         } catch (IOException ioe) {
-            throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage()), ioe);
+            throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage())
+                    + "\n" + failureRecoveryMessage, ioe);
         }
     }
 
