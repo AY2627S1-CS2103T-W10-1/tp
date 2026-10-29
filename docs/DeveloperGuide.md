@@ -1672,9 +1672,12 @@ add --name "Benson Meier" --phone 92345678 --email benson@example.com --tag vend
 7. Compare the contact data file before and after sorting; its contents should be unchanged.
 8. Give two contacts departments that differ only by case. Sort by tags, then by department; confirm their
    relative order from the tag sort is retained. Repeat with missing fields to confirm those contacts appear last.
-9. After sorting, run `view 1`, then `edit 1 --department Support`; confirm both target the displayed first contact.
-   Check the new indices after assignment resets sorting. Delete a sorted contact and run `undo`; confirm its
-   department and tags are restored and the full list returns to canonical order.
+9. Run `depart --list`. If `Support` is absent, register it with `depart --add Support`.
+   Run `sort --by department`, then `view 1`, followed by `edit 1 --department Support`.
+   Expected: viewing and editing both target the first displayed contact.
+   Check the new indices after the edit resets sorting.
+   Sort again, delete the first displayed contact, and run `undo`.
+   Expected: its department and tags are restored, and the full list returns to stored order.
 10. Using a disposable copy of the application, start with malformed contact JSON; confirm the list is empty and
     sorting reports `No contacts found to sort.` without overwriting the file. Add two valid contacts with different
     tags and confirm they are saved. Sort by tags in the same session; confirm sorting succeeds and the saved file
