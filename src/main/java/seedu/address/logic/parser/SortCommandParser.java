@@ -36,8 +36,7 @@ public class SortCommandParser implements Parser<SortCommand> {
         if (Arrays.asList(tokens).contains("--descending")) {
             throw new ParseException(MESSAGE_DESCENDING);
         }
-        if ((!tokens[0].equals("-b") && !tokens[0].equals("--by")) || tokens.length > 2
-                || (tokens.length == 2 && isUnsupportedValue(tokens[1]))) {
+        if (hasUnsupportedArgumentStructure(tokens)) {
             throw new ParseException(MESSAGE_UNSUPPORTED_ARGUMENT);
         }
         if (tokens.length == 1) {
@@ -50,6 +49,14 @@ public class SortCommandParser implements Parser<SortCommand> {
             default -> throw new ParseException(MESSAGE_INVALID_FIELD);
         };
         return new SortCommand(field);
+    }
+
+    private boolean hasUnsupportedArgumentStructure(String[] tokens) {
+        boolean hasUnsupportedOption = !tokens[0].equals("-b") && !tokens[0].equals("--by");
+        boolean hasExtraArguments = tokens.length > 2;
+        boolean hasUnsupportedFieldToken = tokens.length == 2 && isUnsupportedValue(tokens[1]);
+
+        return hasUnsupportedOption || hasExtraArguments || hasUnsupportedFieldToken;
     }
 
     private boolean isUnsupportedValue(String token) {
