@@ -365,16 +365,12 @@ The catalogue includes departments with no assigned contacts and is independent 
 | `depart --edit OLD_DEPARTMENT NEW_DEPARTMENT` | Rename an existing catalogue entry and update every contact assigned to it, including contacts hidden by a filter. |
 | `edit CONTACT_ID --department DEPARTMENT` | Assign an existing catalogue department to the contact at the specified displayed-list position. The short option `-d` is also supported. |
 
-Examples: `depart --add Engineering`, `depart --list`, `depart --edit Engineering "Research & Development"`,
-and `edit 1 --department "Research & Development"`. Quote names containing spaces to distinguish the two
-arguments of `depart --edit`. The command word is `depart` for all four catalogue operations.
-The previous `depart CONTACT_ID --set DEPARTMENT` form is replaced by `edit CONTACT_ID --department DEPARTMENT`.
-
-Department names are case-sensitive and must contain 2-50 characters using only letters, numbers, spaces, `-`, or `&`.
-All department inputs are trimmed before format validation and catalogue lookup; spaces inside quoted names are preserved, while leading and trailing whitespace is discarded. `Department` stores the trimmed name, including when loading existing catalogue and contact data.
-Reject empty or invalid names, duplicate catalogue additions, an unknown rename source, and a rename target
-that already belongs to another catalogue entry. Reject missing arguments, extra arguments, and combined
-catalogue operations without modifying the catalogue or contacts.
+`DepartCommandParser` accepts exactly one lowercase operation and its required number of name arguments.
+Department names are case-sensitive, trimmed, and contain 2-50 ASCII letters, digits, spaces, `-`, or `&`;
+multi-word names must be quoted. The parser rejects malformed commands and invalid names before constructing a
+command; `DepartCommand.execute` then rejects duplicate additions, unknown sources, and conflicting rename targets
+before mutation. The previous `depart CONTACT_ID --set DEPARTMENT` form is replaced by
+`edit CONTACT_ID --department DEPARTMENT`; the full user-facing syntax and feedback are in the UG.
 
 Renaming changes the catalogue entry and all its contact assignments as one logical operation; other contact
 fields remain unchanged. Persist the catalogue (including unused entries) and updated assignments across restarts.
@@ -423,63 +419,6 @@ storage flow. A save failure is reported instead of success; the in-memory chang
 `DepartCommandParserTest`, `DepartCommandTest`, `AddressBookTest`, and `JsonSerializableAddressBookTest`
 cover invalid input, catalogue constraints, unaffected contacts, and legacy-data loading.
 
-#### Department command formats and feedback
-
-| Operation | Format | Required name arguments |
-| --- | --- | --- |
-| List | `depart --list` | None |
-| Add | `depart --add DEPARTMENT` | Exactly one |
-| Delete | `depart --delete DEPARTMENT` | Exactly one |
-| Rename | `depart --edit OLD_NAME NEW_NAME` | Exactly two, source first |
-
-The command word `depart` is case-insensitive. Options are lowercase, case-sensitive, unquoted,
-and have no short forms. Choose exactly one operation; extra arguments and repeated or combined operations
-are rejected. Use ordinary ASCII hyphens and separate the option and arguments with whitespace.
-The old `depart CONTACT_ID --set DEPARTMENT` form is not supported.
-
-Names are case-sensitive and contain 2-50 characters from ASCII letters (`A-Z`, `a-z`), digits (`0-9`),
-spaces, `-`, and `&`; names consisting only of whitespace are invalid. Names containing spaces must be one quoted argument, using matching single or double quotes, e.g. `depart --edit Engineering "Customer Support"`.
-Unlike `add` and `edit`, an unquoted multi-word department name is treated as multiple arguments and is rejected.
-Leading and trailing whitespace is trimmed after quotes are removed; internal spaces are preserved and count towards the length limit.
-A closing quote must be followed by whitespace or the end of input. An unquoted name starting with `--`
-is treated as an invalid option-like argument. To use such a name, quote it.
-Renaming to the source's exact current name is allowed; renaming to another existing entry is not.
-
-**Validation order:** Command structure (including quotes, option and argument count) is checked first.
-Names are then validated left to right, checking blank values before character and length constraints.
-Only after all names are valid does the system check whether a deletion target exists, an addition is a duplicate,
-or, for a rename,
-whether the source exists followed by whether the target belongs to another entry. The first failure is reported;
-no catalogue or contact changes occur on validation failure. For example, `depart --edit Unknown !`
-reports the invalid target name before checking whether Unknown exists.
-
-In the messages below, bracketed placeholders are replaced by the supplied names without surrounding quote
-characters. Code blocks show actual line breaks.
-
-| Condition | Feedback |
-| --- | --- |
-| List a nonempty catalogue | `Departments:` followed by each registered name on a separate line. |
-| Add a department | `Added department: [NAME]` |
-| Rename a department | `Renamed department: [OLD_NAME] -> [NEW_NAME]` |
-| Invalid command structure, including a missing name argument | The format error shown below. |
-| Supplied name is empty or whitespace-only, e.g. `depart --add ""` | `Department name cannot be empty.` |
-| Nonblank name violates character or length constraints | `Invalid Department: Must be 2-50 characters using only letters, numbers, spaces, '-', or '&'.` |
-| Addition duplicates an existing entry | `Department already exists: [NAME]` |
-| Delete target does not exist | `Department does not exist: [NAME]. Use depart --list or depart --add DEPARTMENT.` |
-| Delete a department | `Deleted department: [NAME]. Associated contacts now have no department.` |
-| Rename source does not exist | `Department does not exist: [OLD_NAME]. Use depart --list or depart --add DEPARTMENT.` |
-| Rename target belongs to another entry | `Department already exists: [NEW_NAME]` |
-| Catalogue is empty | `No departments have been registered.` |
-
-Invalid command structure includes missing, unknown or quoted operations; missing or extra arguments;
-repeated or combined operations; unmatched quotes or text immediately following a closing quote; and
-unquoted names beginning with `--`. The exact feedback is:
-
-```text
-Invalid command format!
-depart --list | depart --add DEPARTMENT | depart --edit OLD_NAME NEW_NAME | depart --delete DEPARTMENT
-```
-
 ### Searching names with quotes
 
 Name search uses `ArgumentTokenizer.splitWords` to remove matching outer quotes before splitting
@@ -487,7 +426,7 @@ the resulting text into whole-word OR keywords. Single and double quotes behave 
 quotes inside unquoted words remain literal. Empty input, unmatched quotes and text immediately
 after a closing quote are rejected.
 
-### Searching contacts by tags (UC6)
+### Searching contacts by tags
 
 The tag-search command is `find --tag TAG [TAG ...] [--tag TAG ...]`. The option is lowercase and may be
 repeated; as with `add` and `edit`, several tags may follow one option. The command word is case-insensitive.
@@ -510,8 +449,9 @@ with `add` and `edit` while still accepting longer legacy tags loaded from stora
 | No standalone `--tag`, but an option-like token is supplied | `Invalid find option: '[INPUT]'. Use find --tag TAG [TAG ...] [--tag TAG ...] or find KEYWORD [MORE_KEYWORDS].` |
 | No arguments, or text before the first standalone `--tag` | `Invalid command format!` followed by a newline and `FindCommand.MESSAGE_USAGE`. |
 
-Option-like input is rejected unless quoted as a tag value. Parsing failures leave the current filter, display
-order, and contacts unchanged. Search matching is case-insensitive without changing stored tag spelling or equality.
+An unquoted value beginning with `--` is treated as an option and rejected if unrecognized; quoting makes it a
+tag value. Parsing failures leave the current filter, display order, and contacts unchanged. Search matching is
+case-insensitive without changing stored tag spelling or equality.
 
 #### Matching and execution
 
@@ -860,12 +800,12 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | Priority | As a …​                                    | I want to …​                                  | So that I can…​                                                               |
 | -------- |-------------------------------------------|----------------------------------------------|------------------------------------------------------------------------------|
 | `* * *`  | new user / forgetful user                 | see usage instructions                       | refer to instructions when I do not know/forget how to use the App           |
-| `* * *`  | forgetful user                            | see usage instructions                       | refer to instructions when I do not know/forget how to use the App           |
-| `* * *`  | user                                      | add a new person                             |                                                                              |
+| `* * *`  | user                                      | add a new person                             | retain their contact details for future reference                            |
 | `* * *`  | user                                      | delete a person                              | remove entries that I no longer need                                         |
 | `* * *`  | user                                      | find a person by name                        | locate details of persons without having to go through the entire list       |
 | `* * *`  | user                                      | record which department a contact belongs to | categorise employees for easier filtering                                    |
-| `* * *`  | user                                      | search across all tags                       | find someone when I only remember where they work/fragmented info            |
+| `* * *`  | user                                      | manage a shared department catalogue         | keep assignments consistent when the organisation changes                   |
+| `* * *`  | user                                      | find contacts by one or more tags            | locate related contacts without checking the entire list                     |
 | `* * *`  | user                                      | view one contact's full details              | see all the fields of a person that may be cut off in the list view          |
 | `* * *`  | user                                      | add a contact with only partial information  | capture an person's incomplete information if I do not have all their info   |
 | `* * *`  | user                                      | undo a delete                                | recover from a mistaken delete                                               |
