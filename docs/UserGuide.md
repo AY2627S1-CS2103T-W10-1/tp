@@ -639,7 +639,7 @@ The JSON save is skipped for `find`, `view`, `sort`, `export`, `help`/`?`, `depa
 `export` writes a separate CSV copy; it does not modify or save the JSON contact file.
 Finding, viewing, help and department listing only display information; unconfirmed `clear` only displays its warning.
 `clear --confirm` does save the cleared data. `list`/`ls` retains the normal JSON-save behavior.
-Departments and tags are contact data and are saved normally when changed.
+Department catalogue entries, contact assignments, and tags are saved whenever they are changed.
 If saving fails after adding, editing, deleting, changing departments, or restoring a deletion, the change remains
 in the current session, while the previous saved file remains unchanged. Resolve the storage problem, then run
 `list` to retry saving before closing the app. Repeating the original command may apply another change.
