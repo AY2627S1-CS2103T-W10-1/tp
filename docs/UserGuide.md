@@ -36,6 +36,10 @@ view of departments and contact details. Contacts are stored locally, so the app
 
    * `sort --by tags` : Sorts displayed contacts by their alphabetically smallest tag.
 
+   * `find --tag friends` : Shows contacts tagged `friends`, ignoring tag capitalization.
+
+   * `depart --list` : Lists all registered departments, including departments with no contacts.
+
    * `add -n John Doe -p 98765432 -e johnd@example.com -a John street, block 123, #01-01` : Adds a contact named `John Doe` to the Address Book.
 
    * `delete 3` : Deletes the 3rd contact shown in the current list.
@@ -226,9 +230,9 @@ Manages the shared department catalogue. Choose one operation per command:
 | Command | Result |
 | --- | --- |
 | `depart --list` | Lists every registered department, including unused departments. |
-| `depart --delete DEPARTMENT` | Removes a department and clears its assignments on all contacts, including hidden contacts. |
 | `depart --add DEPARTMENT` | Registers a new department without assigning contacts. |
 | `depart --edit OLD_NAME NEW_NAME` | Renames a department and updates every associated contact, including hidden contacts. |
+| `depart --delete DEPARTMENT` | Removes a department and clears its assignments on all contacts, including hidden contacts. |
 
 * Names are case-sensitive and must contain 2-50 characters using English letters (`A-Z`, `a-z`), numbers,
   spaces, `-`, or `&`.
@@ -446,22 +450,21 @@ Format: `find --tag TAG [TAG ...] [--tag TAG ...]`
   inputs are deduplicated. Leading `#` or `/` characters are removed before searching.
 * Tags use English letters (`A-Z`, `a-z`), numbers, hyphens (`-`), or underscores (`_`), without spaces.
   New tags are limited to 30 characters, but search also accepts longer tags retained from older data files.
-  Quote a tag that is itself an option-like value, e.g. `find --tag "--tag"` searches for the tag `--tag`.
+  An unquoted value beginning with `--` is treated as an option; quote it to use it as a tag value, e.g.
+  `find --tag "--tag"` searches for the tag `--tag`.
+* Name and tag searches cannot be combined: text before the first `--tag`, as in
+  `find Alice --tag friends`, is rejected.
 * A missing value displays `Tag cannot be empty: Please provide a valid tag after '--tag'.`
 * An invalid search value displays `Tags must use only letters, numbers, hyphens (-), and underscores (_), with no spaces.`
 * No matches displays `No contacts found with the specified tag(s).`
-* Searching changes only the displayed list; it does not modify contacts or save the JSON data file.
+* Searching examines all stored contacts, replaces the previous filter, and displays matches in stored order.
+  It does not modify contacts or save the JSON data file.
 
 Example: `find --tag client --tag important`
 
 For example, `find --tag friends` displays the two contacts tagged `friends` and reports the number of matches:
 
 ![Finding contacts by tag](images/findByTag.png)
-
-For `depart --add`, `depart --edit` and `depart --delete`, each department name containing spaces
-must be enclosed in matching single or double quotes, e.g. `depart --add "Customer Support"`.
-Matching quotes around tag-search values are optional, except when needed to prevent a value such as `--tag`
-from being interpreted as an option.
 
 ### Locating persons by name: `find`
 
