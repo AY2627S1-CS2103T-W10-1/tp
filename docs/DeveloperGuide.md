@@ -393,35 +393,22 @@ zero or more registered `Department` values, while each `Person` has zero or one
 Department equality is based on the case-sensitive name; assignments do not require the same object instance
 as the catalogue entry.
 
-`AddressBookParser` routes `depart` to `DepartCommandParser`. The parser uses the shared quote-aware word
-lexer to enforce one operation and its exact argument count, validates names with `Department`, and creates
-`DepartCommand.list()`, `DepartCommand.add(...)`, `DepartCommand.delete(...)`, or `DepartCommand.rename(...)`.
-`DepartCommand.execute` checks catalogue membership through `Model.hasDepartment` before a mutation.
-Additions delegate to `ModelManager.addDepartment`; renames delegate to `ModelManager.renameDepartment`.
-`AddressBook.renameDepartment` replaces matching contacts with copies produced by
-`Person.withRenamedDepartment`, preserving their other fields and leaving unrelated contacts unchanged.
+The following sequence diagram shows a successful department deletion. Parser construction, ordinary list reads,
+result construction, and the internal storage write are omitted so that the main state changes remain visible.
+
+![Sequence diagram for deleting a department](images/DeleteDepartmentSequenceDiagram.png)
 
 `depart --list` skips the storage save and preserves display state. Adding an unused catalogue entry also
 preserves contact filtering and sorting. `EditCommandParser` stores `-d`/`--department` in
 `EditPersonDescriptor`; `EditCommand` checks the displayed index and catalogue membership before updating
 any fields. A successful contact edit displays all contacts in stored order.
-`ModelManager.renameDepartment` updates both stored contacts and deletion history, so `undo` cannot restore
-an obsolete department name. A rename retains the active filter and resets display sorting.
-`DepartCommand.delete(...)` validates catalogue membership before calling `ModelManager.deleteDepartment`.
-`AddressBook.deleteDepartment` removes the entry and clears matching assignments, including hidden contacts.
-`ModelManager` records the department and affected contact objects in a deletion entry, alongside markers for
-contact deletions in a shared chronological history. Matching assignments in contact deletion history are
-cleared too. The active filter is retained and sorting resets to stored order.
-`UndoCommand` checks the latest deletion type. For a department deletion, it rejects an existing catalogue name
-before changing state; otherwise it restores the department and assignments on tracked contacts still without
-a department, including contacts awaiting restoration. `setPerson` updates tracked references so subsequent
-name or phone edits survive undo. Explicit reassignment to another department is preserved. Department deletions
-and renames replace affected contacts without updating older deletion entries, so a contact reassigned after the
-deletion is never reassigned by `undo`, even if its new department is later deleted. Missing contacts
-are not recreated. The history entry is consumed only on success, and all contacts are displayed in stored order.
-Department restoration reports `Restored deleted department: [NAME]`; a name conflict reports
-`Cannot restore the deleted department because it already exists: [NAME]` and preserves data and history.
-History is session-only. Successful deletion and restoration use the normal storage-save flow.
+
+Renaming replaces matching contact values, including those in deletion history, and retains the active filter.
+Deleting removes the catalogue entry, clears matching assignments from all contacts, and records the affected
+contacts in the shared deletion history. Undo restores assignments only to tracked contacts that still have no
+department, preserving later edits and explicit reassignment. A conflicting catalogue name rejects restoration
+without changing data or history. Department deletion history is session-only; successful mutations use the
+normal storage-save flow.
 
 Renaming an entry to its own name is allowed. `clear` resets the catalogue together with contacts.
 
@@ -512,12 +499,9 @@ are removed by the shared tokenizer. A tag that looks like an option must be quo
 
 #### Parsing and validation
 
-`AddressBookParser` delegates `find` to `FindCommandParser`. The parser uses the shared quote-aware
-`ArgumentTokenizer`, with each word after `--tag` treated as a tag value. It rejects text before the first
-`--tag`, preventing a combined name-and-tag search. Values are validated from left to right through
-`ParserUtil.parseTagForSearch`, keeping normalization and character validation aligned with `add` and `edit`
-while allowing the longer values accepted by `Tag.fromStoredValue`.
-Normalized duplicate query tags are removed before constructing the command.
+`FindCommandParser` uses the shared quote-aware tokenizer, rejects text before the first `--tag`, validates
+values through `ParserUtil.parseTagForSearch`, and removes duplicate query tags. This keeps normalization aligned
+with `add` and `edit` while still accepting longer legacy tags loaded from storage.
 
 | Condition | Feedback |
 | --- | --- |
@@ -526,27 +510,14 @@ Normalized duplicate query tags are removed before constructing the command.
 | No standalone `--tag`, but an option-like token is supplied | `Invalid find option: '[INPUT]'. Use find --tag TAG [TAG ...] [--tag TAG ...] or find KEYWORD [MORE_KEYWORDS].` |
 | No arguments, or text before the first standalone `--tag` | `Invalid command format!` followed by a newline and `FindCommand.MESSAGE_USAGE`. |
 
-Without a standalone `--tag`, a token beginning with `-`, an en dash, or an em dash is treated as an
-unsupported option; otherwise parsing follows the existing name-search path. After a valid `--tag`, an
-unquoted word beginning with `--` is also treated as an option and rejected if unknown. Quoting makes it a
-tag value instead. Empty quoted text and an option without a value produce the missing-tag message.
-Parsing failures leave the current filter, display order, and contacts unchanged.
-
-Tag search uses `String.equalsIgnoreCase` so users need not remember tag capitalization,
-consistent with name search and tag sorting. Stored tag spelling and tag equality are unchanged;
-case variants may coexist in storage but are equivalent for searching.
+Option-like input is rejected unless quoted as a tag value. Parsing failures leave the current filter, display
+order, and contacts unchanged. Search matching is case-insensitive without changing stored tag spelling or equality.
 
 #### Matching and execution
 
-For valid tag input, the parser constructs `FindCommand(new TagsMatchPredicate(tags))`.
-`TagsMatchPredicate` keeps an immutable copy of the query and uses `String.equalsIgnoreCase` to compare complete
-stored tag names. A contact matches if any stored tag equals any requested tag (OR matching); substring
-matches do not match; case-only differences do match. Contacts with no tags do not match.
-
-`FindCommand.execute` passes the predicate to `Model.updateFilteredPersonList`. `ModelManager` restores
-the display projection to stored order and applies the new predicate across all stored contacts, replacing
-any previous filter and resetting sorting. Filtering selects entries from the stored contact list, so repeated
-query tags or multiple matching tags do not duplicate contacts in the results.
+`TagsMatchPredicate` keeps an immutable query and performs case-insensitive whole-tag OR matching.
+`FindCommand` applies it to all stored contacts, replacing the previous filter and restoring stored order;
+multiple matching tags never duplicate a contact.
 
 A successful search reports `[COUNT] person(s) listed!`. If no contacts match, it displays an empty list and
 `No contacts found with the specified tag(s).`; this is a valid search result, not a validation error.
