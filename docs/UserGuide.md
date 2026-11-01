@@ -234,7 +234,8 @@ Manages the shared department catalogue. Choose one operation per command:
   spaces, `-`, or `&`.
   `depart`, `add`, and `edit` trim surrounding whitespace before validation and catalogue lookup.
   Spaces inside quoted names are preserved. Existing saved names are normalized on loading.
-  Blank names are rejected. Quote names containing spaces, e.g. `depart --add "Customer Support"`.
+  Blank names are rejected. For `depart --add`, `depart --edit` and `depart --delete`, enclose each name
+  containing spaces in matching single or double quotes, e.g. `depart --add "Customer Support"`.
 * Adding an existing name, renaming an unknown source, or renaming to another existing name fails without changes.
   Renaming a department to its current name is allowed and leaves its name unchanged.
 * Names and assignments are saved across restarts. When loading older data, existing contact departments are
@@ -458,8 +459,6 @@ For example, `find --tag friends` displays the two contacts tagged `friends` and
 
 ![Finding contacts by tag](images/findByTag.png)
 
-For `depart --add`, `depart --edit` and `depart --delete`, each department name containing spaces
-must be enclosed in matching single or double quotes, e.g. `depart --add "Customer Support"`.
 Matching quotes around tag-search values are optional, except when needed to prevent a value such as `--tag`
 from being interpreted as an option.
 
@@ -691,6 +690,8 @@ contacts and departments have been verified on the new computer.
 
 ## Command summary
 
+For `add`, supply a name and at least one of `--phone` or `--email`.
+
 Action | Format, Examples
 --------|------------------
 **Add** | `add --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMENT] [--address ADDRESS] [--tag TAG ...]`<br> or `add -n NAME [-p PHONE] [-e EMAIL] [-d DEPARTMENT] [-a ADDRESS] [-t TAG]…` <br> e.g., `add --name "James Ho" --email jamesho@example.com`
@@ -706,3 +707,4 @@ Action | Format, Examples
 **Sort** | `sort -b FIELD` or `sort --by FIELD`, where `FIELD` is `department`, `dept`, `tag`, or `tags`
 **Undo** | `undo` (restore), `undo --discard-latest` (drop without restoring)
 **Help** | `help [COMMAND]` or `? [COMMAND]`
+**Exit** | `exit`

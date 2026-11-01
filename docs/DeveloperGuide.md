@@ -32,6 +32,8 @@ He Qianyi used OpenAI Codex to assist with the Week 11 UG/DG review, contact-wor
 reproducible manual testing instructions, documentation links, diagrams and current product screenshots.
 He Qianyi used OpenAI Codex to assist with preventing concurrent CSV exports from overwriting files,
 including regression tests and the matching export documentation.
+He Qianyi used OpenAI Codex to assist with final-submission documentation corrections in the README,
+User Guide, Developer Guide and About Us page.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -889,14 +891,13 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | Priority | As a …​                                    | I want to …​                                  | So that I can…​                                                               |
 | -------- |-------------------------------------------|----------------------------------------------|------------------------------------------------------------------------------|
 | `* * *`  | new user / forgetful user                 | see usage instructions                       | refer to instructions when I do not know/forget how to use the App           |
-| `* * *`  | forgetful user                            | see usage instructions                       | refer to instructions when I do not know/forget how to use the App           |
-| `* * *`  | user                                      | add a new person                             |                                                                              |
+| `* * *`  | user                                      | add a new person                             | keep their contact information for later use                                 |
 | `* * *`  | user                                      | delete a person                              | remove entries that I no longer need                                         |
 | `* * *`  | user                                      | find a person by name                        | locate details of persons without having to go through the entire list       |
 | `* * *`  | user                                      | record which department a contact belongs to | categorise employees for easier filtering                                    |
 | `* * *`  | user                                      | search across all tags                       | find someone when I only remember where they work/fragmented info            |
 | `* * *`  | user                                      | view one contact's full details              | see all the fields of a person that may be cut off in the list view          |
-| `* * *`  | user                                      | add a contact with only partial information  | capture an person's incomplete information if I do not have all their info   |
+| `* * *`  | user                                      | add a contact with only partial information  | record the contact details I know and fill in the rest later                  |
 | `* * *`  | user                                      | undo a delete                                | recover from a mistaken delete                                               |
 | `* * *`  | user with many contacts                   | List all contacts                            | quickly review the contacts I have stored                                    |
 | `* * *`  | user with many contacts                   | sort contacts by department/tags             | quickly review contact list of people with the same tag                      |
@@ -1406,7 +1407,7 @@ not an extension of this use case; startup loading and mutating-command saves ha
 3.  The system should maintain responsiveness with command execution times of under 1 second when handling a dataset of up to 1,000 records under typical usage conditions.
 4.  The system should provide smooth scrolling when displaying a dataset of up to 1,000 records under typical usage conditions.
 5.  A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
-6.  Contact data must be stored locally in a human-editable text file (e.g., JSON). If the file is missing, malformed, or corrupted at startup, the application must show a clear diagnostic message and either recover safely or exit without an unhandled exception.
+6.  Contact data must be stored locally in a human-editable JSON file. If the file is missing at startup, the application loads sample contacts and logs that choice. If the file cannot be read or its data is invalid, the application logs a warning to the terminal and application log, then starts with an empty address book without an unhandled exception. No warning is shown in the application window. The invalid file is retained until a successful command that saves data replaces it.
 7.  After a successful add, edit, or delete command, the updated contact list must be restored when the application is closed and reopened.
 8.  If saving contact data fails, the application must report the failure and leave the last successfully saved data file intact.
 
