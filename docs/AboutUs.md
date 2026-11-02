@@ -5,7 +5,7 @@ title: About Us
 
 We are a team based in the [School of Computing, National University of Singapore](https://www.comp.nus.edu.sg).
 
-You can reach us at the email `seer[at]comp.nus.edu.sg`
+For questions or bug reports, use the [sudoContact issue tracker](https://github.com/AY2627S1-CS2103T-W10-1/tp/issues).
 
 ## Project team
 
@@ -13,7 +13,7 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 <img src="images/jackchuayc.png" width="200px">
 
-[[github](http://github.com/jackchuayc)] 
+[[github](https://github.com/jackchuayc)]
 
 * Role: Developer
 
@@ -29,7 +29,7 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 <img src="images/snowlyr.png" width="200px">
 
-[[github](http://github.com/snowlyr)] 
+[[github](https://github.com/snowlyr)]
 
 * Role: Developer
 
@@ -48,4 +48,4 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 [[github](https://github.com/He-Qianyi)]
 
 * Role: Developer
-* Responsibilities: UI design
+* Responsibilities: Partial-contact addition, contact details viewing, CSV export, and related tests and documentation
