@@ -40,7 +40,7 @@ view of departments and contact details. Contacts are stored locally, so the app
 
    * `depart --list` : Lists all registered departments, including departments with no contacts.
 
-   * `add -n John Doe -p 98765432 -e johnd@example.com -a John street, block 123, #01-01` : Adds a contact named `John Doe` to the Address Book.
+   * `add -n John Doe -p 98765432 -e johnd@example.com -a John street, block 123, #01-01` : Adds a contact named `John Doe` to the sudoContact.
 
    * `delete 3` : Deletes the 3rd contact shown in the current list.
 
@@ -388,7 +388,7 @@ You can also click a popup's title bar instead of pressing `Alt+3`, then use `j`
 Format: `view CONTACT_ID`
 
 * `CONTACT_ID` is the positive integer shown beside a contact in the **currently displayed list**.
-* After filtering or sorting, use the current displayed `CONTACT_ID`, rather than its position in the saved address book.
+* After filtering or sorting, use the current displayed `CONTACT_ID`, rather than its position in the saved sudoContact.
 * Surrounding spaces are ignored. Missing contact IDs, zero, negative numbers, decimals and extra arguments are rejected.
 * A contact ID outside the displayed list produces an error showing the valid range.
 * An empty displayed list produces `There is no contact to view in the currently displayed list.`
@@ -414,7 +414,7 @@ Examples:
 
 ### Editing a person: `edit`
 
-Edits an existing person in the address book.
+Edits an existing person in sudoContact.
 
 Format: `edit INDEX [-n NAME] [-p PHONE] [-e EMAIL] [-a ADDRESS] [-d DEPARTMENT] [-t TAG]…​`
 
@@ -491,7 +491,7 @@ Examples:
 
 ### Deleting a person: `delete`
 
-Deletes the specified person from the address book.
+Deletes the specified person from sudoContact.
 
 Format: `delete INDEX`
 
@@ -501,7 +501,7 @@ Format: `delete INDEX`
 * You can restore a deleted person with `undo`.
 
 Examples:
-* `list` followed by `delete 2` deletes the 2nd person in the address book.
+* `list` followed by `delete 2` deletes the 2nd person in sudoContact.
 * `find Bernice` followed by `delete 1` deletes the 1st person in the results of the `find` command.
 
 ### Undoing a deletion: `undo`
