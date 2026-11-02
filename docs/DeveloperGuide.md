@@ -618,7 +618,6 @@ publishing a new order. A missing data file retains the existing sample-data beh
 Regression coverage includes parser boundaries, aliases and errors; stable department and tag ordering; observable
 display/filter behavior; editing and deleting sorted indices; unchanged storage; and recovery after startup loading
 failures, including sorting contacts after successful additions and saves in the same session.
-Run `./gradlew check coverage` (Windows: `.\gradlew.bat check coverage`) with Java 25.
 
 ### Clearing contacts with confirmation
 
