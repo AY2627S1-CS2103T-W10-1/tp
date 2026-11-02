@@ -405,7 +405,7 @@ Examples:
 * `list` followed by `view 2` shows the second contact in the full list.
 * After registering Engineering, use `edit CONTACT_ID --department Engineering` to assign it.
   Since editing resets the displayed list, find the contact again and use its current row number with `view`.
-* `find Betsy` followed by `view 1` shows the first contact in the search results.
+* `find Bernice` followed by `view 1` shows the first contact in the search results.
 
 ### Editing a person: `edit`
 
@@ -452,7 +452,7 @@ Format: `find --tag TAG [TAG ...] [--tag TAG ...]`
 * No matches displays `No contacts found with the specified tag(s).`
 * Searching changes only the displayed list; it does not modify contacts or save the JSON data file.
 
-Example: `find --tag client --tag important`
+Example: `find --tag friends --tag colleagues`
 
 For example, `find --tag friends` displays the two contacts tagged `friends` and reports the number of matches:
 
@@ -479,7 +479,7 @@ Format: `find KEYWORD [MORE_KEYWORDS]`
 * Persons matching at least one keyword are returned (an `OR` search); for example, `Hans Bo` returns `Hans Gruber` and `Bo Yang`.
 
 Examples:
-* `find John` returns `john` and `John Doe`
+* With the initial sample contacts, `find yeoh` returns `Alex Yeoh`.
 * With the initial sample contacts, `find alex david` returns `Alex Yeoh` and `David Li`.
 
 ### Deleting a person: `delete`
@@ -495,7 +495,7 @@ Format: `delete INDEX`
 
 Examples:
 * `list` followed by `delete 2` deletes the 2nd person in the address book.
-* `find Betsy` followed by `delete 1` deletes the 1st person in the results of the `find` command.
+* `find Bernice` followed by `delete 1` deletes the 1st person in the results of the `find` command.
 
 ### Undoing a deletion: `undo`
 
@@ -698,7 +698,7 @@ Action | Format, Examples
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit** | `edit INDEX [-n NAME] [-p PHONE_NUMBER] [-e EMAIL] [-a ADDRESS] [-d DEPARTMENT] [-t TAG]…​`<br> e.g., `edit 2 -n James Lee -e jameslee@example.com`
 **Find by name** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
-**Find by tag** | `find --tag TAG [TAG ...] [--tag TAG ...]`<br> e.g., `find --tag client --tag important`
+**Find by tag** | `find --tag TAG [TAG ...] [--tag TAG ...]`<br> e.g., `find --tag friends --tag colleagues`
 **Export** | `export --csv [FILENAME]` or `export -c [FILENAME]`<br> e.g., `export -c team.csv`
 **View** | `view CONTACT_ID`<br> e.g., `view 2`
 **List** | `list` or `ls`
