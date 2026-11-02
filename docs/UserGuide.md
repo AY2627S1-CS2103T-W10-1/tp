@@ -81,8 +81,8 @@ view of departments and contact details. Contacts are stored locally, so the app
 * For `add` and `edit`, quotes are optional. Wrap a value in matching single or double quotes when it contains a flag as a
   separate word, or a word starting with `--`.<br>
   For example, `edit 1 -a Blk 5 -t 3` sets the address to `Blk 5` and adds the tag `3`, while
-  `edit 1 -a "Blk 5 -t 3"` sets the address to `Blk 5 -t 3`. A quote inside a word, as in `O'Brien`, needs no
-  special treatment. Unmatched quotes and unknown options such as `--nme` are rejected.
+  `edit 1 -a "Blk 5 -t 3"` sets the address to `Blk 5 -t 3`. A quote inside a word, as in `-a O'Brien Road`,
+  needs no special treatment. Unmatched quotes and unknown options such as `--nme` are rejected.
   Other commands follow their own quoting rules; for example, quote a multiword department name in `depart`.
 
 * Several tags can follow one tag flag, for example `-t friend family` or `--tag friend --tag family`.
@@ -238,7 +238,8 @@ Manages the shared department catalogue. Choose one operation per command:
   spaces, `-`, or `&`.
   `depart`, `add`, and `edit` trim surrounding whitespace before validation and catalogue lookup.
   Spaces inside quoted names are preserved. Existing saved names are normalized on loading.
-  Blank names are rejected. Quote names containing spaces, e.g. `depart --add "Customer Support"`.
+  Blank names are rejected. For `depart --add`, `depart --edit` and `depart --delete`, enclose each name
+  containing spaces in matching single or double quotes, e.g. `depart --add "Customer Support"`.
 * Adding an existing name, renaming an unknown source, or renaming to another existing name fails without changes.
   Renaming a department to its current name is allowed and leaves its name unchanged.
 * Names and assignments are saved across restarts. When loading older data, existing contact departments are
@@ -409,7 +410,7 @@ Examples:
 * `list` followed by `view 2` shows the second contact in the full list.
 * After registering Engineering, use `edit CONTACT_ID --department Engineering` to assign it.
   Since editing resets the displayed list, find the contact again and use its current row number with `view`.
-* `find Betsy` followed by `view 1` shows the first contact in the search results.
+* `find Bernice` followed by `view 1` shows the first contact in the search results.
 
 ### Editing a person: `edit`
 
@@ -460,11 +461,14 @@ Format: `find --tag TAG [TAG ...] [--tag TAG ...]`
 * Searching examines all stored contacts, replaces the previous filter, and displays matches in stored order.
   It does not modify contacts or save the JSON data file.
 
-Example: `find --tag client --tag important`
+Example: `find --tag friends --tag colleagues`
 
 For example, `find --tag friends` displays the two contacts tagged `friends` and reports the number of matches:
 
 ![Finding contacts by tag](images/findByTag.png)
+
+Matching quotes around tag-search values are optional, except when needed to prevent a value such as `--tag`
+from being interpreted as an option.
 
 ### Locating persons by name: `find`
 
@@ -482,7 +486,7 @@ Format: `find KEYWORD [MORE_KEYWORDS]`
 * Persons matching at least one keyword are returned (an `OR` search); for example, `Hans Bo` returns `Hans Gruber` and `Bo Yang`.
 
 Examples:
-* `find John` returns `john` and `John Doe`
+* With the initial sample contacts, `find yeoh` returns `Alex Yeoh`.
 * With the initial sample contacts, `find alex david` returns `Alex Yeoh` and `David Li`.
 
 ### Deleting a person: `delete`
@@ -498,7 +502,7 @@ Format: `delete INDEX`
 
 Examples:
 * `list` followed by `delete 2` deletes the 2nd person in the address book.
-* `find Betsy` followed by `delete 1` deletes the 1st person in the results of the `find` command.
+* `find Bernice` followed by `delete 1` deletes the 1st person in the results of the `find` command.
 
 ### Undoing a deletion: `undo`
 
@@ -694,14 +698,16 @@ contacts and departments have been verified on the new computer.
 
 ## Command summary
 
+For `add`, supply a name and at least one of `--phone` or `--email`.
+
 Action | Format, Examples
 --------|------------------
 **Add** | `add --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMENT] [--address ADDRESS] [--tag TAG ...]`<br> or `add -n NAME [-p PHONE] [-e EMAIL] [-d DEPARTMENT] [-a ADDRESS] [-t TAG]…` <br> e.g., `add --name "James Ho" --email jamesho@example.com`
 **Clear** | `clear` (warning), `clear --confirm` (delete all contacts and registered departments)
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
-**Edit** | `edit INDEX [-n NAME] [-p PHONE_NUMBER] [-e EMAIL] [-a ADDRESS] [-d DEPARTMENT] [-t TAG]…​`<br> e.g., `edit 2 -n James Lee -e jameslee@example.com`
+**Edit** | `edit INDEX [-n NAME] [-p PHONE] [-e EMAIL] [-a ADDRESS] [-d DEPARTMENT] [-t TAG]…​`<br> e.g., `edit 2 -n James Lee -e jameslee@example.com`
 **Find by name** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
-**Find by tag** | `find --tag TAG [TAG ...] [--tag TAG ...]`<br> e.g., `find --tag client --tag important`
+**Find by tag** | `find --tag TAG [TAG ...] [--tag TAG ...]`<br> e.g., `find --tag friends --tag colleagues`
 **Export** | `export --csv [FILENAME]` or `export -c [FILENAME]`<br> e.g., `export -c team.csv`
 **View** | `view CONTACT_ID`<br> e.g., `view 2`
 **List** | `list` or `ls`
@@ -709,3 +715,4 @@ Action | Format, Examples
 **Sort** | `sort -b FIELD` or `sort --by FIELD`, where `FIELD` is `department`, `dept`, `tag`, or `tags`
 **Undo** | `undo` (restore), `undo --discard-latest` (drop without restoring)
 **Help** | `help [COMMAND]` or `? [COMMAND]`
+**Exit** | `exit`

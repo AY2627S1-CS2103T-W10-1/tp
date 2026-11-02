@@ -38,7 +38,7 @@ sudoContact is for departmental secretaries and administrative staff who:
 
 ## Command overview
 
-The following command formats describe sudoContact's product interface. Replace uppercase placeholders with values; items in square brackets are optional.
+The following command formats describe sudoContact's product interface. Replace uppercase placeholders with values; items in square brackets are optional. For `add`, supply at least one of `--phone` or `--email`.
 
 | Task | Command format | Example |
 | --- | --- | --- |
@@ -87,7 +87,7 @@ The Help menu and `F1` show the overview. Press `q` in the Help window to close 
 
 ### Prerequisites
 
-- Java Development Kit (JDK) 25 or later
+- Java Development Kit (JDK) 25
 
 ### Build and run
 
@@ -95,14 +95,14 @@ From the repository root:
 
 ```powershell
 .\gradlew.bat shadowJar
-java -jar build\libs\addressbook.jar
+java -jar "build\libs\sudoContact.jar"
 ```
 
 On macOS or Linux:
 
 ```sh
 ./gradlew shadowJar
-java -jar build/libs/addressbook.jar
+java -jar "build/libs/sudoContact.jar"
 ```
 
 Run the automated test suite with:
