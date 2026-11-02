@@ -77,8 +77,8 @@ view of departments and contact details. Contacts are stored locally, so the app
 * For `add` and `edit`, quotes are optional. Wrap a value in matching single or double quotes when it contains a flag as a
   separate word, or a word starting with `--`.<br>
   For example, `edit 1 -a Blk 5 -t 3` sets the address to `Blk 5` and adds the tag `3`, while
-  `edit 1 -a "Blk 5 -t 3"` sets the address to `Blk 5 -t 3`. A quote inside a word, as in `O'Brien`, needs no
-  special treatment. Unmatched quotes and unknown options such as `--nme` are rejected.
+  `edit 1 -a "Blk 5 -t 3"` sets the address to `Blk 5 -t 3`. A quote inside a word, as in `-a O'Brien Road`,
+  needs no special treatment. Unmatched quotes and unknown options such as `--nme` are rejected.
   Other commands follow their own quoting rules; for example, quote a multiword department name in `depart`.
 
 * Several tags can follow one tag flag, for example `-t friend family` or `--tag friend --tag family`.
