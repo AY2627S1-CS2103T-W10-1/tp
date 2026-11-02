@@ -36,6 +36,10 @@ view of departments and contact details. Contacts are stored locally, so the app
 
    * `sort --by tags` : Sorts displayed contacts by their alphabetically smallest tag.
 
+   * `find --tag friends` : Shows contacts tagged `friends`, ignoring tag capitalization.
+
+   * `depart --list` : Lists all registered departments, including departments with no contacts.
+
    * `add -n John Doe -p 98765432 -e johnd@example.com -a John street, block 123, #01-01` : Adds a contact named `John Doe` to the Address Book.
 
    * `delete 3` : Deletes the 3rd contact shown in the current list.
@@ -226,9 +230,9 @@ Manages the shared department catalogue. Choose one operation per command:
 | Command | Result |
 | --- | --- |
 | `depart --list` | Lists every registered department, including unused departments. |
-| `depart --delete DEPARTMENT` | Removes a department and clears its assignments on all contacts, including hidden contacts. |
 | `depart --add DEPARTMENT` | Registers a new department without assigning contacts. |
 | `depart --edit OLD_NAME NEW_NAME` | Renames a department and updates every associated contact, including hidden contacts. |
+| `depart --delete DEPARTMENT` | Removes a department and clears its assignments on all contacts, including hidden contacts. |
 
 * Names are case-sensitive and must contain 2-50 characters using English letters (`A-Z`, `a-z`), numbers,
   spaces, `-`, or `&`.
@@ -350,10 +354,10 @@ For an empty displayed list, the feedback is `No contacts found to sort.`
 
 Problem | Feedback
 --------|---------
-Missing option | `Missing sorting option. Usage: sort -b/--by <department|dept|tag|tags>`
-Missing field | `Missing sorting field. Usage: sort -b/--by <department|dept|tag|tags>`
+Missing option | `Missing sorting option. Usage: sort -b/--by <department\|dept\|tag\|tags>`
+Missing field | `Missing sorting field. Usage: sort -b/--by <department\|dept\|tag\|tags>`
 Unknown field | `Invalid sorting field. Use department, dept, tag, or tags.`
-Unsupported or repeated argument | `Unsupported argument. Usage: sort -b/--by <department|dept|tag|tags>`
+Unsupported or repeated argument | `Unsupported argument. Usage: sort -b/--by <department\|dept\|tag\|tags>`
 `--descending` supplied | `Descending order is not supported. Contacts are sorted in ascending order.`
 Invalid displayed contact data | `Unable to sort contacts because some stored contact data is invalid.`
 
@@ -447,11 +451,15 @@ Format: `find --tag TAG [TAG ...] [--tag TAG ...]`
   inputs are deduplicated. Leading `#` or `/` characters are removed before searching.
 * Tags use English letters (`A-Z`, `a-z`), numbers, hyphens (`-`), or underscores (`_`), without spaces.
   New tags are limited to 30 characters, but search also accepts longer tags retained from older data files.
-  Quote a tag that is itself an option-like value, e.g. `find --tag "--tag"` searches for the tag `--tag`.
+  An unquoted value beginning with `--` is treated as an option; quote it to use it as a tag value, e.g.
+  `find --tag "--tag"` searches for the tag `--tag`.
+* Name and tag searches cannot be combined: text before the first `--tag`, as in
+  `find Alice --tag friends`, is rejected.
 * A missing value displays `Tag cannot be empty: Please provide a valid tag after '--tag'.`
 * An invalid search value displays `Tags must use only letters, numbers, hyphens (-), and underscores (_), with no spaces.`
 * No matches displays `No contacts found with the specified tag(s).`
-* Searching changes only the displayed list; it does not modify contacts or save the JSON data file.
+* Searching examines all stored contacts, replaces the previous filter, and displays matches in stored order.
+  It does not modify contacts or save the JSON data file.
 
 Example: `find --tag friends --tag colleagues`
 
@@ -635,7 +643,7 @@ The JSON save is skipped for `find`, `view`, `sort`, `export`, `help`/`?`, `depa
 `export` writes a separate CSV copy; it does not modify or save the JSON contact file.
 Finding, viewing, help and department listing only display information; unconfirmed `clear` only displays its warning.
 `clear --confirm` does save the cleared data. `list`/`ls` retains the normal JSON-save behavior.
-Departments and tags are contact data and are saved normally when changed.
+Department catalogue entries, contact assignments, and tags are saved whenever they are changed.
 If saving fails after adding, editing, deleting, changing departments, or restoring a deletion, the change remains
 in the current session, while the previous saved file remains unchanged. Resolve the storage problem, then run
 `list` to retry saving before closing the app. Repeating the original command may apply another change.

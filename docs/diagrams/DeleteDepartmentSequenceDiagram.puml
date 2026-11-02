@@ -1,0 +1,63 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+title Deleting a department: successful execution
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as LogicManager LOGIC_COLOR
+participant "d:DepartCommand" as DepartCommand LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant "m:ModelManager" as ModelManager MODEL_COLOR
+participant ":AddressBook" as AddressBook MODEL_COLOR
+end box
+
+participant ":Storage" as Storage STORAGE_COLOR
+
+[-> LogicManager : execute("depart --delete Engineering")
+activate LogicManager
+
+ref over LogicManager, DepartCommand
+AddressBookParser and DepartCommandParser
+create d for the DELETE operation.
+end ref
+
+LogicManager -> DepartCommand : execute(m)
+activate DepartCommand
+DepartCommand -> ModelManager : hasDepartment(Engineering)
+activate ModelManager
+ModelManager --> DepartCommand : true
+deactivate ModelManager
+
+DepartCommand -> ModelManager : deleteDepartment(Engineering)
+activate ModelManager
+note right of ModelManager
+Record affected contacts for undo,
+including contacts in deletion history.
+end note
+ModelManager -> AddressBook : deleteDepartment(Engineering)
+activate AddressBook
+note right of AddressBook
+Remove the catalogue entry and clear
+matching assignments from all contacts.
+end note
+AddressBook --> ModelManager
+deactivate AddressBook
+ModelManager --> DepartCommand
+deactivate ModelManager
+DepartCommand --> LogicManager : result: CommandResult
+deactivate DepartCommand
+
+LogicManager -> ModelManager : getAddressBook()
+activate ModelManager
+ModelManager --> LogicManager : addressBook
+deactivate ModelManager
+LogicManager -> Storage : saveAddressBook(addressBook)
+activate Storage
+Storage --> LogicManager
+deactivate Storage
+
+[<-- LogicManager : result
+deactivate LogicManager
+@enduml
