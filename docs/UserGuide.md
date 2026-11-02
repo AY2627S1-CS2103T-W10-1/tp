@@ -696,7 +696,7 @@ Action | Format, Examples
 **Add** | `add --name NAME [--phone PHONE] [--email EMAIL] [--department DEPARTMENT] [--address ADDRESS] [--tag TAG ...]`<br> or `add -n NAME [-p PHONE] [-e EMAIL] [-d DEPARTMENT] [-a ADDRESS] [-t TAG]…` <br> e.g., `add --name "James Ho" --email jamesho@example.com`
 **Clear** | `clear` (warning), `clear --confirm` (delete all contacts and registered departments)
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
-**Edit** | `edit INDEX [-n NAME] [-p PHONE_NUMBER] [-e EMAIL] [-a ADDRESS] [-d DEPARTMENT] [-t TAG]…​`<br> e.g., `edit 2 -n James Lee -e jameslee@example.com`
+**Edit** | `edit INDEX [-n NAME] [-p PHONE] [-e EMAIL] [-a ADDRESS] [-d DEPARTMENT] [-t TAG]…​`<br> e.g., `edit 2 -n James Lee -e jameslee@example.com`
 **Find by name** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
 **Find by tag** | `find --tag TAG [TAG ...] [--tag TAG ...]`<br> e.g., `find --tag friends --tag colleagues`
 **Export** | `export --csv [FILENAME]` or `export -c [FILENAME]`<br> e.g., `export -c team.csv`
@@ -706,3 +706,4 @@ Action | Format, Examples
 **Sort** | `sort -b FIELD` or `sort --by FIELD`, where `FIELD` is `department`, `dept`, `tag`, or `tags`
 **Undo** | `undo` (restore), `undo --discard-latest` (drop without restoring)
 **Help** | `help [COMMAND]` or `? [COMMAND]`
+**Exit** | `exit`
