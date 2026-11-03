@@ -11,29 +11,10 @@ title: Developer Guide
 This project is based on the AddressBook-Level3 project created by the [SE-EDU initiative](https://se-education.org).
 
 * [SE-EDU initiative](https://se-education.org)
-* He Qianyi used OpenAI Codex to assist with feature 4 (partial-contact addition): parser/options,
-  omitted-field representation, duplicate identity, storage/UI integration, tests and related UG/DG documentation.
-* He Qianyi used OpenAI Codex to assist with the feature 3 `view CONTACT_ID` implementation, including the
-  command/parser, details window, command-result integration, tests, and related
-  User Guide/Developer Guide documentation.
-
-OpenAI Codex assisted He Qianyi with the Feature 11 CSV export implementation, tests and documentation.
-He Qianyi is responsible for reviewing and understanding these changes.
-He Qianyi used OpenAI Codex to assist with updating and verifying the UI class diagram and the UML sequence diagrams for contact viewing, partial-contact addition and CSV export.
-
-He Qianyi used OpenAI Codex to assist with diagnostic logging for contact viewing and CSV export,
-including review fixes and regression tests to keep private input and feedback out of application logs.
-He Qianyi used OpenAI Codex to assist with iterative email validation, long-input regression tests,
-contact-workflow glossary updates and alpha-review documentation corrections.
-He Qianyi used OpenAI Codex to assist with alpha-bug fixes for read-only contact viewing, specific CSV
-filename feedback, return-to-prompt focus after popup dismissal, deterministic detail-value selection,
-regression tests and matching documentation.
-He Qianyi used OpenAI Codex to assist with the Week 11 UG/DG review, contact-workflow use cases,
-reproducible manual testing instructions, documentation links, diagrams and current product screenshots.
-He Qianyi used OpenAI Codex to assist with preventing concurrent CSV exports from overwriting files,
-including regression tests and the matching export documentation.
-He Qianyi used OpenAI Codex to assist with final-submission documentation corrections in the README,
-User Guide, Developer Guide and About Us page.
+* Claude Opus 5.5 (through Claude Code) and GPT models (through OpenAI Codex) were used in this project to
+  generate code and documentation, and to hunt for bugs during alpha and beta testing.
+  OpenAI Codex also assisted with writing and running automated tests, preliminary PR reviews,
+  and preparing and checking UML diagrams and product screenshots.
 
 --------------------------------------------------------------------------------------------------------------------
 
