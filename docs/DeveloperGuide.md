@@ -13,6 +13,8 @@ This project is based on the AddressBook-Level3 project created by the [SE-EDU i
 * [SE-EDU initiative](https://se-education.org)
 * Claude Opus 5.5 (through Claude Code) and GPT models (through OpenAI Codex) were used in this project to
   generate code and documentation, and to hunt for bugs during alpha and beta testing.
+  OpenAI Codex also assisted with writing and running automated tests, preliminary PR reviews,
+  and preparing and checking UML diagrams and product screenshots.
 
 --------------------------------------------------------------------------------------------------------------------
 
